@@ -29,7 +29,7 @@ class VictoryAxis extends React.Component {
       svg: {
         "border": "2px solid black",
         "margin": "20",
-        "width": "400",
+        "width": "300",
         "height": "300"
       }
     };
@@ -47,8 +47,8 @@ class VictoryAxis extends React.Component {
   getYTransform() {
     const styles = this.getStyles();
     const yMargin = {
-      left: -500,
-      top: 500
+      left: styles.svg.margin,
+      top: styles.svg.margin - styles.svg.height
     }
     return "rotate(-90) translate(" + yMargin.top + "," + yMargin.left + ")";
   }
@@ -74,8 +74,8 @@ class VictoryAxis extends React.Component {
       .scale(this.getYScale())
       .orient("bottom");
 
-    let xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
-    let yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
+    const xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
+    const yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
     this.setState({
       xAxis: xAxis,
       yAxis: yAxis
