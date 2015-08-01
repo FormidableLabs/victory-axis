@@ -9,6 +9,9 @@ import Component from "src/components/victory-axis";
 const TestUtils = React.addons.TestUtils;
 
 describe("components/victory-axis", function () {
+  it("is true", function () {
+    expect(true).to.equal(true);
+  });
 
   it.skip("has expected content with deep render", function () {
     // This is a "deep" render that renders children + all into an actual
