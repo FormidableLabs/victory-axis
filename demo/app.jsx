@@ -4,14 +4,18 @@ import {VictoryAxis} from "../src/index";
 
 class App extends React.Component {
   render() {
+    const style = {
+        border: "2px solid black",
+        margin: "50",
+        width: "350",
+        height: "350"
+    };
+
     return (
       <div className="demo">
-        <p>
-          < VictoryAxis/>
-        </p>
-        <p>
-          < VictoryAxis color={"red"}/>
-        </p>
+        <svg style={style}>
+          < VictoryAxis style={style}/>
+        </svg>
       </div>
     );
   }
