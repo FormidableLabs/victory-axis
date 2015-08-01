@@ -1,44 +1,67 @@
 import React from "react";
 import Radium from "radium";
 import d3 from "d3";
+import _ from "lodash";
 
 @Radium
 class VictoryAxis extends React.Component {
 
   constructor(props) {
     super(props);
+    if (this.props.data) {
+      this.state = {
+        data: this.props.data,
+        x: this.props.data.map(row => row.x),
+        y: this.props.data.map(row => row.y)
+      };
+    } else {
+      this.state = {};
+      this.state.x = this.returnOrGenerateX();
+      this.state.y = this.returnOrGenerateY();
+
+      let inter = _.zip(this.state.x, this.state.y);
+      let objs = _.map(inter, (obj) => { return {x: obj[0], y: obj[1]}; });
+
+      this.state.data = objs;
+    }
+  }
+
+  returnOrGenerateX() {
+    let step = Math.round(this.props.xMax / this.props.sample, 4);
+    return this.props.x
+         ? this.props.x
+         : _.range(this.props.xMin, this.props.xMax, step)
+  }
+
+  returnOrGenerateY() {
+    const y = this.props.y;
+    if (typeof(y) === "array") {
+      return y;
+    } else if (typeof(y) === "function") {
+      return _.map(this.state.x, (x) => y(x))
+    } else {
+      // asplode
+      return null;
+    }
   }
 
   getStyles() {
-    return {
-      base: {
-        color: "#000",
-        fontSize: 12,
-        textDecoration: "underline"
-      },
-      red: {
-        color: "#d71920",
-        fontSize: 30
-      },
-      path: {
-        "fill": "none",
-        "stroke": "darkgrey",
-        "strokeWidth": "2px"
-      },
-      svg: {
-        "border": "2px solid black",
-        "margin": "20",
-        "width": "300",
-        "height": "300"
+    return _.merge({
+      width: 300,
+      height: 300,
+      margin: 20,
+      xAxis: {
+        stroke: "green",
+        fill: "green"
       }
-    };
+    }, this.props.style);
   }
 
   getXTransform() {
     const styles = this.getStyles();
     const xMargin = {
-      left: styles.svg.margin,
-      top: styles.svg.height - styles.svg.margin
+      left: styles.margin,
+      top: styles.height - styles.margin
     };
     return "translate(" + xMargin.left + "," + xMargin.top + ")";
   }
@@ -46,21 +69,21 @@ class VictoryAxis extends React.Component {
   getYTransform() {
     const styles = this.getStyles();
     const yMargin = {
-      left: styles.svg.margin,
-      top: styles.svg.margin - styles.svg.height
+      left: styles.margin,
+      top: -styles.margin
     };
-    return "rotate(-90) translate(" + yMargin.top + "," + yMargin.left + ")";
+    return "translate(" + yMargin.left + "," + yMargin.top + ")";
   }
 
   getXScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(this.props.xMin, style.svg.width);
+    const scale = this.props.scale(this.props.xMin, style.width);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.x));
   }
 
   getYScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(style.svg.height, this.props.yMin);
+    const scale = this.props.scale(style.height, this.props.yMin);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.y));
   }
 
@@ -71,7 +94,7 @@ class VictoryAxis extends React.Component {
       .orient("bottom");
     const yAxisFunction = d3.svg.axis()
       .scale(this.getYScale())
-      .orient("bottom");
+      .orient("left");
 
     const xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
     const yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
@@ -81,12 +104,10 @@ class VictoryAxis extends React.Component {
   render() {
     const styles = this.getStyles();
     return (
-      <svg style={[styles.svg, this.props.style]}>
-        <g>
-          <g ref="xAxis" transform={this.getXTransform()}>{this.state.xAxis}</g>
-          <g ref="yAxis" transform={this.getYTransform()}>{this.state.yAxis}</g>
-        </g>
-      </svg>
+      <g>
+        <g ref="xAxis" style={styles.xAxis} transform={this.getXTransform() }>{this.state.xAxis}</g>
+        <g ref="yAxis" style={styles.yAxis} transform={this.getYTransform()}>{this.state.yAxis}</g>
+      </g>
     );
   }
 }
