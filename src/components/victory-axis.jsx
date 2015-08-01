@@ -50,7 +50,7 @@ class VictoryAxis extends React.Component {
     return _.merge({
       width: 300,
       height: 300,
-      margin: 20,
+      margin: 40,
       xAxis: {
         stroke: "green",
         fill: "green"
@@ -61,7 +61,7 @@ class VictoryAxis extends React.Component {
   getXTransform() {
     const styles = this.getStyles();
     const xMargin = {
-      left: styles.margin,
+      left: 0,
       top: styles.height - styles.margin
     };
     return "translate(" + xMargin.left + "," + xMargin.top + ")";
@@ -71,20 +71,20 @@ class VictoryAxis extends React.Component {
     const styles = this.getStyles();
     const yMargin = {
       left: styles.margin,
-      top: -styles.margin
+      top: 0
     };
     return "translate(" + yMargin.left + "," + yMargin.top + ")";
   }
 
   getXScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(this.props.xMin, style.width);
+    const scale = this.props.scale(style.margin, style.width - style.margin);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.x));
   }
 
   getYScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(style.height, this.props.yMin);
+    const scale = this.props.scale(style.height - style.margin, style.margin);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.y));
   }
 
@@ -141,7 +141,7 @@ VictoryAxis.defaultProps = {
   x: null,
   xMax: 100,
   xMin: 0,
-  y: () => Math.random(),
+  y: () => 100 * Math.random(),
   yMax: 100,
   yMin: 0
 };
