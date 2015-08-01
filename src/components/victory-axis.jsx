@@ -1,7 +1,6 @@
 import React from "react";
 import Radium from "radium";
 import d3 from "d3";
-import _ from "lodash";
 
 @Radium
 class VictoryAxis extends React.Component {
@@ -49,7 +48,7 @@ class VictoryAxis extends React.Component {
     const yMargin = {
       left: styles.svg.margin,
       top: styles.svg.margin - styles.svg.height
-    }
+    };
     return "rotate(-90) translate(" + yMargin.top + "," + yMargin.left + ")";
   }
 
@@ -60,7 +59,7 @@ class VictoryAxis extends React.Component {
   }
 
   getYScale() {
-    const style = this.getStyles()
+    const style = this.getStyles();
     const scale = this.props.scale(style.svg.height, this.props.yMin);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.y));
   }
@@ -76,14 +75,11 @@ class VictoryAxis extends React.Component {
 
     const xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
     const yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
-    this.setState({
-      xAxis: xAxis,
-      yAxis: yAxis
-    });
+    this.setState({xAxis, yAxis});
   }
 
   render() {
-    const styles = this.getStyles()
+    const styles = this.getStyles();
     return (
       <svg style={[styles.svg, this.props.style]}>
         <g>
@@ -102,29 +98,30 @@ VictoryAxis.propTypes = {
       y: React.PropTypes.number
     })
   ),
-  xMin: React.PropTypes.number,
-  yMin: React.PropTypes.number,
-  xMax: React.PropTypes.number,
-  yMax: React.PropTypes.number,
   sample: React.PropTypes.number,
+  scale: React.PropTypes.func,
+  style: React.PropTypes.node,
   x: React.PropTypes.array,
+  xMin: React.PropTypes.number,
+  xMax: React.PropTypes.number,
   y: React.PropTypes.oneOfType([
     React.PropTypes.array,
     React.PropTypes.func
   ]),
-  scale: React.PropTypes.func
+  yMin: React.PropTypes.number,
+  yMax: React.PropTypes.number
 };
 
 VictoryAxis.defaultProps = {
-  xMin: 0,
-  yMin: 0,
-  xMax: 100,
-  yMax: 100,
   data: null,
   sample: 100,
-  x: null,
-  y: () => Math.random(),
   scale: (min, max) => d3.scale.linear().range([min, max]),
+  x: null,
+  xMax: 100,
+  xMin: 0,
+  y: () => Math.random(),
+  yMax: 100,
+  yMin: 0
 };
 
 export default VictoryAxis;
