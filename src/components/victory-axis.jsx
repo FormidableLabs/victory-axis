@@ -8,12 +8,16 @@ class VictoryAxis extends React.Component {
 
   constructor(props) {
     super(props);
+    const style = this.getStyles();
+    this.state = {};
+    this.state.yRange = {min: style.margin, max: style.height - style.margin}
+    this.state.xRange = {min: style.margin, max: style.width - style.margin}
   }
 
   getStyles() {
     return _.merge({
-      width: 300,
-      height: 300,
+      width: 500,
+      height: 200,
       margin: 40,
       xAxis: {
         stroke: "green",
@@ -23,33 +27,25 @@ class VictoryAxis extends React.Component {
   }
 
   getXTransform() {
-    const styles = this.getStyles();
-    const xMargin = {
-      left: 0,
-      top: styles.height - styles.margin
-    };
-    return "translate(" + xMargin.left + "," + xMargin.top + ")";
+    const range = this.state.yRange
+    return "translate(" + 0 + "," + range.max + ")";
   }
 
   getYTransform() {
-    const styles = this.getStyles();
-    const yMargin = {
-      left: styles.margin,
-      top: 0
-    };
-    return "translate(" + yMargin.left + "," + yMargin.top + ")";
+    const range = this.state.xRange
+    return "translate(" + range.min + "," + 0 + ")";
   }
 
   getXScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(style.margin, style.width - style.margin);
-    return scale.domain([this.props.xMin, this.props.xMax]);
+    const scale = this.props.scale().range([this.state.xRange.min, this.state.xRange.max]);
+    return scale.domain([this.props.xDomain.min, this.props.xDomain.max]);
   }
 
   getYScale() {
     const style = this.getStyles();
-    const scale = this.props.scale(style.height - style.margin, style.margin);
-    return scale.domain([this.props.yMin, this.props.yMax]);
+    const scale = this.props.scale().range([this.state.yRange.max, this.state.yRange.min]);
+    return scale.domain([this.props.yDomain.min, this.props.yDomain.max]);
   }
 
 
@@ -81,19 +77,29 @@ VictoryAxis.propTypes = {
   sample: React.PropTypes.number,
   scale: React.PropTypes.func,
   style: React.PropTypes.node,
-  xMin: React.PropTypes.number,
-  xMax: React.PropTypes.number,
-  yMin: React.PropTypes.number,
-  yMax: React.PropTypes.number
+  xRange: React.PropTypes.shape({
+    min: React.PropTypes.number,
+    max: React.PropTypes.number
+  }),
+  xDomain: React.PropTypes.shape({
+    min: React.PropTypes.number,
+    max: React.PropTypes.number
+  }),
+  yRange: React.PropTypes.shape({
+    min: React.PropTypes.number,
+    max: React.PropTypes.number
+  }),
+  yDomain: React.PropTypes.shape({
+    min: React.PropTypes.number,
+    max: React.PropTypes.number
+  })
 };
 
 VictoryAxis.defaultProps = {
   sample: 100,
-  scale: (min, max) => d3.scale.linear().range([min, max]),
-  xMax: 100,
-  xMin: 0,
-  yMax: 100,
-  yMin: 0
+  scale: () => d3.scale.linear(),
+  xDomain: {min: 0, max: 100},
+  yDomain: {min: 0, max: 100}
 };
 
 export default VictoryAxis;
