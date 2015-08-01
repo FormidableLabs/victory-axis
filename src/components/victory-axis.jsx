@@ -71,42 +71,36 @@ class VictoryAxis extends React.Component {
       },
       svg: {
         "border": "2px solid black",
-        "margin": "20px",
-        "width": "500",
-        "height": "200"
+        "margin": "20",
+        "width": "400",
+        "height": "300"
       }
     };
   }
 
+
   componentDidMount() {
-    const xscale = d3.scale.linear().range([0, 100]);
+    const style = this.getStyles()
+    const xScale = this.props.scale(this.props.xMin, style.svg.width);
     const d3Axis = d3.svg.axis()
-      .scale(xscale)
+      .scale(xScale)
       .orient("bottom");
-    console.log(d3Axis)
     let node = React.findDOMNode(this.refs.xAxis);
     let xAxis = d3Axis(d3.select(node));
-
-    console.log("xAxis", xAxis)
-
-    this.setState({xAxis: d3Axis(node)});
+    this.setState({xAxis: xAxis});
   }
 
   render() {
     const styles = this.getStyles();
-
-    const xScale = this.props.scale(this.props.xMin, styles.svg.width);
-    const yScale = this.props.scale(styles.svg.height, this.props.yMin);
-
-    let xExt = d3.extent(this.state.data, (obj) => obj.x);
-    let yExt = d3.extent(this.state.data, (obj) => obj.y);
-
-    xScale.domain(d3.extent(this.state.data, (obj) => obj.x));
-    yScale.domain(d3.extent(this.state.data, (obj) => obj.y));
+    const xMargin = {
+      left: styles.svg.margin,
+      top: styles.svg.height - styles.svg.margin
+    }
+    const xTransform = "translate(" + xMargin.left + "," + xMargin.top + ")";
     return (
-      <svg style={[styles.svg, this.props.style]} >
+      <svg style={[styles.svg, this.props.style]}>
         <g>
-          <g className="x axis" ref="xAxis" transform="translate(10, 10)">{this.state.xaxis}</g>
+          <g ref="xAxis" transform={xTransform}>{this.state.xAxis}</g>
         </g>
       </svg>
     );

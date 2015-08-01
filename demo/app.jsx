@@ -6,12 +6,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="demo">
-        <p>
-          < VictoryAxis/>
-        </p>
-        <p>
-          < VictoryAxis color={"red"}/>
-        </p>
+        < VictoryAxis/>
       </div>
     );
   }
