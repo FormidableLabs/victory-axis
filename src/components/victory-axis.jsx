@@ -78,29 +78,55 @@ class VictoryAxis extends React.Component {
     };
   }
 
-
-  componentDidMount() {
-    const style = this.getStyles()
-    const xScale = this.props.scale(this.props.xMin, style.svg.width);
-    const d3Axis = d3.svg.axis()
-      .scale(xScale)
-      .orient("bottom");
-    let node = React.findDOMNode(this.refs.xAxis);
-    let xAxis = d3Axis(d3.select(node));
-    this.setState({xAxis: xAxis});
-  }
-
-  render() {
+  getXTransform() {
     const styles = this.getStyles();
     const xMargin = {
       left: styles.svg.margin,
       top: styles.svg.height - styles.svg.margin
     }
-    const xTransform = "translate(" + xMargin.left + "," + xMargin.top + ")";
+    return "translate(" + xMargin.left + "," + xMargin.top + ")";
+  }
+
+  getYTransform() {
+    return "rotate(-90)";
+  }
+
+  getXScale() {
+    const style = this.getStyles()
+    const scale = this.props.scale(this.props.xMin, style.svg.width);
+    return scale.domain(d3.extent(this.state.data, (obj) => obj.x));
+  }
+
+  getYScale() {
+    const style = this.getStyles()
+    const scale = this.props.scale(style.svg.height, this.props.yMin);
+    return scale.domain(d3.extent(this.state.data, (obj) => obj.y));
+  }
+
+
+  componentDidMount() {
+    const xAxisFunction = d3.svg.axis()
+      .scale(this.getXScale())
+      .orient("bottom");
+    const yAxisFunction = d3.svg.axis()
+      .scale(this.getYScale())
+      .orient("bottom");
+
+    let xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
+    let yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
+    this.setState({
+      xAxis: xAxis,
+      yAxis: yAxis
+    });
+  }
+
+  render() {
+    const styles = this.getStyles()
     return (
       <svg style={[styles.svg, this.props.style]}>
         <g>
-          <g ref="xAxis" transform={xTransform}>{this.state.xAxis}</g>
+          <g ref="xAxis" transform={this.getXTransform()}>{this.state.xAxis}</g>
+          <g ref="yAxis" transform={this.getYTransform()}>{this.state.yAxis}</g>
         </g>
       </svg>
     );
