@@ -88,7 +88,12 @@ class VictoryAxis extends React.Component {
   }
 
   getYTransform() {
-    return "rotate(-90)";
+    const styles = this.getStyles();
+    const yMargin = {
+      left: -500,
+      top: 500
+    }
+    return "rotate(-90) translate(" + yMargin.top + "," + yMargin.left + ")";
   }
 
   getXScale() {
