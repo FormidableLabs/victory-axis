@@ -103,60 +103,66 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _classCallCheck(this, _VictoryAxis);
 	
 	    _get(Object.getPrototypeOf(_VictoryAxis.prototype), "constructor", this).call(this, props);
+	    var style = this.getStyles();
+	    this.state = {};
+	    this.state.yRange = { min: style.margin, max: style.height - style.margin };
+	    this.state.xRange = { min: style.margin, max: style.width - style.margin };
+	    this.state.ticks = _lodash2["default"].isArray(this.props.ticks) ? this.prop.ticks.length : this.props.ticks;
 	  }
 	
 	  _createClass(VictoryAxis, [{
 	    key: "getStyles",
 	    value: function getStyles() {
 	      return _lodash2["default"].merge({
-	        width: 300,
-	        height: 300,
+	        width: 500,
+	        height: 200,
 	        margin: 40,
 	        xAxis: {
-	          stroke: "green",
-	          fill: "green"
+	          stroke: "black",
+	          fill: "none",
+	          strokeWidth: 0.5,
+	          shapeRendering: "crispEdges"
+	        },
+	        yAxis: {
+	          stroke: "black",
+	          fill: "none",
+	          strokeWidth: 0.5,
+	          shapeRendering: "crispEdges"
+	        },
+	        text: {
+	          fontFamily: "sans-serif"
 	        }
 	      }, this.props.style);
 	    }
 	  }, {
 	    key: "getXTransform",
 	    value: function getXTransform() {
-	      var styles = this.getStyles();
-	      var xMargin = {
-	        left: 0,
-	        top: styles.height - styles.margin
-	      };
-	      return "translate(" + xMargin.left + "," + xMargin.top + ")";
+	      var range = this.state.yRange;
+	      return "translate(" + 0 + "," + range.max + ")";
 	    }
 	  }, {
 	    key: "getYTransform",
 	    value: function getYTransform() {
-	      var styles = this.getStyles();
-	      var yMargin = {
-	        left: styles.margin,
-	        top: 0
-	      };
-	      return "translate(" + yMargin.left + "," + yMargin.top + ")";
+	      var range = this.state.xRange;
+	      return "translate(" + range.min + "," + 0 + ")";
 	    }
 	  }, {
 	    key: "getXScale",
 	    value: function getXScale() {
-	      var style = this.getStyles();
-	      var scale = this.props.scale(style.margin, style.width - style.margin);
-	      return scale.domain([this.props.xMin, this.props.xMax]);
+	      var scale = this.props.scale().range([this.state.xRange.min, this.state.xRange.max]);
+	      return scale.domain([this.props.xDomain.min, this.props.xDomain.max]);
 	    }
 	  }, {
 	    key: "getYScale",
 	    value: function getYScale() {
-	      var style = this.getStyles();
-	      var scale = this.props.scale(style.height - style.margin, style.margin);
-	      return scale.domain([this.props.yMin, this.props.yMax]);
+	      var scale = this.props.scale().range([this.state.yRange.max, this.state.yRange.min]);
+	      return scale.domain([this.props.yDomain.min, this.props.yDomain.max]);
 	    }
 	  }, {
 	    key: "componentDidMount",
 	    value: function componentDidMount() {
-	      var xAxisFunction = _d32["default"].svg.axis().scale(this.getXScale()).orient("bottom");
-	      var yAxisFunction = _d32["default"].svg.axis().scale(this.getYScale()).orient("left");
+	      var xAxisFunction = _d32["default"].svg.axis().scale(this.getXScale()).orient("bottom").ticks(this.state.ticks);
+	      var yAxisFunction = _d32["default"].svg.axis().scale(this.getYScale()).orient("left").ticks(this.state.ticks);
 	
 	      var xAxis = xAxisFunction(_d32["default"].select(_react2["default"].findDOMNode(this.refs.xAxis)));
 	      var yAxis = yAxisFunction(_d32["default"].select(_react2["default"].findDOMNode(this.refs.yAxis)));
@@ -192,21 +198,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	  sample: _react2["default"].PropTypes.number,
 	  scale: _react2["default"].PropTypes.func,
 	  style: _react2["default"].PropTypes.node,
-	  xMin: _react2["default"].PropTypes.number,
-	  xMax: _react2["default"].PropTypes.number,
-	  yMin: _react2["default"].PropTypes.number,
-	  yMax: _react2["default"].PropTypes.number
+	  ticks: _react2["default"].PropTypes.oneOfType([_react2["default"].PropTypes.array, _react2["default"].PropTypes.number]),
+	  xRange: _react2["default"].PropTypes.shape({
+	    min: _react2["default"].PropTypes.number,
+	    max: _react2["default"].PropTypes.number
+	  }),
+	  xDomain: _react2["default"].PropTypes.shape({
+	    min: _react2["default"].PropTypes.number,
+	    max: _react2["default"].PropTypes.number
+	  }),
+	  yRange: _react2["default"].PropTypes.shape({
+	    min: _react2["default"].PropTypes.number,
+	    max: _react2["default"].PropTypes.number
+	  }),
+	  yDomain: _react2["default"].PropTypes.shape({
+	    min: _react2["default"].PropTypes.number,
+	    max: _react2["default"].PropTypes.number
+	  })
 	};
 	
 	VictoryAxis.defaultProps = {
 	  sample: 100,
-	  scale: function scale(min, max) {
-	    return _d32["default"].scale.linear().range([min, max]);
+	  ticks: 5,
+	  scale: function scale() {
+	    return _d32["default"].scale.linear();
 	  },
-	  xMax: 100,
-	  xMin: 0,
-	  yMax: 100,
-	  yMin: 0
+	  xDomain: { min: 0, max: 100 },
+	  yDomain: { min: 0, max: 100 }
 	};
 	
 	exports["default"] = VictoryAxis;
