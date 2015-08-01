@@ -8,49 +8,6 @@ class VictoryAxis extends React.Component {
 
   constructor(props) {
     super(props);
-    /*
-      Our use-cases are:
-      1. The user passes in data as an array of {x: 1, y: 2}-style pairs
-      2. The user provides no x; make it from xMin and xMax
-      3. The user provides x as an array of points; leave it be
-      4. The user provides y as an array of points; leave it be
-      5. The user provides y as a function; use x to generate y
-     */
-    if (this.props.data) {
-      this.state = {
-        data: this.props.data,
-        x: this.props.data.map(row => row.x),
-        y: this.props.data.map(row => row.y)
-      };
-    } else {
-      this.state = {};
-      this.state.x = this.returnOrGenerateX();
-      this.state.y = this.returnOrGenerateY();
-
-      let inter = _.zip(this.state.x, this.state.y);
-      let objs = _.map(inter, (obj) => { return {x: obj[0], y: obj[1]}; });
-
-      this.state.data = objs;
-    }
-  }
-
-  returnOrGenerateX() {
-    let step = Math.round(this.props.xMax / this.props.sample, 4);
-    return this.props.x
-         ? this.props.x
-         : _.range(this.props.xMin, this.props.xMax, step)
-  }
-
-  returnOrGenerateY() {
-    const y = this.props.y;
-    if (typeof(y) === "array") {
-      return y;
-    } else if (typeof(y) === "function") {
-      return _.map(this.state.x, (x) => y(x))
-    } else {
-      // asplode
-      return null;
-    }
   }
 
   getStyles() {
@@ -83,7 +40,7 @@ class VictoryAxis extends React.Component {
     const xMargin = {
       left: styles.svg.margin,
       top: styles.svg.height - styles.svg.margin
-    }
+    };
     return "translate(" + xMargin.left + "," + xMargin.top + ")";
   }
 
@@ -97,7 +54,7 @@ class VictoryAxis extends React.Component {
   }
 
   getXScale() {
-    const style = this.getStyles()
+    const style = this.getStyles();
     const scale = this.props.scale(this.props.xMin, style.svg.width);
     return scale.domain(d3.extent(this.state.data, (obj) => obj.x));
   }
