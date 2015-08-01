@@ -19,28 +19,29 @@ class VictoryAxis extends React.Component {
       this.state.x = this.returnOrGenerateX();
       this.state.y = this.returnOrGenerateY();
 
-      let inter = _.zip(this.state.x, this.state.y);
-      let objs = _.map(inter, (obj) => { return {x: obj[0], y: obj[1]}; });
-
-      this.state.data = objs;
+      this.state.data = _.map(_.zip(this.state.x, this.state.y),
+        (obj) => {
+          return { x: obj[0], y: obj[1] };
+        }
+      );
     }
   }
 
   returnOrGenerateX() {
-    let step = Math.round(this.props.xMax / this.props.sample, 4);
+    const step = Math.round(this.props.xMax / this.props.sample, 4);
     return this.props.x
          ? this.props.x
-         : _.range(this.props.xMin, this.props.xMax, step)
+         : _.range(this.props.xMin, this.props.xMax, step);
   }
 
   returnOrGenerateY() {
     const y = this.props.y;
-    if (typeof(y) === "array") {
+    if (typeof y === "object" && y.isArray()) {
       return y;
-    } else if (typeof(y) === "function") {
-      return _.map(this.state.x, (x) => y(x))
+    } else if (typeof y === "function") {
+      return _.map(this.state.x, (x) => y(x));
     } else {
-      // asplode
+      // log an error
       return null;
     }
   }

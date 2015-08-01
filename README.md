@@ -161,6 +161,6 @@ build.
 
 Please see [CONTRIBUTING](CONTRIBUTING.md)
 
-[trav_img]: https://api.travis-ci.org/FormidableLabs/formidable-react-component-boilerplate.svg
-[trav_site]: https://travis-ci.org/FormidableLabs/formidable-react-component-boilerplate
+[trav_img]: https://api.travis-ci.org/FormidableLabs/victory-axis.svg
+[trav_site]: https://travis-ci.org/FormidableLabs/victory-axis
 
