@@ -72,16 +72,15 @@ class VictoryAxis extends React.Component {
   }
 
   getAxisPath(type) {
-    const path;
     const orient = this.props[type].orient
     const range = this.props[type].range
     const tickSize = this.props[type].tickSize
     const sign = (orient === "top" || orient === "left") ? -1 : 1
     if (orient === "top" || orient === "bottom") {
-      path = "M" + range.min + "," + sign * tickSize.outerTickSize +
+      return "M" + range.min + "," + sign * tickSize.outerTickSize +
         "V0H" + range.max + "V" + sign * tickSize.outerTickSize
     } else {
-      path = "M" + sign * tickSize.outerTickSize + "," + range.min + "H0V" +
+      return "M" + sign * tickSize.outerTickSize + "," + range.min + "H0V" +
         range.max + "H" + sign * tickSize.outerTickSize
     }
   }
@@ -107,8 +106,12 @@ class VictoryAxis extends React.Component {
     const styles = this.getStyles();
     return (
       <g>
-        <g ref="xAxis" style={styles.xAxis} transform={this.getTransform("x")}></g>
-        <g ref="yAxis" style={styles.yAxis} transform={this.getTransform("y")}></g>
+        <g ref="xAxis" style={styles.xAxis} transform={this.getTransform("x")}>
+          <path d={this.getAxisPath("x")} />
+        </g>
+        <g ref="yAxis" style={styles.yAxis} transform={this.getTransform("y")}>
+          <path d={this.getAxisPath("y")} />
+        </g>
       </g>
     );
   }
@@ -164,14 +167,24 @@ VictoryAxis.defaultProps = {
     orient: "bottom",
     scale: () => d3.scale.linear(),
     ticks: 5,
-    tickValues: [20, 40, 60, 80, 100]
+    tickValues: [20, 40, 60, 80, 100],
+    tickSize: {
+      innerTickSize: 3,
+      outerTickSize: 3,
+      tickPadding: 3
+    }
   },
   y: {
     domain: {min: 0, max: 100},
     orient: "left",
     scale: () => d3.scale.linear(),
     ticks: 5,
-    tickValues: [20, 40, 60, 80, 100]
+    tickValues: [20, 40, 60, 80, 100],
+    tickSize: {
+      innerTickSize: 3,
+      outerTickSize: 3,
+      tickPadding: 3
+    }
   }
 };
 
