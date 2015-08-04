@@ -72,14 +72,21 @@ class VictoryAxis extends React.Component {
   }
 
   getAxisPath(type) {
-    const orientation = this.props[type].orient
-    if (orientation === "top" || orientation === "bottom") {
-
+    const path;
+    const orient = this.props[type].orient
+    const range = this.props[type].range
+    const tickSize = this.props[type].tickSize
+    const sign = (orient === "top" || orient === "left") ? -1 : 1
+    if (orient === "top" || orient === "bottom") {
+      path = "M" + range.min + "," + sign * tickSize.outerTickSize +
+        "V0H" + range.max + "V" + sign * tickSize.outerTickSize
+    } else {
+      path = "M" + sign * tickSize.outerTickSize + "," + range.min + "H0V" +
+        range.max + "H" + sign * tickSize.outerTickSize
     }
   }
 
   componentDidMount() {
-    console.log();
     // const xAxisFunction = d3.svg.axis()
     //   .scale(this.getXScale())
     //   .orient(this.props.x.orient)
