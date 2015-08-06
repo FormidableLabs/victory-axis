@@ -9,21 +9,13 @@ class VictoryAxis extends React.Component {
   constructor(props) {
     super(props);
     const style = this.getStyles();
-    this.state = {
-      x: this.props.x,
-      y: this.props.y
-    };
-    this.state.y.range = {
-      min: style.margin,
-      max: style.height - style.margin
-    };
-    this.state.x.range = {
-      min: style.margin,
-      max: style.width - style.margin
-    };
-
-    this.state.x.ticks = this.getTicks("x");
-    this.state.y.ticks = this.getTicks("y");
+    this.state = {};
+    this.state.range = this.props.range || [style.margin, style.width - style.margin];
+    this.state.domain = this.props.domain || this.props.scale().domain();
+    this.state.scale = this.setupScale();
+    this.state.ticks = this.getTicks();
+    this.state.tickFormat = this.getTickFormat();
+    this.state.tickSpacing = _.max([this.props.innerTickSize, 0]) + this.props.tickPadding;
   }
 
   getStyles() {
@@ -31,86 +23,142 @@ class VictoryAxis extends React.Component {
       width: 500,
       height: 200,
       margin: 40,
-      xAxis: {
-        stroke: "black",
-        fill: "none",
-        strokeWidth: 1,
-        shapeRendering: "crispEdges"
-      },
-      yAxis: {
-        stroke: "black",
-        fill: "none",
-        strokeWidth: 1,
-        shapeRendering: "crispEdges"
-      }
+      stroke: "black",
+      fill: "none",
+      strokeWidth: 1,
+      shapeRendering: "crispEdges"
     }, this.props.style);
   }
 
-  getTransform(type) {
-    const range = this.state[type].range;
-    return type === "x" ? "translate(" + 0 + "," + range.max + ")"
-      : "translate(" + range.min + "," + 0 + ")";
-  }
-
-  getScale(type) {
-    const scale = type === "x" ?
-      this.props.x.scale().range([this.state.x.range.min, this.state.y.range.max])
-      : this.props.y.scale().range([this.state.x.range.max, this.state.y.range.min]);
-    return scale.domain(this.props[type].domain.min, this.props[type].domain.max)
-  }
-
-  getTicks(type) {
-    if (this.props[type].tickValues) {
-      return this.props[type].tickValues
+  getTransform() {
+    const range = this.state.range;
+    const orient = this.props.orient;
+    if (orient === "top") {
+      return "translate(" + 0 + "," + _.min(range) + ")";
     }
-    return this.props[type].scale(this.props[type]).ticks(this.props[type].ticks)
+    if (orient === "bottom") {
+      return "translate(" + 0 + "," + _.max(range) + ")";
+    }
+    if (orient === "left") {
+      return "translate(" + _.min(range) + "," + 0 + ")";
+    }
+    if (orient === "right") {
+      return "translate(" + _.max(range) + "," + 0 + ")";
+    }
   }
 
-  getTickSpacing(type) {
-    const tickSize = this.props[type].tickSize;
-    return Math.max(tickSize.innerTickSize, 0) + tickSize.tickPadding
+  setupScale() {
+    const scale = this.props.scale().copy();
+    scale.range(this.state.range);
+    scale.domain(this.state.domain);
+    return scale;
   }
 
-  getAxisPath(type) {
-    const orient = this.props[type].orient
-    const range = this.props[type].range
-    const tickSize = this.props[type].tickSize
+  getTicks() {
+    const scale = this.state.scale;
+    if (this.props.tickValues) {
+      return this.props.tickValues;
+    } else if (_.isFunction(scale().ticks)) {
+      return scale().ticks(this.props.tickCount);
+    } else {
+      return scale().domain();
+    }
+  }
+
+  getTickFormat() {
+    if (this.props.tickFormat) {
+      return this.props.tickFormat;
+    } else if (_.isFunction(this.props.scale.tickFormat)) {
+      return this.props.scale().tickFormat(this.state.ticks.length);
+    } else {
+      return (x) => x;
+    }
+  }
+
+  getAxisPath() {
+    const orient = this.props.orient
+    const range = this.state.range
     const sign = (orient === "top" || orient === "left") ? -1 : 1
     if (orient === "top" || orient === "bottom") {
-      return "M" + range.min + "," + sign * tickSize.outerTickSize +
-        "V0H" + range.max + "V" + sign * tickSize.outerTickSize
+      return "M" + _.min(range) + "," + sign * this.props.outerTickSize +
+        "V0H" + _.max(range) + "V" + sign * this.props.outerTickSize
     } else {
-      return "M" + sign * tickSize.outerTickSize + "," + range.min + "H0V" +
-        range.max + "H" + sign * tickSize.outerTickSize
+      return "M" + sign * this.props.outerTickSize + "," + _.min(range) + "H0V" +
+        _.max(range) + "H" + sign * this.props.outerTickSize
     }
   }
 
-  componentDidMount() {
-    // const xAxisFunction = d3.svg.axis()
-    //   .scale(this.getXScale())
-    //   .orient(this.props.x.orient)
-    //   .ticks(5, 10)
-    //   .tickValues(this.props.x.tickValues);
-    // const yAxisFunction = d3.svg.axis()
-    //   .scale(this.getYScale())
-    //   .orient(this.props.y.orient)
-    //   .ticks(5, 10)
-    //   .tickValues(this.props.y.tickValues);
+  getActiveScale() {
+    const scale = this.state.scale;
+    if (scale().rangeBand) {
+      return (x) => scale(x) + scale.rangeBand() / 2;
+    }
+    else {
+      return scale;
+    }
+  }
 
-    // const xAxis = xAxisFunction(d3.select(React.findDOMNode(this.refs.xAxis)));
-    // const yAxis = yAxisFunction(d3.select(React.findDOMNode(this.refs.yAxis)));
-    // this.setState({xAxis, yAxis});
+  getTickLines() {
+    const orient = this.props.orient;
+    // determine axis orientation and layout
+    const verticalAxis = orient === "left" || orient === "right";
+    const sign = orient === "top" || orient === "left" ? -1 : 1;
+    // determine tick formatting constants based on orientation and layout
+    const x = verticalAxis ? sign * this.state.tickSpacing : 0;
+    const y = verticalAxis ? 0 : sign * this.state.tickSpacing;
+    const x2 = verticalAxis ? sign * this.props.innerTickSize : 0;
+    const y2 = verticalAxis ? 0 : sign * this.props.innerTickSize;
+    const dy = verticalAxis ? ".32em" : (sign < 0 ? "0em" : ".71em");
+    const textAnchor = verticalAxis ? (sign < 0 ? "end" : "start") : "middle";
+    const ticks = this.getTicks();
+    let position, translate;
+    return _.map(ticks, (tick, index) => {
+       position = this.getActiveScale().call(tick);
+       translate = verticalAxis ?
+        "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+      return (
+        <g key={"tick-" + index} className="tick" transform={translate}>
+          <line x2={x2} y2={y2} stroke={"black"} />
+          <text x={x} y={y} dy={dy} textAnchor={textAnchor}>
+            {this.state.scale.tickFormat(tick)}
+          </text>
+        </g>
+      );
+    });
+  }
+
+  getLabelElements() {
+    if (this.props.orient === "left" || this.props.orient === "right") {
+      return (
+        <text className={"label"}
+          textAnchor={"end"}
+          y={6}
+          dy={".75em"}
+          transform={"rotate(-90)"}>
+          "okay"
+        </text>
+      );
+    } else {
+      const width = _.max(this.state.range);
+      return (
+        <text className={"label"}
+          textAnchor={"end"}
+          x={width}
+          y={-6}>
+          "okay"
+        </text>
+      );
+    }
   }
 
   render() {
     const styles = this.getStyles();
     return (
       <g>
-        <g ref="xAxis" style={styles.xAxis} transform={this.getTransform("x")}>
-          <path d={this.getAxisPath("x")} />
-        </g>
-        <g ref="yAxis" style={styles.yAxis} transform={this.getTransform("y")}>
-          <path d={this.getAxisPath("y")} />
+        <g ref="xAxis" style={styles} transform={this.getTransform()}>
+          {this.getTickLines()}
+          <path d={this.getAxisPath()} />
+          {this.getLabelElements()}
         </g>
       </g>
     );
@@ -119,73 +167,27 @@ class VictoryAxis extends React.Component {
 
 VictoryAxis.propTypes = {
   style: React.PropTypes.node,
-  x: React.PropTypes.shape({
-    domain: React.PropTypes.shape({
-      min: React.PropTypes.number,
-      max: React.PropTypes.number
-    }),
-    orient: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
-    range: React.PropTypes.shape({
-      min: React.PropTypes.number,
-      max: React.PropTypes.number
-    }),
-    scale: React.PropTypes.func, // is this true, or can we pass a string?
-    ticks: React.PropTypes.number,
-    tickValues: React.PropTypes.array,
-    tickSize: React.PropTypes.shape({
-      innerTickSize: React.PropTypes.number,
-      outerTickSize: React.PropTypes.number,
-      tickPadding: React.PropTypes.number
-    }),
-    tickFormat: React.PropTypes.func
-  }),
-  y: React.PropTypes.shape({
-    domain: React.PropTypes.shape({
-      min: React.PropTypes.number,
-      max: React.PropTypes.number
-    }),
-    orient: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
-    range: React.PropTypes.shape({
-      min: React.PropTypes.number,
-      max: React.PropTypes.number
-    }),
-    scale: React.PropTypes.func, // is this true, or can we pass a string?
-    ticks: React.PropTypes.number,
-    tickValues: React.PropTypes.array,
-    tickSize: React.PropTypes.shape({
-      innerTickSize: React.PropTypes.number,
-      outerTickSize: React.PropTypes.number,
-      tickPadding: React.PropTypes.number
-    }),
-    tickFormat: React.PropTypes.func
-  })
+  domain: React.PropTypes.array,
+  orient: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
+  range: React.PropTypes.array,
+  scale: React.PropTypes.func, // is this right, or should we pass a string?
+  tickCount: React.PropTypes.number,
+  tickValues: React.PropTypes.array,
+  innerTickSize: React.PropTypes.number,
+  outerTickSize: React.PropTypes.number,
+  tickPadding: React.PropTypes.number,
+  tickFormat: React.PropTypes.func
 };
 
 VictoryAxis.defaultProps = {
-  x: {
-    domain: {min: 0, max: 100},
-    orient: "bottom",
-    scale: () => d3.scale.linear(),
-    ticks: 5,
-    tickValues: [20, 40, 60, 80, 100],
-    tickSize: {
-      innerTickSize: 3,
-      outerTickSize: 3,
-      tickPadding: 3
-    }
-  },
-  y: {
-    domain: {min: 0, max: 100},
-    orient: "left",
-    scale: () => d3.scale.linear(),
-    ticks: 5,
-    tickValues: [20, 40, 60, 80, 100],
-    tickSize: {
-      innerTickSize: 3,
-      outerTickSize: 3,
-      tickPadding: 3
-    }
-  }
+  domain: [0, 100],
+  orient: "bottom",
+  scale: () => d3.scale.linear(),
+  tickCount: 5,
+  tickValues: [20, 40, 60, 80, 100],
+  innerTickSize: 3,
+  outerTickSize: 3,
+  tickPadding: 3
 };
 
 export default VictoryAxis;
