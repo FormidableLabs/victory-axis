@@ -6,8 +6,11 @@ class App extends React.Component {
   render() {
     const style = {
         border: "2px solid black",
-        margin: "50",
-        width: "350",
+        marginTop: "10",
+        marginBottom: "50",
+        marginLeft: "50",
+        marginRight: "20",
+        width: "500",
         height: "350"
     };
 
