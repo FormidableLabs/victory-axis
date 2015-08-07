@@ -132,9 +132,8 @@ class VictoryAxis extends React.Component {
     const scale = this.state.scale;
     if (scale.rangeBand) {
       return (x) => scale(x) + scale.rangeBand() / 2;
-    } else {
-      return scale;
     }
+    return scale;
   }
 
   getTickProperties() {
@@ -171,8 +170,8 @@ class VictoryAxis extends React.Component {
       translate = verticalAxis ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
-        <g key={"tick-" + index} className="tick" transform={translate}>
-          <line x2={properties.x2} y2={properties.y2} stroke={"black"} />
+        <g key={"tick-" + index} transform={translate}>
+          <line x2={properties.x2} y2={properties.y2} stroke="black" />
           <text x={properties.x}
             y={properties.y}
             dy={properties.dy}
@@ -189,30 +188,21 @@ class VictoryAxis extends React.Component {
     const style = this.getStyles();
     const margin = this.getMarginValues();
     const orientation = this.props.orientation;
-    const sign = orientation === "top" || orientation === "left" ? -1 : 1;
-    if (this.isVertical()) {
-      return (
-        <text className={"label"}
-          textAnchor={"middle"}
-          y={sign * this.props.labelPadding}
-          x={-((style.height - Math.abs(margin.bottom - margin.top)) / 2)}
-          dy={".75em"}
-          fill="black"
-          transform={"rotate(-90)"}>
-          {this.props.label}
-        </text>
-      );
-    } else {
-      return (
-        <text className={"label"}
-          fill="black"
-          textAnchor={"middle"}
-          x={((style.width + Math.abs(margin.left - margin.right)) / 2)}
-          y={sign * this.props.labelPadding}>
-          {this.props.label}
-        </text>
-      );
-    }
+    const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
+    const x = this.isVertical() ?
+      -((style.height - Math.abs(margin.bottom - margin.top)) / 2)
+      : ((style.width + Math.abs(margin.left - margin.right)) / 2);
+    return (
+      <text
+        textAnchor="middle"
+        y={sign * this.props.labelPadding}
+        x={x}
+        dy={this.isVertical() ? ".75em" : ""}
+        fill="black"
+        transform={this.isVertical() ? "rotate(-90)" : ""}>
+        {this.props.label}
+      </text>
+    );
   }
 
   render() {
