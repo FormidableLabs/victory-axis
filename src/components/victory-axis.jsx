@@ -19,8 +19,8 @@ class VictoryAxis extends React.Component {
 
   getStyles() {
     return _.merge({
-      width: "500",
-      height: "200",
+      width: 500,
+      height: 200,
       stroke: "black",
       fill: "none",
       strokeWidth: 1,
@@ -31,10 +31,10 @@ class VictoryAxis extends React.Component {
   getMarginValues() {
     const minimumMargin = 50;
     const style = this.getStyles();
-    const top = parseInt(style.marginTop, 10) || minimumMargin;
-    const bottom = parseInt(style.marginBottom, 10) || minimumMargin;
-    const left = parseInt(style.marginLeft, 10) || minimumMargin;
-    const right = parseInt(style.marginRight, 10) || minimumMargin;
+    const top = style.marginTop || minimumMargin;
+    const bottom = style.marginBottom || minimumMargin;
+    const left = style.marginLeft || minimumMargin;
+    const right = style.marginRight || minimumMargin;
     const orientation = this.props.orientation;
     return {
       top: orientation === "top" ? _.max([top, minimumMargin]) : top,
@@ -62,9 +62,9 @@ class VictoryAxis extends React.Component {
     const style = this.getStyles();
     const margin = this.getMarginValues();
     if (this.isVertical()) {
-      return [margin.top, parseInt(style.height, 10) - margin.bottom];
+      return [margin.top, style.height - margin.bottom];
     } else {
-      return [margin.left, parseInt(style.width, 10) - margin.right];
+      return [margin.left, style.width - margin.right];
     }
   }
 
@@ -79,9 +79,9 @@ class VictoryAxis extends React.Component {
     const style = this.getStyles();
     const offset = {
       top: [0, margin.top],
-      bottom: [0, (parseInt(style.height, 10) - margin.bottom)],
+      bottom: [0, (style.height - margin.bottom)],
       left: [margin.left, 0],
-      right: [(parseInt(style.width, 10) - margin.right), 0]
+      right: [(style.width - margin.right), 0]
     };
     return "translate(" + offset[orientation][0] + "," + offset[orientation][1] + ")";
   }
@@ -195,7 +195,7 @@ class VictoryAxis extends React.Component {
         <text className={"label"}
           textAnchor={"middle"}
           y={sign * this.props.labelPadding}
-          x={-((parseInt(style.height, 10) - Math.abs(margin.bottom - margin.top)) / 2)}
+          x={-((style.height - Math.abs(margin.bottom - margin.top)) / 2)}
           dy={".75em"}
           fill="black"
           transform={"rotate(-90)"}>
@@ -207,7 +207,7 @@ class VictoryAxis extends React.Component {
         <text className={"label"}
           fill="black"
           textAnchor={"middle"}
-          x={((parseInt(style.width, 10) + Math.abs(margin.left - margin.right)) / 2)}
+          x={((style.width + Math.abs(margin.left - margin.right)) / 2)}
           y={sign * this.props.labelPadding}>
           {this.props.label}
         </text>

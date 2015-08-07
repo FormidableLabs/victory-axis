@@ -6,17 +6,17 @@ class App extends React.Component {
   render() {
     const style = {
       axis: {
-        marginTop: "50",
-        marginBottom: "50",
-        marginLeft: "50",
-        marginRight: "50",
-        width: "300", // same as the containing svg
-        height: "300" // same as the containing svg
+        marginTop: 50,
+        marginBottom: 50,
+        marginLeft: 50,
+        marginRight: 50,
+        width: 500, // same as the containing svg
+        height: 300 // same as the containing svg
       },
       svg: {
         border: "2px solid black",
-        width: "300",
-        height: "300"
+        width: 500,
+        height: 300
       }
     };
 
