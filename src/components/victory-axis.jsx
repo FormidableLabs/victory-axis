@@ -59,12 +59,11 @@ class VictoryAxis extends React.Component {
   }
 
   getRange() {
-    const style = this.getStyles();
     const margin = this.getMarginValues();
     if (this.isVertical()) {
-      return [margin.top, style.height - margin.bottom];
+      return [margin.top, this.props.height - margin.bottom];
     } else {
-      return [margin.left, style.width - margin.right];
+      return [margin.left, this.props.width - margin.right];
     }
   }
 
@@ -76,12 +75,11 @@ class VictoryAxis extends React.Component {
   getTransform() {
     const orientation = this.props.orientation;
     const margin = this.getMarginValues();
-    const style = this.getStyles();
     const offset = {
       top: [0, margin.top],
-      bottom: [0, (style.height - margin.bottom)],
+      bottom: [0, (this.props.height - margin.bottom)],
       left: [margin.left, 0],
-      right: [(style.width - margin.right), 0]
+      right: [(this.props.width - margin.right), 0]
     };
     return "translate(" + offset[orientation][0] + "," + offset[orientation][1] + ")";
   }
@@ -185,13 +183,12 @@ class VictoryAxis extends React.Component {
   }
 
   getLabelElements() {
-    const style = this.getStyles();
     const margin = this.getMarginValues();
     const orientation = this.props.orientation;
     const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
     const x = this.isVertical() ?
-      -((style.height - Math.abs(margin.bottom - margin.top)) / 2)
-      : ((style.width + Math.abs(margin.left - margin.right)) / 2);
+      -((this.props.height - Math.abs(margin.bottom - margin.top)) / 2)
+      : ((this.props.width + Math.abs(margin.left - margin.right)) / 2);
     return (
       <text
         textAnchor="middle"
@@ -231,7 +228,9 @@ VictoryAxis.propTypes = {
   tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
   label: React.PropTypes.string,
-  labelPadding: React.PropTypes.number
+  labelPadding: React.PropTypes.number,
+  width: React.PropTypes.number,
+  height: React.PropTypes.number
 };
 
 VictoryAxis.defaultProps = {
@@ -242,7 +241,9 @@ VictoryAxis.defaultProps = {
   outerTickSize: 0,
   tickPadding: 3,
   label: "",
-  labelPadding: 40
+  labelPadding: 40,
+  width: 500,
+  height: 300
 };
 
 export default VictoryAxis;
