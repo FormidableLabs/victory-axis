@@ -11,11 +11,10 @@ class VictoryAxis extends React.Component {
     this.state = {};
     this.state.range = this.getRange();
     this.state.domain = this.getDomain();
-    this.state.scale = this.setupScale();
+    this.state.scale = this.setupScale(); // set up a scale with domain and range
     this.state.ticks = this.getTicks();
     this.state.tickFormat = this.getTickFormat();
     this.state.tickSpacing = _.max([this.props.innerTickSize, 0]) + this.props.tickPadding;
-    this.minimumMargin = 50;
   }
 
   getStyles() {
@@ -30,17 +29,18 @@ class VictoryAxis extends React.Component {
   }
 
   getMarginValues() {
+    const minimumMargin = 50;
     const style = this.getStyles();
-    const top = parseInt(style.marginTop, 10) || this.minimumMargin;
-    const bottom = parseInt(style.marginBottom, 10) || this.minimumMargin;
-    const left = parseInt(style.marginLeft, 10) || this.minimumMargin;
-    const right = parseInt(style.marginRight, 10) || this.minimumMargin;
+    const top = parseInt(style.marginTop, 10) || minimumMargin;
+    const bottom = parseInt(style.marginBottom, 10) || minimumMargin;
+    const left = parseInt(style.marginLeft, 10) || minimumMargin;
+    const right = parseInt(style.marginRight, 10) || minimumMargin;
     const orientation = this.props.orientation;
     return {
-      top: orientation === "top" ? _.max([top, this.minimumMargin]) : top,
-      bottom: orientation === "bottom" ? _.max([bottom, this.minimumMargin]) : bottom,
-      left: orientation === "left" ? _.max([left, this.minimumMargin]) : left,
-      right: orientation === "right" ? _.max([right, this.minimumMargin]) : right
+      top: orientation === "top" ? _.max([top, minimumMargin]) : top,
+      bottom: orientation === "bottom" ? _.max([bottom, minimumMargin]) : bottom,
+      left: orientation === "left" ? _.max([left, minimumMargin]) : left,
+      right: orientation === "right" ? _.max([right, minimumMargin]) : right
     };
   }
 
@@ -51,6 +51,8 @@ class VictoryAxis extends React.Component {
     } else if (this.props.tickValues) {
       domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
     } else {
+      // we use this.props.scale here, since domain needs to be set on
+      // this.state.scale
       domain = this.props.scale().domain();
     }
     return this.isVertical() ? domain.reverse() : domain;
@@ -70,7 +72,6 @@ class VictoryAxis extends React.Component {
     const orientation = this.props.orientation;
     return (orientation === "left" || orientation === "right");
   }
-
 
   getTransform() {
     const orientation = this.props.orientation;
@@ -96,18 +97,19 @@ class VictoryAxis extends React.Component {
     const scale = this.state.scale;
     if (this.props.tickValues) {
       return this.props.tickValues;
-    } else if (_.isFunction(scale().ticks)) {
-      return scale().ticks(this.props.tickCount);
+    } else if (_.isFunction(scale.ticks)) {
+      return scale.ticks(this.props.tickCount);
     } else {
-      return scale().domain();
+      return scale.domain();
     }
   }
 
   getTickFormat() {
+    const scale = this.state.scale;
     if (this.props.tickFormat) {
       return this.props.tickFormat;
-    } else if (_.isFunction(this.state.scale().tickFormat)) {
-      return this.state.scale().tickFormat(this.state.ticks.length);
+    } else if (_.isFunction(scale.tickFormat)) {
+      return scale.tickFormat(this.state.ticks.length);
     } else {
       return (x) => x;
     }
@@ -128,7 +130,7 @@ class VictoryAxis extends React.Component {
 
   getActiveScale() {
     const scale = this.state.scale;
-    if (scale().rangeBand) {
+    if (scale.rangeBand) {
       return (x) => scale(x) + scale.rangeBand() / 2;
     } else {
       return scale;
@@ -239,21 +241,18 @@ VictoryAxis.propTypes = {
   tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
   label: React.PropTypes.string,
-  labelPadding: React.PropTypes.number,
-  origin: React.PropTypes.number
+  labelPadding: React.PropTypes.number
 };
 
 VictoryAxis.defaultProps = {
   orientation: "bottom",
   scale: () => d3.scale.linear(),
   tickCount: 5,
-  tickValues: [0, 20, 40, 60, 80, 100],
   innerTickSize: 4,
   outerTickSize: 0,
   tickPadding: 3,
   label: "",
-  labelPadding: 40,
-  origin: 0
+  labelPadding: 40
 };
 
 export default VictoryAxis;
