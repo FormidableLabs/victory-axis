@@ -177,7 +177,7 @@ class VictoryAxis extends React.Component {
             dy={properties.dy}
             textAnchor={properties.textAnchor}
             fill="black">
-            {this.getTickFormat().call(this, tick)}
+            {this.state.tickFormat(tick)}
           </text>
         </g>
       );
