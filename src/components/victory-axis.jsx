@@ -58,6 +58,9 @@ class VictoryAxis extends React.Component {
   }
 
   getLabelPadding() {
+    if (this.props.labelPadding) {
+      return this.props.labelPadding;
+    }
     return this.props.label ? (this.getFontSize() * 2) : 0;
   }
 
@@ -220,6 +223,7 @@ VictoryAxis.propTypes = {
   tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
   label: React.PropTypes.string,
+  labelPadding: React.PropTypes.number,
   width: React.PropTypes.number,
   height: React.PropTypes.number,
   offsetX: React.PropTypes.number,
