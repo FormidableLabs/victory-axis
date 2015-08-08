@@ -12,7 +12,7 @@ class VictoryAxis extends React.Component {
     this.state.scale = this.setupScale(); // set up a scale with domain and range
     this.state.range = this.getRange();
     this.state.domain = this.getDomain();
-    // code smell: order matters this.state.scale is used to determine
+    // code smell: order matters this.state.scale is used to determine ticks and tick format
     this.state.ticks = this.getTicks();
     this.state.tickFormat = this.getTickFormat();
   }
@@ -53,6 +53,9 @@ class VictoryAxis extends React.Component {
   }
 
   getRange() {
+    if (this.props.range) {
+      return this.props.range;
+    }
     const offset = this.getOffset();
     if (this.isVertical()) {
       return [offset.y, this.props.height - offset.y];
@@ -103,8 +106,18 @@ class VictoryAxis extends React.Component {
 
   setupScale() {
     const scale = this.props.scale().copy();
-    scale.range(this.getRange());
-    scale.domain(this.getDomain());
+    const range = this.getRange();
+    const domain = this.getDomain();
+    scale.range(range);
+    scale.domain(domain);
+    // hacky check for identity scale
+    if (_.difference(scale.range(), range).length !== 0) {
+      // identity scale, reset the domain and range
+      scale.range(range);
+      scale.domain(range);
+      this.warn("Identity Scale: domain and range must be identical. " +
+        "Domain has been reset to match range.");
+    }
     return scale;
   }
 
@@ -226,6 +239,7 @@ class VictoryAxis extends React.Component {
 VictoryAxis.propTypes = {
   style: React.PropTypes.node,
   domain: React.PropTypes.array,
+  range: React.PropTypes.array,
   orientation: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
   scale: React.PropTypes.func, // is this right, or should we pass a string?
   tickCount: React.PropTypes.number,
