@@ -43,6 +43,15 @@ class App extends React.Component {
           <svg style={style.svg}>
             <VictoryAxis style={style.axis}
               label="AXIS"
+              orientation="top"
+              tickValues={[-40, -20, 0, 20, 40]}/>
+          </svg>
+        </div>
+        <div>
+          <svg style={style.svg}>
+            <VictoryAxis style={style.axis}
+              label="AXIS"
+              orientation="right"
               tickValues={[-40, -20, 0, 20, 40]}/>
           </svg>
         </div>

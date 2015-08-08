@@ -8,40 +8,26 @@ class VictoryAxis extends React.Component {
 
   constructor(props) {
     super(props);
+    const style = this.getStyles();
     this.state = {};
+    this.state.labelPadding = this.props.label ? (style.fontSize * 2) : 1;
+    this.state.tickSpacing = _.max([this.props.innerTickSize, 0]) + this.props.tickPadding;
+    this.state.offset = this.calculateOffset();
     this.state.range = this.getRange();
     this.state.domain = this.getDomain();
     this.state.scale = this.setupScale(); // set up a scale with domain and range
     this.state.ticks = this.getTicks();
     this.state.tickFormat = this.getTickFormat();
-    this.state.tickSpacing = _.max([this.props.innerTickSize, 0]) + this.props.tickPadding;
   }
 
   getStyles() {
     return _.merge({
-      width: 500,
-      height: 200,
       stroke: "black",
       fill: "none",
+      fontSize: 18,
       strokeWidth: 1,
       shapeRendering: "crispEdges"
     }, this.props.style);
-  }
-
-  getMarginValues() {
-    const minimumMargin = 50;
-    const style = this.getStyles();
-    const top = style.marginTop || minimumMargin;
-    const bottom = style.marginBottom || minimumMargin;
-    const left = style.marginLeft || minimumMargin;
-    const right = style.marginRight || minimumMargin;
-    const orientation = this.props.orientation;
-    return {
-      top: orientation === "top" ? _.max([top, minimumMargin]) : top,
-      bottom: orientation === "bottom" ? _.max([bottom, minimumMargin]) : bottom,
-      left: orientation === "left" ? _.max([left, minimumMargin]) : left,
-      right: orientation === "right" ? _.max([right, minimumMargin]) : right
-    };
   }
 
   getDomain() {
@@ -59,11 +45,10 @@ class VictoryAxis extends React.Component {
   }
 
   getRange() {
-    const margin = this.getMarginValues();
     if (this.isVertical()) {
-      return [margin.top, this.props.height - margin.bottom];
+      return [this.state.offset.y, this.props.height - this.state.offset.y];
     } else {
-      return [margin.left, this.props.width - margin.right];
+      return [this.state.offset.x, this.props.width - this.state.offset.x];
     }
   }
 
@@ -72,14 +57,27 @@ class VictoryAxis extends React.Component {
     return (orientation === "left" || orientation === "right");
   }
 
+  calculateOffset() {
+    const style = this.getStyles();
+    const totalPadding = style.fontSize +
+      (2 * this.props.innerTickSize) +
+      this.state.labelPadding;
+    const minimumPadding = style.fontSize;
+    const x = this.isVertical() ? totalPadding : minimumPadding;
+    const y = this.isVertical() ? minimumPadding: totalPadding;
+    return {
+      x: this.props.offsetX || x,
+      y: this.props.offsetY || y
+    };
+  }
+
   getTransform() {
     const orientation = this.props.orientation;
-    const margin = this.getMarginValues();
     const offset = {
-      top: [0, margin.top],
-      bottom: [0, (this.props.height - margin.bottom)],
-      left: [margin.left, 0],
-      right: [(this.props.width - margin.right), 0]
+      top: [0, this.state.offset.y],
+      bottom: [0, (this.props.height - this.state.offset.y)],
+      left: [this.state.offset.x, 0],
+      right: [(this.props.width - this.state.offset.x), 0]
     };
     return "translate(" + offset[orientation][0] + "," + offset[orientation][1] + ")";
   }
@@ -182,19 +180,18 @@ class VictoryAxis extends React.Component {
     });
   }
 
+
   getLabelElements() {
-    const margin = this.getMarginValues();
     const orientation = this.props.orientation;
     const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
     const x = this.isVertical() ?
-      -((this.props.height - Math.abs(margin.bottom - margin.top)) / 2)
-      : ((this.props.width + Math.abs(margin.left - margin.right)) / 2);
+      -((this.props.height) / 2)
+      : ((this.props.width) / 2);
     return (
       <text
         textAnchor="middle"
-        y={sign * this.props.labelPadding}
+        y={sign * this.state.labelPadding}
         x={x}
-        dy={this.isVertical() ? ".75em" : ""}
         fill="black"
         transform={this.isVertical() ? "rotate(-90)" : ""}>
         {this.props.label}
@@ -228,9 +225,10 @@ VictoryAxis.propTypes = {
   tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
   label: React.PropTypes.string,
-  labelPadding: React.PropTypes.number,
   width: React.PropTypes.number,
-  height: React.PropTypes.number
+  height: React.PropTypes.number,
+  offsetX: React.PropTypes.number,
+  offsetY: React.PropTypes.number
 };
 
 VictoryAxis.defaultProps = {
@@ -240,8 +238,6 @@ VictoryAxis.defaultProps = {
   innerTickSize: 4,
   outerTickSize: 0,
   tickPadding: 3,
-  label: "",
-  labelPadding: 40,
   width: 500,
   height: 300
 };
