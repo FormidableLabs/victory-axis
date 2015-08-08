@@ -1,6 +1,7 @@
 /*global document:false*/
 import React from "react";
 import {VictoryAxis} from "../src/index";
+import d3 from "d3";
 
 class App extends React.Component {
   render() {
@@ -24,7 +25,7 @@ class App extends React.Component {
       <div className="demo">
         <div>
           <svg style={style.svg}>
-            < VictoryAxis style={style.axis}/>
+            < VictoryAxis style={style.axis} scale={() => d3.time.scale()}/>
           </svg>
         </div>
         <div>

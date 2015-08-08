@@ -33,10 +33,10 @@ class VictoryAxis extends React.Component {
       domain = this.props.domain;
     } else if (this.props.tickValues) {
       domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
+    } else if (_.isDate(this.props.scale().domain()[0])) {
+      return [_.now() - 3600000, _.now()]; // default range of an hour for time scales
     } else {
-      // we use this.props.scale here, since domain needs to be set on
-      // this.state.scale
-      domain = this.props.scale().domain();
+      return this.props.scale().domain();
     }
     return this.isVertical() ? domain.reverse() : domain;
   }
@@ -66,7 +66,7 @@ class VictoryAxis extends React.Component {
     const totalPadding = fontSize +
       (2 * this.props.tickSize) +
       this.getLabelPadding();
-    const minimumPadding = fontSize;
+    const minimumPadding = 1.2 * fontSize;
     const x = this.isVertical() ? totalPadding : minimumPadding;
     const y = this.isVertical() ? minimumPadding : totalPadding;
     return {
