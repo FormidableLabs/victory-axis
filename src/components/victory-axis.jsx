@@ -17,6 +17,16 @@ class VictoryAxis extends React.Component {
     this.state.tickFormat = this.getTickFormat();
   }
 
+  warn(message) {
+    if (process.env.NODE_ENV !== "production") {
+      /* eslint-disable no-console */
+      if (console && console.warn) {
+        console.warn(message);
+      }
+      /* eslint-enable no-console */
+    }
+  }
+
   getStyles() {
     return _.merge({
       stroke: "#756f6a",
@@ -34,7 +44,8 @@ class VictoryAxis extends React.Component {
     } else if (this.props.tickValues) {
       domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
     } else if (_.isDate(this.props.scale().domain()[0])) {
-      return [_.now() - 3600000, _.now()]; // default range of an hour for time scales
+      this.warn("please specify tickValues or domain when creating a time scale axis");
+      return this.props.scale().domain();
     } else {
       return this.props.scale().domain();
     }
@@ -125,12 +136,12 @@ class VictoryAxis extends React.Component {
       <line x1={_.min(this.state.range)} x2={_.max(this.state.range)}/>;
   }
 
-  getActiveScale() {
+  getActiveScale(tick) {
     const scale = this.state.scale;
     if (scale.rangeBand) {
-      return (x) => scale(x) + scale.rangeBand() / 2;
+      return scale(tick) + scale.rangeBand() / 2;
     }
-    return scale;
+    return scale(tick);
   }
 
   getTickProperties() {
@@ -164,7 +175,7 @@ class VictoryAxis extends React.Component {
     let translate;
     // determine the position and translation of each tick
     return _.map(ticks, (tick, index) => {
-      position = this.getActiveScale().call(this, tick);
+      position = this.getActiveScale(tick);
       translate = verticalAxis ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
