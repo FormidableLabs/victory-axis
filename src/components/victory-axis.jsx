@@ -38,17 +38,27 @@ class VictoryAxis extends React.Component {
   }
 
   getDomain() {
+    const scaleDomain = this.props.scale().domain()
     let domain;
     if (this.props.domain) {
       domain = this.props.domain;
     } else if (this.props.tickValues) {
       domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
-    } else if (_.isDate(this.props.scale().domain()[0])) {
-      this.warn("please specify tickValues or domain when creating a time scale axis");
-      return this.props.scale().domain();
     } else {
-      return this.props.scale().domain();
+      domain = scaleDomain;
     }
+
+    // Warn when domains need more information to produce meaningful axes
+    if (domain === scaleDomain && _.isDate(scaleDomain[0])) {
+      this.warn("please specify tickValues or domain when creating a time scale axis");
+    } else if (domain === scaleDomain && scaleDomain.length === 0) {
+      this.warn("please specify tickValues or domain when creating an axis using " +
+        "ordinal or quantile scales");
+    } else if (domain === scaleDomain && scaleDomain.length === 1) {
+      this.warn("please specify tickValues or domain when creating an axis using " +
+        "a threshold scale");
+    }
+
     return this.isVertical() ? domain.reverse() : domain;
   }
 
