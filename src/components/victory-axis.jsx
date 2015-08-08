@@ -10,7 +10,8 @@ class VictoryAxis extends React.Component {
     super(props);
     const style = this.getStyles();
     this.state = {};
-    this.state.labelPadding = this.props.label ? (style.fontSize * 2) : 1;
+    this.state.fontSize = style.fontSize || 16;
+    this.state.labelPadding = this.props.label ? (this.state.fontSize * 2) : 1;
     this.state.tickSpacing = _.max([this.props.innerTickSize, 0]) + this.props.tickPadding;
     this.state.offset = this.calculateOffset();
     this.state.range = this.getRange();
@@ -24,7 +25,6 @@ class VictoryAxis extends React.Component {
     return _.merge({
       stroke: "black",
       fill: "none",
-      fontSize: 18,
       strokeWidth: 1,
       shapeRendering: "crispEdges"
     }, this.props.style);
@@ -58,11 +58,10 @@ class VictoryAxis extends React.Component {
   }
 
   calculateOffset() {
-    const style = this.getStyles();
-    const totalPadding = style.fontSize +
+    const totalPadding = this.state.fontSize +
       (2 * this.props.innerTickSize) +
       this.state.labelPadding;
-    const minimumPadding = style.fontSize;
+    const minimumPadding = this.state.fontSize;
     const x = this.isVertical() ? totalPadding : minimumPadding;
     const y = this.isVertical() ? minimumPadding: totalPadding;
     return {
