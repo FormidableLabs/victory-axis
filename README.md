@@ -81,21 +81,6 @@ There a tons of configuration options for Victory Axis. Some map directly to d3,
 
 All props are optional for linear scales, but some of the more exotic scales require explicit directions.  Victory Axis will warn you when you encounter one of these prima donnas. Required props for each scale are also enumerated at the end of this section.
 
-#### scale
-This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.
-**Default** scale: `() => d3.scale.linear()`
-**PropType** func
-
-#### domain
-This prop describes range of input values the axis will cover. This prop should be given as an array of the minimum and maximum expected value for your axis.If this prop isn't provided Victory Axis will try to assign a domain based on `tickValues`, or the default domain of the axis scale  Most d3 scales have default domains of `[0, 1]`. Ordinal, threshold, and quantile scales need a specified domain or `tickValues`.  The default `d3.time.scale` domain will render an axis spanning from 4PM to .001. That probably isn't what you want either.
-**Default** calculated
-**PropType** array
-
-#### range
-
-**Default** calculated
-**PropType** array
-
 #### width 
 The maximum width the axis can take up in number of pixels.  This should be equal to or less than the width of the containing svg.  
 **Default** width: 500
@@ -104,6 +89,58 @@ The maximum width the axis can take up in number of pixels.  This should be equa
 #### height 
 The maximum height the axis can take up in number of pixels.  This should be equal to or less than the height of the containing svg.  
 **Default** height: 300
+**PropType** number
+
+#### scale
+This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.
+**Default** scale: `() => d3.scale.linear()`
+**PropType** func
+
+#### domain
+This prop describes the range of *input* values the axis will cover. This prop should be given as an array of the minimum and maximum expected values for your axis. If this prop isn't provided Victory Axis will try to assign a domain based on `tickValues`, or the default domain of the axis scale  Most d3 scales have default domains of `[0, 1]`. Ordinal, quantile, threshold, and time scales need a specified domain or `tickValues`. Identity scales require the domain and range to be identical, so by default, Victory Axis will set the default domain equal to the range when these scales are used.  If you are using an identity scale, and you want to specify a custom domain, you will also need to specify an identical custom range, or the custom domain will be overridden.
+**Default** calculated
+**PropType** array
+
+#### range
+This prop describes the *output* range of values the axis will cover. By default this prop is calculated based on width, height, offsets, and orientation, so that the axis is sensible within the area allocated for it on the screen. It's reasonable to think of the relationship between Victory Axis domains and ranges as a mapping between the spread of data you want to cover, and the space you have to display it. In most cases, using the default calculated range is a good idea, but if you want to use a custom range, just pass in an array containing the minimum and maximum expected value for the range.  
+**Default** calculated
+**PropType** array
+
+#### tickValues
+tickValues expects an array of values.  If this prop is provided, VictoryAxis will render each value as a tick on the axis as long as they are within domain specified by `this.props.domain`. If no domain is specified, the minimum and maximum tickValues will be used to determine the domain. 
+**Default** undefined
+**PropType** array
+
+#### tickCount
+If a tickArray is not specified, tickCount will be used to determine how many ticks to render to the axis. Ticks will be evenly spaced across the domain.
+**Default** tickCount: 5
+**PropType** number
+
+#### tickFormat
+tickFormat is a function that will determine how each tickValue is formatted.For example, in the case of time scales, tickFormat might be specified as: 
+
+```
+tickFormat={() => d3.time.format("%Y")}
+```
+
+Causing each tick to display only years.  By default, tickFormat will be set to the default tickFormat for whatever axis scale you are using, or
+
+```
+(x) => x
+```
+
+if no scale is found. This prop will work with d3 formats and arbitrary functions.
+**Default** calculated
+**PropType** func
+
+#### tickSize
+This value determines the length of the tick lines.
+**Default** tickSize: 4
+**PropType** number
+
+#### tickPadding
+This value determines the padding between the tick lines and the tick values.
+**Default** tickPadding: 3
 **PropType** number
 
 #### label 
@@ -131,15 +168,58 @@ This value is how much padding your label should get. If Victory Axis has a labe
 **Default** calculated
 **PropType** number
 
-style
-domain
-range
-scale
-tickCount
-tickValues
-tickSize
-tickPadding
-tickFormat
+#### style
+Victory Axis is styled inline with [Radium](http://github.com/formidablelabs/radium). The default styles are as follows:
+
+```
+{
+  axis: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  ticksLines: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  gridLines: {
+    stroke: "#c9c5bb",
+    fill: "#c9c5bb",
+    strokeWidth: 1,
+    strokeLinecap: "round"
+  },
+  text: {
+    color: "#756f6a",
+    fontFamily: "sans-serif"
+  }
+}
+```
+
+Any styles passed in as props will be merged with this set of default styles.
+**Default** See above
+**PropType** node
+
+### Required Prop Types by Scale
+
+- linear: none
+- log: none
+- pow: none
+- identity: none, but domain and range must be identical if specified
+- quantile: domain or tickValues
+- quantize: none, but domain is recommended
+- threshold: domain or tickValues
+- time: domain or tickValues
+- ordinal: domain or tickValues, not fully supported.
+
+## Coming Soon!
+
+- Suppport for laying out axes that cross each other
+- Better support for ordinal scales
+- Better default styles and better methods of overriding these styles, including CUSTOMIZABLE THEMES!
+- Test Coverage!
 
 ## Development
 
