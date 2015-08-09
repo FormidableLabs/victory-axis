@@ -15,7 +15,7 @@ class App extends React.Component {
         height: 300 // same as the containing svg
       },
       svg: {
-        border: "2px solid black",
+        margin: 20,
         width: 500,
         height: 300
       }
@@ -24,36 +24,48 @@ class App extends React.Component {
     return (
       <div className="demo">
         <div>
+          <h1>Default Axis</h1>
           <svg style={style.svg}>
-            < VictoryAxis style={style.axis} scale={() => d3.time.scale()}/>
+            <VictoryAxis/>
           </svg>
         </div>
         <div>
+          <h1>Time Scale Axis</h1>
           <svg style={style.svg}>
-            <VictoryAxis style={style.axis}
-              label="X-AXIS"
+            <VictoryAxis
+              scale={() => d3.time.scale()}
+              tickValues={[
+                new Date(1980, 1, 1),
+                new Date(1990, 1, 1),
+                new Date(2000, 1, 1),
+                new Date(2010, 1, 1),
+                new Date(2020, 1, 1)]}
+                tickFormat={() => d3.time.format("%Y")}/>
+          </svg>
+        </div>
+        <div>
+          <h1>X-Y Axis</h1>
+          <svg style={style.svg}>
+            <VictoryAxis
+              label="x-axis"
               orientation="bottom"
-              tickValues={[0, 20, 40, 60, 80, 100]}/>
-            <VictoryAxis style={style.axis}
-              label="Y-AXIS"
+              offsetX={50}
+              offsetY={50}/>
+            <VictoryAxis
+              label="y-axis"
               orientation="left"
-              tickValues={[0, 20, 40, 60, 80, 100]}/>
+              offsetX={50}
+              offsetY={50}/>
           </svg>
         </div>
         <div>
+        <h1>Log Scale Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis style={style.axis}
-              label="AXIS"
-              orientation="top"
-              tickValues={[-40, -20, 0, 20, 40]}/>
-          </svg>
-        </div>
-        <div>
-          <svg style={style.svg}>
-            <VictoryAxis style={style.axis}
-              label="AXIS"
-              orientation="right"
-              tickValues={[-40, -20, 0, 20, 40]}/>
+              orientation="left"
+              scale={() => d3.scale.log()}
+              offsetX={75}
+              domain={[1, 5]}/>
           </svg>
         </div>
       </div>

@@ -29,16 +29,33 @@ class VictoryAxis extends React.Component {
 
   getStyles() {
     return _.merge({
-      stroke: "#756f6a",
-      fill: "#756f6a",
-      fontFamily: "sans-serif",
-      strokeWidth: 1,
-      strokeLinecap: "round"
+      axis: {
+        stroke: "#756f6a",
+        fill: "#756f6a",
+        strokeWidth: 2,
+        strokeLinecap: "round"
+      },
+      ticksLines: {
+        stroke: "#756f6a",
+        fill: "#756f6a",
+        strokeWidth: 2,
+        strokeLinecap: "round"
+      },
+      gridLines: {
+        stroke: "#c9c5bb",
+        fill: "#c9c5bb",
+        strokeWidth: 1,
+        strokeLinecap: "round"
+      },
+      text: {
+        color: "#756f6a",
+        fontFamily: "sans-serif"
+      }
     }, this.props.style);
   }
 
   getDomain() {
-    const scaleDomain = this.props.scale().domain()
+    const scaleDomain = this.props.scale().domain();
     let domain;
     if (this.props.domain) {
       domain = this.props.domain;
@@ -47,7 +64,6 @@ class VictoryAxis extends React.Component {
     } else {
       domain = scaleDomain;
     }
-
     // Warn when domains need more information to produce meaningful axes
     if (domain === scaleDomain && _.isDate(scaleDomain[0])) {
       this.warn("please specify tickValues or domain when creating a time scale axis");
@@ -58,7 +74,6 @@ class VictoryAxis extends React.Component {
       this.warn("please specify tickValues or domain when creating an axis using " +
         "a threshold scale");
     }
-
     return this.isVertical() ? domain.reverse() : domain;
   }
 
@@ -66,11 +81,19 @@ class VictoryAxis extends React.Component {
     if (this.props.range) {
       return this.props.range;
     }
-    const offset = this.getOffset();
+    const extent = this.getGraphExtent();
     if (this.isVertical()) {
-      return [offset.y, this.props.height - offset.y];
+      return extent.y;
     }
-    return [offset.x, this.props.width - offset.x];
+    return extent.x;
+  }
+
+  getGraphExtent() {
+    const offset = this.getOffset();
+    return {
+      x: [offset.x, this.props.width - offset.x],
+      y: [offset.y, this.props.height - offset.y]
+    };
   }
 
   isVertical() {
@@ -85,7 +108,7 @@ class VictoryAxis extends React.Component {
     if (this.props.labelPadding) {
       return this.props.labelPadding;
     }
-    return this.props.label ? (this.getFontSize() * 2) : 0;
+    return this.props.label ? (this.getFontSize() * 2.4) : 0;
   }
 
   getOffset() {
@@ -145,7 +168,7 @@ class VictoryAxis extends React.Component {
   getTickFormat() {
     const scale = this.state.scale;
     if (this.props.tickFormat) {
-      return this.props.tickFormat;
+      return this.props.tickFormat();
     } else if (_.isFunction(scale.tickFormat)) {
       return scale.tickFormat(this.state.ticks.length);
     } else {
@@ -154,9 +177,11 @@ class VictoryAxis extends React.Component {
   }
 
   getAxisLine() {
+    const style = this.getStyles().axis;
+    const extent = this.getGraphExtent();
     return this.isVertical() ?
-      <line y1={_.min(this.state.range)} y2={_.max(this.state.range)}/> :
-      <line x1={_.min(this.state.range)} x2={_.max(this.state.range)}/>;
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={style}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={style}/>;
   }
 
   getActiveScale(tick) {
@@ -203,13 +228,42 @@ class VictoryAxis extends React.Component {
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
         <g key={"tick-" + index} transform={translate}>
-          <line x2={properties.x2} y2={properties.y2}/>
+          <line
+            x2={properties.x2}
+            y2={properties.y2}
+            style={this.getStyles().ticksLines}/>
           <text x={properties.x}
             y={properties.y}
             dy={properties.dy}
+            style={this.getStyles().text}
             textAnchor={properties.textAnchor}>
             {this.state.tickFormat(tick)}
           </text>
+        </g>
+      );
+    });
+  }
+
+  getGridLines() {
+    const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
+    const verticalAxis = this.isVertical();
+    const ticks = this.getTicks();
+    const offset = this.getOffset();
+    const x2 = verticalAxis ? sign * (this.props.width - (offset.x + offset.y)) : 0;
+    const y2 = verticalAxis ? 0 : sign * (this.props.height - (offset.x + offset.y));
+    let position;
+    let translate;
+    // determine the position and translation of each gridline
+    return _.map(ticks, (tick, index) => {
+      position = this.getActiveScale(tick);
+      translate = verticalAxis ?
+        "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+      return (
+        <g key={"grid-" + index} transform={translate}>
+          <line
+            x2={x2}
+            y2={y2}
+            style={this.getStyles().gridLines}/>
         </g>
       );
     });
@@ -226,6 +280,7 @@ class VictoryAxis extends React.Component {
         textAnchor="middle"
         y={sign * this.getLabelPadding()}
         x={x}
+        style={this.getStyles().text}
         transform={this.isVertical() ? "rotate(-90)" : ""}>
         {this.props.label}
       </text>
@@ -237,6 +292,7 @@ class VictoryAxis extends React.Component {
     return (
       <g>
         <g style={styles} transform={this.getTransform()}>
+          {this.getGridLines()}
           {this.getAxisLine()}
           {this.getTickLines()}
           {this.getLabelElements()}
