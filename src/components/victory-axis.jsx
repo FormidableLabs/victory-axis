@@ -2,6 +2,7 @@ import React from "react";
 import Radium from "radium";
 import d3 from "d3";
 import _ from "lodash";
+import log from "../log";
 
 @Radium
 class VictoryAxis extends React.Component {
@@ -15,16 +16,6 @@ class VictoryAxis extends React.Component {
     // code smell: order matters this.state.scale is used to determine ticks and tick format
     this.state.ticks = this.getTicks();
     this.state.tickFormat = this.getTickFormat();
-  }
-
-  warn(message) {
-    if (process.env.NODE_ENV !== "production") {
-      /* eslint-disable no-console */
-      if (console && console.warn) {
-        console.warn(message);
-      }
-      /* eslint-enable no-console */
-    }
   }
 
   getStyles() {
@@ -66,12 +57,12 @@ class VictoryAxis extends React.Component {
     }
     // Warn when domains need more information to produce meaningful axes
     if (domain === scaleDomain && _.isDate(scaleDomain[0])) {
-      this.warn("please specify tickValues or domain when creating a time scale axis");
+      log.warn("please specify tickValues or domain when creating a time scale axis");
     } else if (domain === scaleDomain && scaleDomain.length === 0) {
-      this.warn("please specify tickValues or domain when creating an axis using " +
+      log.warn("please specify tickValues or domain when creating an axis using " +
         "ordinal or quantile scales");
     } else if (domain === scaleDomain && scaleDomain.length === 1) {
-      this.warn("please specify tickValues or domain when creating an axis using " +
+      log.warn("please specify tickValues or domain when creating an axis using " +
         "a threshold scale");
     }
     return this.isVertical() ? domain.reverse() : domain;
