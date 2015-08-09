@@ -1,174 +1,229 @@
 [![Travis Status][trav_img]][trav_site]
 
-Victory Component Boilerplate
-===========================
+Victory Axis
+=============
 
-Boilerplate for developing a Victory Component!
+Victory axis is an implementation of d3 axis that leaves all of the rendering to React. In addition to the usual d3 features, Victory Axis comes with some default styling, and will also nicely center your axis given a height and width.
 
-## The Generator
+## Examples
 
-We expect these opinions to change *often*.  We've written a yeoman generator to
-pull down the freshest copy of this repo whenever you use it.  It just copies
-this repo so you don't have to. Check it out
-[here](https://github.com/FormidableLabs/generator-formidable-react-component)
-
-
-## Build
-
-Build for production use (NPM, bower, etc).
+Victory Axis is written to be highly configurable, but it also includes a set of sensible defaults and fallbacks. If no properties are provided,   
 
 ```
-$ npm run build
+ <svg width={500} height={500}>
+    <VictoryAxis/>
+  </svg>
 ```
 
-Which is composed of commands to create `dist` UMD bundles (min'ed, non-min'ed)
+Victory Axis renders the following default axis:
+
+![Default axis](default-axis.png)
+
+Axes are meant to be composble. Axes with the same offsets should line up automatically.  
+```
+<svg width={500} height={500}>
+  <VictoryAxis
+    label="x-axis"
+    orientation="bottom"
+    offsetX={50}
+    offsetY={50}/>
+  <VictoryAxis
+    label="y-axis"
+    orientation="left"
+    offsetX={50}
+    offsetY={50}/>
+</svg>
+```
+
+Labels are automatically centered along each axis.
+
+![Standard x-y axis](x-y-axis.png)
+
+With a little more code, you can make a time scale with custom tick values and formatting. 
 
 ```
-$ npm run build-dist
+<svg width={500} height={500}>
+  <VictoryAxis
+    scale={() => d3.time.scale()}
+    tickValues={[
+      new Date(1980, 1, 1),
+      new Date(1990, 1, 1),
+      new Date(2000, 1, 1),
+      new Date(2010, 1, 1),
+      new Date(2020, 1, 1)]}
+      tickFormat={() => d3.time.format("%Y")}/>
+</svg>
 ```
 
-and the ES5 `lib`:
+![Time scale axis](time-scale-axis.png)
+
+~~All~~ Most* other d3 scales are supported too. Here's how you make a log scale:
+```
+<svg width={500} height={500}>
+  <VictoryAxis
+    <VictoryAxis style={style.axis}
+      orientation="left"
+      scale={() => d3.scale.log()}
+      offsetX={75}
+      domain={[1, 5]}/>/>
+</svg>
+```
+
+![Time scale axis](time-scale-axis.png)
+
+*We're still working on ordinal scales
+
+## API
+
+There a tons of configuration options for Victory Axis. Some map directly to d3, but we've added some new ones too.
+
+### Props
+
+All props are optional for linear scales, but some of the more exotic scales require explicit directions.  Victory Axis will warn you when you encounter one of these prima donnas. Required props for each scale are also enumerated at the end of this section.
+
+#### width 
+The maximum width the axis can take up in number of pixels.  This should be equal to or less than the width of the containing svg.  
+**Default** width: 500
+**PropType** number
+
+#### height 
+The maximum height the axis can take up in number of pixels.  This should be equal to or less than the height of the containing svg.  
+**Default** height: 300
+**PropType** number
+
+#### scale
+This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.
+**Default** scale: `() => d3.scale.linear()`
+**PropType** func
+
+#### domain
+This prop describes the range of *input* values the axis will cover. This prop should be given as an array of the minimum and maximum expected values for your axis. If this prop isn't provided Victory Axis will try to assign a domain based on `tickValues`, or the default domain of the axis scale  Most d3 scales have default domains of `[0, 1]`. Ordinal, quantile, threshold, and time scales need a specified domain or `tickValues`. Identity scales require the domain and range to be identical, so by default, Victory Axis will set the default domain equal to the range when these scales are used.  If you are using an identity scale, and you want to specify a custom domain, you will also need to specify an identical custom range, or the custom domain will be overridden.
+**Default** calculated
+**PropType** array
+
+#### range
+This prop describes the *output* range of values the axis will cover. By default this prop is calculated based on width, height, offsets, and orientation, so that the axis is sensible within the area allocated for it on the screen. It's reasonable to think of the relationship between Victory Axis domains and ranges as a mapping between the spread of data you want to cover, and the space you have to display it. In most cases, using the default calculated range is a good idea, but if you want to use a custom range, just pass in an array containing the minimum and maximum expected value for the range.  
+**Default** calculated
+**PropType** array
+
+#### tickValues
+tickValues expects an array of values.  If this prop is provided, VictoryAxis will render each value as a tick on the axis as long as they are within domain specified by `this.props.domain`. If no domain is specified, the minimum and maximum tickValues will be used to determine the domain. 
+**Default** undefined
+**PropType** array
+
+#### tickCount
+If a tickArray is not specified, tickCount will be used to determine how many ticks to render to the axis. Ticks will be evenly spaced across the domain.
+**Default** tickCount: 5
+**PropType** number
+
+#### tickFormat
+tickFormat is a function that will determine how each tickValue is formatted.For example, in the case of time scales, tickFormat might be specified as: 
 
 ```
-$ npm run build-lib
+tickFormat={() => d3.time.format("%Y")}
 ```
 
-Note that `dist/` files are only updated and committed on **tagged releases**.
+Causing each tick to display only years.  By default, tickFormat will be set to the default tickFormat for whatever axis scale you are using, or
 
+```
+(x) => x
+```
+
+if no scale is found. This prop will work with d3 formats and arbitrary functions.
+**Default** calculated
+**PropType** func
+
+#### tickSize
+This value determines the length of the tick lines.
+**Default** tickSize: 4
+**PropType** number
+
+#### tickPadding
+This value determines the padding between the tick lines and the tick values.
+**Default** tickPadding: 3
+**PropType** number
+
+#### label 
+That's your axis label. 
+**Default** label: ""
+**PropType** string
+
+#### orientation 
+This props describes how the axis will be positioned. Supported options are "top", "bottom", "left", and "right".
+**Default** orientation: "bottom"
+**PropType** "top", "bottom", "left", "right"
+
+#### offsetX
+This value describes how far from the "edge" of it's permitted area each axis will be set back in the x-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.
+**Default** calculated
+**PropType** number
+
+#### offsetY
+This value describes how far from the "edge" of it's permitted area each axis will be set back in the y-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.
+**Default** calculated
+**PropType** number
+
+#### labelPadding
+This value is how much padding your label should get. If Victory Axis has a label, and this value is not provided, label padding will be calculated based on font size. 
+**Default** calculated
+**PropType** number
+
+#### style
+Victory Axis is styled inline with [Radium](http://github.com/formidablelabs/radium). The default styles are as follows:
+
+```
+{
+  axis: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  ticksLines: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  gridLines: {
+    stroke: "#c9c5bb",
+    fill: "#c9c5bb",
+    strokeWidth: 1,
+    strokeLinecap: "round"
+  },
+  text: {
+    color: "#756f6a",
+    fontFamily: "sans-serif"
+  }
+}
+```
+
+Any styles passed in as props will be merged with this set of default styles.
+**Default** See above
+**PropType** node
+
+### Required Prop Types by Scale
+
+- linear: none
+- log: none
+- pow: none
+- identity: none, but domain and range must be identical if specified
+- quantile: domain or tickValues
+- quantize: none, but domain is recommended
+- threshold: domain or tickValues
+- time: domain or tickValues
+- ordinal: domain or tickValues, not fully supported.
+
+## Coming Soon!
+
+- Suppport for laying out axes that cross each other
+- Better support for ordinal scales
+- Better default styles and better methods of overriding these styles, including CUSTOMIZABLE THEMES!
+- Test Coverage!
 
 ## Development
 
-All development tasks consist of watching the demo bundle, the test bundle
-and launching a browser pointed to the demo page.
-
-Run the `demo` application in a browser window with hot reload:
-(More CPU usage, but faster, more specific updates)
-
-```
-$ npm run hot       # hot test/app server (OR)
-$ npm run open-hot  # hot servers _and a browser window opens!_
-```
-
-Run the `demo` application with watched rebuilds, but not hot reload:
-
-```
-$ npm run dev       # dev test/app server (OR)
-$ npm run open-dev  # dev servers _and a browser window opens!_
-```
-
-From there you can see:
-
-* Demo app: [127.0.0.1:3000](http://127.0.0.1:3000/)
-* Client tests: [127.0.0.1:3001/test/client/test.html](http://127.0.0.1:3001/test/client/test.html)
-
-## Quality
-
-### In Development
-
-During development, you are expected to be running either:
-
-```
-$ npm run dev
-$ npm run hot
-```
-
-to build the src and test files. With these running, you can run the faster
-
-```
-$ npm run check-dev
-```
-
-Command. It is comprised of:
-
-```
-$ npm run lint
-$ npm run test-dev
-```
-
-Note that the tests here are not instrumented for code coverage and are thus
-more development / debugging friendly.
-
-### Continuous Integration
-
-CI doesn't have source / test file watchers, so has to _build_ the test files
-via the commands:
-
-```
-$ npm run check     # PhantomJS only
-$ npm run check-cov # (OR) PhantomJS w/ coverage
-$ npm run check-ci  # (OR) PhantomJS,Firefox + coverage - available on Travis.
-```
-
-Which is currently comprised of:
-
-```
-$ npm run lint      # AND ...
-
-$ npm run test      # PhantomJS only
-$ npm run test-cov  # (OR) PhantomJS w/ coverage
-$ npm run test-ci   # (OR) PhantomJS,Firefox + coverage
-```
-
-Note that `(test|check)-(cov|ci)` run code coverage and thus the
-test code may be harder to debug because it is instrumented.
-
-### Client Tests
-
-The client tests rely on webpack dev server to create and serve the bundle
-of the app/test code at: http://127.0.0.1:3001/assets/main.js which is done
-with the task `npm run server-test` (part of `npm dev` and `npm hot`).
-
-#### Code Coverage
-
-Code coverage reports are outputted to:
-
-```
-coverage/
-  client/
-    BROWSER_STRING/
-      lcov-report/index.html  # Viewable web report.
-```
-
-## Releases
-
-Built files in `dist/` should **not** be committeed during development or PRs.
-Instead we _only_ build and commit them for published, tagged releases. So
-the basic workflow is:
-
-* [`npm version`](https://docs.npmjs.com/cli/version): Runs verification,
-  builds `dist/` and `lib/` via `scripts` commands.
-    * Our scripts also run the applicable `git` commands, so be very careful
-      when running out `version` commands.
-* [`npm publish`](https://docs.npmjs.com/cli/publish): Uploads to NPM.
-    * **NOTE**: We don't _build_ in `prepublish` because of the
-      [`npm install` runs `npm prepublish` bug](https://github.com/npm/npm/issues/3059)
-
-
-**Note - NPM**: To correctly run `preversion`, etc. scripts, please make sure
-you have a very modern `npm` binary:
-
-```
-$ npm install -g npm
-```
-
-In code:
-
-```
-# Update version (_probably_ `patch`), rebuild `dist/` and `lib/`.
-$ npm version major|minor|patch -m "Version %s - INSERT_REASONS"
-# ... the project is now patched and committed to git (but unpushed).
-
-# Check that everything looks good in last commit and push.
-$ git diff HEAD^ HEAD
-$ git push && git push --tags
-# ... the project is now pushed to GitHub and available to `bower`.
-
-# And finally publish to `npm`!
-$ npm publish
-```
-
-Side note: `npm publish` runs `npm prepublish` under the hood, which does the
-build.
+Please see [DEVELOPMENT](DEVELOPMENT.md)
 
 ## Contributing
 
