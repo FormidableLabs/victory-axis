@@ -5,14 +5,14 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/formidable-labs/victory-axis.git"
+    "url": "https://github.com/formidablelabs/victory-axis.git"
   },
   "author": "Lauren Eastridge",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/formidable-labs/victory-axis/issues"
+    "url": "https://github.com/formidablelabs/victory-axis/issues"
   },
-  "homepage": "https://github.com/formidable-labs/victory-axis",
+  "homepage": "https://github.com/formidablelabs/victory-axis",
   "scripts": {
     "postinstall": "npm run build-lib",
     "preversion": "npm run check",
