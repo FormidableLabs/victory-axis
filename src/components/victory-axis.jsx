@@ -99,7 +99,7 @@ class VictoryAxis extends React.Component {
     if (this.props.labelPadding) {
       return this.props.labelPadding;
     }
-    // TODO: wut? why 2.4?
+    // TODO: magic numbers
     return this.props.label ? (this.getFontSize() * 2.4) : 0;
   }
 
@@ -108,7 +108,7 @@ class VictoryAxis extends React.Component {
     const totalPadding = fontSize +
       (2 * this.props.tickSize) +
       this.getLabelPadding();
-    const minimumPadding = 1.2 * fontSize;
+    const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical() ? totalPadding : minimumPadding;
     const y = this.isVertical() ? minimumPadding : totalPadding;
     return {
