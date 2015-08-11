@@ -75,11 +75,11 @@ With a little more code, you can make a time scale with custom tick values and f
 
 ## API
 
-There a tons of configuration options for Victory Axis. Some map directly to d3, but we've added some new ones too.
+There are tons of configuration options for Victory Axis. Some map directly to d3, but we've added some new ones too.
 
 ### Props
 
-All props are optional for linear scales, but some of the more exotic scales require explicit directions.  Victory Axis will warn you when you encounter one of these prima donnas. Required props for each scale are also enumerated at the end of this section.
+All props are optional for linear scales, but some of the more exotic scales require explicit configuration. Victory Axis will warn you if the axis you select isn't receiving the options it requires. Required props for each scale are also enumerated at the end of this section.
 
 #### width 
 The maximum width the axis can take up in number of pixels.  This should be equal to or less than the width of the containing svg.  
@@ -92,12 +92,12 @@ The maximum height the axis can take up in number of pixels.  This should be equ
 **PropType** number
 
 #### scale
-This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.
+This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.  
 **Default** scale: `() => d3.scale.linear()`
 **PropType** func
 
 #### domain
-This prop describes the range of *input* values the axis will cover. This prop should be given as an array of the minimum and maximum expected values for your axis. If this prop isn't provided Victory Axis will try to assign a domain based on `tickValues`, or the default domain of the axis scale  Most d3 scales have default domains of `[0, 1]`. Ordinal, quantile, threshold, and time scales need a specified domain or `tickValues`. Identity scales require the domain and range to be identical, so by default, Victory Axis will set the default domain equal to the range when these scales are used.  If you are using an identity scale, and you want to specify a custom domain, you will also need to specify an identical custom range, or the custom domain will be overridden.
+This prop describes the range of *input* values the axis will cover. This prop should be given as an array of the minimum and maximum expected values for your axis. If this prop isn't provided Victory Axis will try to assign a domain based on `tickValues`, or the default domain of the axis scale. Most d3 scales have default domains of `[0, 1]`. Ordinal, quantile, threshold, and time scales need a specified domain or `tickValues`. Identity scales require the domain and range to be identical, so by default, Victory Axis will set the default domain equal to the range when these scales are used.  If you are using an identity scale, and you want to specify a custom domain, you will also need to specify an identical custom range, or the custom domain will be overridden.  
 **Default** calculated
 **PropType** array
 
@@ -107,64 +107,64 @@ This prop describes the *output* range of values the axis will cover. By default
 **PropType** array
 
 #### tickValues
-tickValues expects an array of values.  If this prop is provided, VictoryAxis will render each value as a tick on the axis as long as they are within domain specified by `this.props.domain`. If no domain is specified, the minimum and maximum tickValues will be used to determine the domain. 
+`tickValues` expects an array of values.  If this prop is provided, Victory Axis will render each value as a tick on the axis as long as they are within domain specified by `this.props.domain`. If no domain is specified, the minimum and maximum `tickValues` will be used to determine the domain.  
 **Default** undefined
 **PropType** array
 
 #### tickCount
-If a tickArray is not specified, tickCount will be used to determine how many ticks to render to the axis. Ticks will be evenly spaced across the domain.
+If a `tickArray` is not specified, `tickCount` will be used to determine how many ticks to render to the axis. Ticks will be evenly spaced across the domain.  
 **Default** tickCount: 5
 **PropType** number
 
 #### tickFormat
-tickFormat is a function that will determine how each tickValue is formatted.For example, in the case of time scales, tickFormat might be specified as: 
+`tickFormat` is a function that will determine how each `tickValue` is formatted. For example, in the case of time scales, `tickFormat` might be specified as:
 
 ```
 tickFormat={() => d3.time.format("%Y")}
 ```
 
-Causing each tick to display only years.  By default, tickFormat will be set to the default tickFormat for whatever axis scale you are using, or
+Causing each tick to display only years.  By default, `tickFormat` will be set to the default `tickFormat` for whatever axis scale you are using, or
 
 ```
 (x) => x
 ```
 
-if no scale is found. This prop will work with d3 formats and arbitrary functions.
+if no scale is found. This prop will work with d3 formats and arbitrary functions.  
 **Default** calculated
 **PropType** func
 
 #### tickSize
-This value determines the length of the tick lines.
+This value determines the length of the tick lines.  
 **Default** tickSize: 4
 **PropType** number
 
 #### tickPadding
-This value determines the padding between the tick lines and the tick values.
+This value determines the padding between the tick lines and the tick values.  
 **Default** tickPadding: 3
 **PropType** number
 
 #### label 
-That's your axis label. 
+That's your axis label.  
 **Default** label: ""
 **PropType** string
 
 #### orientation 
-This props describes how the axis will be positioned. Supported options are "top", "bottom", "left", and "right".
+This props describes how the axis will be positioned. Supported options are "top", "bottom", "left", and "right".  
 **Default** orientation: "bottom"
 **PropType** "top", "bottom", "left", "right"
 
 #### offsetX
-This value describes how far from the "edge" of it's permitted area each axis will be set back in the x-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.
+This value describes how far from the "edge" of it's permitted area each axis will be set back in the x-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.  
 **Default** calculated
 **PropType** number
 
 #### offsetY
-This value describes how far from the "edge" of it's permitted area each axis will be set back in the y-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.
+This value describes how far from the "edge" of it's permitted area each axis will be set back in the y-direction.  If this prop is not given, the offset is calculated based on font size, axis orientation, and label padding.  
 **Default** calculated
 **PropType** number
 
 #### labelPadding
-This value is how much padding your label should get. If Victory Axis has a label, and this value is not provided, label padding will be calculated based on font size. 
+This value is how much padding your label should get. If Victory Axis has a label, and this value is not provided, label padding will be calculated based on font size.  
 **Default** calculated
 **PropType** number
 
@@ -198,7 +198,7 @@ Victory Axis is styled inline with [Radium](http://github.com/formidablelabs/rad
 }
 ```
 
-Any styles passed in as props will be merged with this set of default styles.
+Any styles passed in as props will be merged with this set of default styles.  
 **Default** See above
 **PropType** node
 
