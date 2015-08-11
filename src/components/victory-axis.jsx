@@ -99,6 +99,7 @@ class VictoryAxis extends React.Component {
     if (this.props.labelPadding) {
       return this.props.labelPadding;
     }
+    // TODO: wut? why 2.4?
     return this.props.label ? (this.getFontSize() * 2.4) : 0;
   }
 
@@ -295,12 +296,12 @@ class VictoryAxis extends React.Component {
 
 VictoryAxis.propTypes = {
   style: React.PropTypes.node,
-  domain: React.PropTypes.array,
-  range: React.PropTypes.array,
+  domain: React.PropTypes.arrayOf(React.Proptypes.number),
+  range: React.PropTypes.arrayOf(React.Proptypes.number),
   orientation: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
   scale: React.PropTypes.func, // is this right, or should we pass a string?
   tickCount: React.PropTypes.number,
-  tickValues: React.PropTypes.array,
+  tickValues: React.PropTypes.arrayOf(React.Proptypes.number),
   tickSize: React.PropTypes.number,
   tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
