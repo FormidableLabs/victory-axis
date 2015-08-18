@@ -140,7 +140,7 @@ class VictoryAxis extends React.Component {
       // identity scale, reset the domain and range
       scale.range(range);
       scale.domain(range);
-      this.warn("Identity Scale: domain and range must be identical. " +
+      log.warn("Identity Scale: domain and range must be identical. " +
         "Domain has been reset to match range.");
     }
     return scale;
