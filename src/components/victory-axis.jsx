@@ -9,17 +9,28 @@ class VictoryAxis extends React.Component {
 
   constructor(props) {
     super(props);
+    const style = this.getStyles();
     this.state = {};
+    console.log(style);
+    this.state.width = this.props.width || style.width;
+    this.state.height = this.props.height || style.height;
+    this.state.offsetX = this.props.offsetX || style.margin;
+    this.state.offsetY = this.props.offsetY || style.margin;
+
     this.state.scale = this.setupScale(); // set up a scale with domain and range
     this.state.range = this.getRange();
     this.state.domain = this.getDomain();
     // code smell: order matters this.state.scale is used to determine ticks and tick format
     this.state.ticks = this.getTicks();
     this.state.tickFormat = this.getTickFormat();
+
   }
 
   getStyles() {
     return _.merge({
+      width: 500,
+      height: 300,
+      margin: 20,
       axis: {
         stroke: "#756f6a",
         fill: "#756f6a",
@@ -82,8 +93,8 @@ class VictoryAxis extends React.Component {
   getGraphExtent() {
     const offset = this.getOffset();
     return {
-      x: [offset.x, this.props.width - offset.x],
-      y: [offset.y, this.props.height - offset.y]
+      x: [offset.x, this.state.width - offset.x],
+      y: [offset.y, this.state.height - offset.y]
     };
   }
 
@@ -112,8 +123,8 @@ class VictoryAxis extends React.Component {
     const x = this.isVertical() ? totalPadding : minimumPadding;
     const y = this.isVertical() ? minimumPadding : totalPadding;
     return {
-      x: this.props.offsetX || x,
-      y: this.props.offsetY || y
+      x: this.state.offsetX || x,
+      y: this.state.offsetY || y
     };
   }
 
@@ -122,9 +133,9 @@ class VictoryAxis extends React.Component {
     const offset = this.getOffset();
     const transform = {
       top: [0, offset.y],
-      bottom: [0, (this.props.height - offset.y)],
+      bottom: [0, (this.state.height - offset.y)],
       left: [offset.x, 0],
-      right: [(this.props.width - offset.x), 0]
+      right: [(this.state.width - offset.x), 0]
     };
     return "translate(" + transform[orientation][0] + "," + transform[orientation][1] + ")";
   }
@@ -140,7 +151,7 @@ class VictoryAxis extends React.Component {
       // identity scale, reset the domain and range
       scale.range(range);
       scale.domain(range);
-      this.warn("Identity Scale: domain and range must be identical. " +
+      log.warn("Identity Scale: domain and range must be identical. " +
         "Domain has been reset to match range.");
     }
     return scale;
@@ -172,8 +183,10 @@ class VictoryAxis extends React.Component {
     const style = this.getStyles().axis;
     const extent = this.getGraphExtent();
     return this.isVertical() ?
-      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={style}/> :
-      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={style}/>;
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)}
+        style={[style, this.props.style]}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)}
+        style={[style, this.props.style]}/>;
   }
 
   getActiveScale(tick) {
@@ -223,11 +236,11 @@ class VictoryAxis extends React.Component {
           <line
             x2={properties.x2}
             y2={properties.y2}
-            style={this.getStyles().ticksLines}/>
+            style={[this.getStyles().ticksLines, this.props.style]}/>
           <text x={properties.x}
             y={properties.y}
             dy={properties.dy}
-            style={this.getStyles().text}
+            style={[this.getStyles().text, this.props.style]}
             textAnchor={properties.textAnchor}>
             {this.state.tickFormat(tick)}
           </text>
@@ -241,8 +254,8 @@ class VictoryAxis extends React.Component {
     const verticalAxis = this.isVertical();
     const ticks = this.getTicks();
     const offset = this.getOffset();
-    const x2 = verticalAxis ? sign * (this.props.width - (offset.x + offset.y)) : 0;
-    const y2 = verticalAxis ? 0 : sign * (this.props.height - (offset.x + offset.y));
+    const x2 = verticalAxis ? sign * (this.state.width - (offset.x + offset.y)) : 0;
+    const y2 = verticalAxis ? 0 : sign * (this.state.height - (offset.x + offset.y));
     let position;
     let translate;
     // determine the position and translation of each gridline
@@ -255,7 +268,7 @@ class VictoryAxis extends React.Component {
           <line
             x2={x2}
             y2={y2}
-            style={this.getStyles().gridLines}/>
+            style={[this.getStyles().gridLines, this.props.style]}/>
         </g>
       );
     });
@@ -265,14 +278,14 @@ class VictoryAxis extends React.Component {
     const orientation = this.props.orientation;
     const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
     const x = this.isVertical() ?
-      -((this.props.height) / 2) :
-      ((this.props.width) / 2);
+      -((this.state.height) / 2) :
+      ((this.state.width) / 2);
     return (
       <text
         textAnchor="middle"
         y={sign * this.getLabelPadding()}
         x={x}
-        style={this.getStyles().text}
+        style={[this.getStyles().text, this.props.style]}
         transform={this.isVertical() ? "rotate(-90)" : ""}>
         {this.props.label}
       </text>
@@ -283,7 +296,7 @@ class VictoryAxis extends React.Component {
     const styles = this.getStyles();
     return (
       <g>
-        <g style={styles} transform={this.getTransform()}>
+        <g style={[styles, this.props.style]} transform={this.getTransform()}>
           {this.getGridLines()}
           {this.getAxisLine()}
           {this.getTickLines()}
@@ -318,9 +331,7 @@ VictoryAxis.defaultProps = {
   scale: () => d3.scale.linear(),
   tickCount: 5,
   tickSize: 4,
-  tickPadding: 3,
-  width: 500,
-  height: 300
+  tickPadding: 3
 };
 
 export default VictoryAxis;

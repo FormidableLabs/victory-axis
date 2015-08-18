@@ -7,17 +7,16 @@ class App extends React.Component {
   render() {
     const style = {
       axis: {
-        marginTop: 50,
-        marginBottom: 50,
-        marginLeft: 50,
-        marginRight: 50,
-        width: 500, // same as the containing svg
-        height: 300 // same as the containing svg
+        margin: 20,
+        width: 700, // same as the containing svg
+        height: 400, // same as the containing svg
+        axis: {
+          stroke: "red"
+        }
       },
       svg: {
-        margin: 20,
-        width: 500,
-        height: 300
+        width: 700,
+        height: 400
       }
     };
 
@@ -26,13 +25,14 @@ class App extends React.Component {
         <div>
           <h1>Default Axis</h1>
           <svg style={style.svg}>
-            <VictoryAxis/>
+            <VictoryAxis style={style.axis}/>
           </svg>
         </div>
         <div>
           <h1>Time Scale Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis
+              style={style.axis}
               scale={() => d3.time.scale()}
               tickValues={[
                 new Date(1980, 1, 1),
