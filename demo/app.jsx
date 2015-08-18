@@ -9,10 +9,7 @@ class App extends React.Component {
       axis: {
         margin: 20,
         width: 700, // same as the containing svg
-        height: 400, // same as the containing svg
-        axis: {
-          stroke: "red"
-        }
+        height: 400 // same as the containing svg
       },
       svg: {
         width: 700,

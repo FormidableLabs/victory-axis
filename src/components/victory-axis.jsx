@@ -11,7 +11,6 @@ class VictoryAxis extends React.Component {
     super(props);
     const style = this.getStyles();
     this.state = {};
-    console.log(style);
     this.state.width = this.props.width || style.width;
     this.state.height = this.props.height || style.height;
     this.state.offsetX = this.props.offsetX || style.margin;
@@ -250,28 +249,30 @@ class VictoryAxis extends React.Component {
   }
 
   getGridLines() {
-    const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
-    const verticalAxis = this.isVertical();
-    const ticks = this.getTicks();
-    const offset = this.getOffset();
-    const x2 = verticalAxis ? sign * (this.state.width - (offset.x + offset.y)) : 0;
-    const y2 = verticalAxis ? 0 : sign * (this.state.height - (offset.x + offset.y));
-    let position;
-    let translate;
-    // determine the position and translation of each gridline
-    return _.map(ticks, (tick, index) => {
-      position = this.getActiveScale(tick);
-      translate = verticalAxis ?
-        "translate(0, " + position + ")" : "translate(" + position + ", 0)";
-      return (
-        <g key={"grid-" + index} transform={translate}>
-          <line
-            x2={x2}
-            y2={y2}
-            style={[this.getStyles().gridLines, this.props.style]}/>
-        </g>
-      );
-    });
+    if (this.props.showGridLines) {
+      const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
+      const verticalAxis = this.isVertical();
+      const ticks = this.getTicks();
+      const offset = this.getOffset();
+      const x2 = verticalAxis ? sign * (this.state.width - (offset.x + offset.y)) : 0;
+      const y2 = verticalAxis ? 0 : sign * (this.state.height - (offset.x + offset.y));
+      let position;
+      let translate;
+      // determine the position and translation of each gridline
+      return _.map(ticks, (tick, index) => {
+        position = this.getActiveScale(tick);
+        translate = verticalAxis ?
+          "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+        return (
+          <g key={"grid-" + index} transform={translate}>
+            <line
+              x2={x2}
+              y2={y2}
+              style={[this.getStyles().gridLines, this.props.style]}/>
+          </g>
+        );
+      });
+    }
   }
 
   getLabelElements() {
@@ -293,10 +294,9 @@ class VictoryAxis extends React.Component {
   }
 
   render() {
-    const styles = this.getStyles();
     return (
       <g>
-        <g style={[styles, this.props.style]} transform={this.getTransform()}>
+        <g style={this.props.style} transform={this.getTransform()}>
           {this.getGridLines()}
           {this.getAxisLine()}
           {this.getTickLines()}
@@ -323,7 +323,8 @@ VictoryAxis.propTypes = {
   width: React.PropTypes.number,
   height: React.PropTypes.number,
   offsetX: React.PropTypes.number,
-  offsetY: React.PropTypes.number
+  offsetY: React.PropTypes.number,
+  showGridLines: React.PropTypes.bool
 };
 
 VictoryAxis.defaultProps = {
@@ -331,7 +332,8 @@ VictoryAxis.defaultProps = {
   scale: () => d3.scale.linear(),
   tickCount: 5,
   tickSize: 4,
-  tickPadding: 3
+  tickPadding: 3,
+  showGridLines: true
 };
 
 export default VictoryAxis;
