@@ -56,26 +56,35 @@ class VictoryAxis extends React.Component {
   }
 
   getDomain() {
-    const scaleDomain = this.props.scale().domain();
-    let domain;
     if (this.props.domain) {
-      domain = this.props.domain;
+      return this.props.domain;
     } else if (this.props.tickValues) {
-      domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
+      return this._getDomainFromTickValues();
     } else {
-      domain = scaleDomain;
+      return this._getDomainFromScale();
     }
+  }
+
+  // helper for getDomain()
+  _getDomainFromTickValues() {
+    const domain = [_.min(this.props.tickValues), _.max(this.props.tickValues)];
+    return this.isVertical() ? domain.reverse() : domain;
+  }
+
+  // helper for getDomain()
+  _getDomainFromScale() {
+    const scaleDomain = this.props.scale().domain();
     // Warn when domains need more information to produce meaningful axes
-    if (domain === scaleDomain && _.isDate(scaleDomain[0])) {
+    if (_.isDate(scaleDomain[0])) {
       log.warn("please specify tickValues or domain when creating a time scale axis");
-    } else if (domain === scaleDomain && scaleDomain.length === 0) {
+    } else if (scaleDomain.length === 0) {
       log.warn("please specify tickValues or domain when creating an axis using " +
         "ordinal or quantile scales");
-    } else if (domain === scaleDomain && scaleDomain.length === 1) {
+    } else if (scaleDomain.length === 1) {
       log.warn("please specify tickValues or domain when creating an axis using " +
         "a threshold scale");
     }
-    return this.isVertical() ? domain.reverse() : domain;
+    return this.isVertical() ? scaleDomain : scaleDomain.reverse();
   }
 
   getRange() {
@@ -83,6 +92,7 @@ class VictoryAxis extends React.Component {
       return this.props.range;
     }
     const extent = this.getGraphExtent();
+    const style = this.getStyles();
     if (this.isVertical()) {
       return extent.y;
     }
