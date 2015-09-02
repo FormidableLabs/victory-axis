@@ -2,11 +2,13 @@
 import React from "react";
 import {VictoryAxis} from "../src/index";
 import d3 from "d3";
+import Radium from "radium";
 
+@Radium
 class App extends React.Component {
   render() {
     const style = {
-      axis: {
+      base: {
         margin: 20,
         width: 700, // same as the containing svg
         height: 400 // same as the containing svg
@@ -22,14 +24,16 @@ class App extends React.Component {
         <div>
           <h1>Default Axis</h1>
           <svg style={style.svg}>
-            <VictoryAxis style={style.axis}/>
+            <VictoryAxis style={style}
+              showGridLines={true}/>
           </svg>
         </div>
         <div>
           <h1>Time Scale Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis
-              style={style.axis}
+              label="Decades"
+              showGridLines={true}
               scale={() => d3.time.scale()}
               tickValues={[
                 new Date(1980, 1, 1),
@@ -44,25 +48,30 @@ class App extends React.Component {
           <h1>X-Y Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis
-              label="x-axis"
+              domain={[-1, 1]}
+              showGridLines={true}
+              crossAxis={true}
               orientation="bottom"
               offsetX={50}
-              offsetY={50}/>
+              offsetY={150}/>
             <VictoryAxis
-              label="y-axis"
+              domain={[1, -1]}
+              showGridLines={true}
+              crossAxis={true}
               orientation="left"
-              offsetX={50}
+              offsetX={250}
               offsetY={50}/>
           </svg>
         </div>
         <div>
         <h1>Log Scale Axis</h1>
           <svg style={style.svg}>
-            <VictoryAxis style={style.axis}
+            <VictoryAxis
+              showGridLines={true}
               orientation="left"
               scale={() => d3.scale.log()}
-              offsetX={75}
-              domain={[1, 5]}/>
+              domain={[1, 5]}
+              offsetX={50}/>
           </svg>
         </div>
       </div>
