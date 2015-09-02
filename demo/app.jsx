@@ -23,29 +23,25 @@ class App extends React.Component {
       <div className="demo">
         <div>
           <h1>Default Axis</h1>
-          <svg style={style.svg}>
-            <VictoryAxis style={style}
-              showGridLines={true}/>
-          </svg>
+          <VictoryAxis style={style}
+            showGridLines={true}/>
         </div>
         <div>
           <h1>Time Scale Axis</h1>
-          <svg style={style.svg}>
-            <VictoryAxis
-              label="Decades"
-              showGridLines={true}
-              scale={() => d3.time.scale()}
-              tickValues={[
-                new Date(1980, 1, 1),
-                new Date(1990, 1, 1),
-                new Date(2000, 1, 1),
-                new Date(2010, 1, 1),
-                new Date(2020, 1, 1)]}
-                tickFormat={() => d3.time.format("%Y")}/>
-          </svg>
+          <VictoryAxis
+            label="Decades"
+            showGridLines={true}
+            scale={() => d3.time.scale()}
+            tickValues={[
+              new Date(1980, 1, 1),
+              new Date(1990, 1, 1),
+              new Date(2000, 1, 1),
+              new Date(2010, 1, 1),
+              new Date(2020, 1, 1)]}
+              tickFormat={() => d3.time.format("%Y")}/>
         </div>
         <div>
-          <h1>X-Y Axis</h1>
+        <h1>X-Y Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis
               domain={[-1, 1]}
@@ -53,26 +49,26 @@ class App extends React.Component {
               crossAxis={true}
               orientation="bottom"
               offsetX={50}
-              offsetY={150}/>
+              offsetY={150}
+              containerElement="g"/>
             <VictoryAxis
               domain={[1, -1]}
               showGridLines={true}
               crossAxis={true}
               orientation="left"
               offsetX={250}
-              offsetY={50}/>
-          </svg>
+              offsetY={50}
+              containerElement="g"/>
+            </svg>
         </div>
         <div>
         <h1>Log Scale Axis</h1>
-          <svg style={style.svg}>
-            <VictoryAxis
-              showGridLines={true}
-              orientation="left"
-              scale={() => d3.scale.log()}
-              domain={[1, 5]}
-              offsetX={50}/>
-          </svg>
+          <VictoryAxis
+            showGridLines={true}
+            orientation="left"
+            scale={() => d3.scale.log()}
+            domain={[1, 5]}
+            offsetX={50}/>
         </div>
       </div>
     );

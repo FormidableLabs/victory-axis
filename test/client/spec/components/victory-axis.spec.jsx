@@ -18,7 +18,7 @@ describe("components/victory-axis", function () {
 
     // This is a real DOM node to assert on.
     const divNode = TestUtils
-      .findRenderedDOMComponentWithTag(rendered, "g")
+      .findRenderedDOMComponentWithTag(rendered, "svg")
       .getDOMNode();
 
     expect(divNode).to.have.property("innerHTML", "Edit me!");
@@ -33,6 +33,6 @@ describe("components/victory-axis", function () {
     renderer.render(<Component />);
     const output = renderer.getRenderOutput();
 
-    expect(output.type).to.equal("g");
+    expect(output.type).to.equal("svg");
   });
 });

@@ -297,14 +297,24 @@ class VictoryAxis extends React.Component {
   }
 
   render() {
+    if (this.props.containerElement === "svg") {
+      return (
+        <svg style={this.getStyles()}>
+          <g style={this.getStyles()} transform={this.getTransform()}>
+            {this.getGridLines()}
+            {this.getAxisLine()}
+            {this.getTickLines()}
+            {this.getLabelElements()}
+          </g>
+        </svg>
+      );
+    }
     return (
-      <g>
-        <g style={this.getStyles()} transform={this.getTransform()}>
-          {this.getGridLines()}
-          {this.getAxisLine()}
-          {this.getTickLines()}
-          {this.getLabelElements()}
-        </g>
+      <g style={this.getStyles()} transform={this.getTransform()}>
+        {this.getGridLines()}
+        {this.getAxisLine()}
+        {this.getTickLines()}
+        {this.getLabelElements()}
       </g>
     );
   }
@@ -326,7 +336,8 @@ VictoryAxis.propTypes = {
   offsetX: React.PropTypes.number,
   offsetY: React.PropTypes.number,
   showGridLines: React.PropTypes.bool,
-  crossAxis: React.PropTypes.bool
+  crossAxis: React.PropTypes.bool,
+  containerElement: React.PropTypes.oneOf(["svg", "g"])
 };
 
 VictoryAxis.defaultProps = {
@@ -335,7 +346,8 @@ VictoryAxis.defaultProps = {
   tickCount: 5,
   tickSize: 4,
   tickPadding: 3,
-  showGridLines: false
+  showGridLines: false,
+  containerElement: "svg"
 };
 
 export default VictoryAxis;
