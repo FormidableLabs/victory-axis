@@ -5,7 +5,6 @@ import _ from "lodash";
 import log from "../log";
 import {VictoryAnimation} from "victory-animation";
 
-@Radium
 class VAxis extends React.Component {
 
   constructor(props) {
