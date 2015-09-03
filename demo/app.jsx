@@ -37,23 +37,22 @@ class App extends React.Component {
   }
 
   render() {
-    const style = {
-      base: {
-        margin: 20,
-        width: 700, // same as the containing svg
-        height: 400 // same as the containing svg
-      },
-      svg: {
-        width: 700,
-        height: 400
-      }
+    const baseStyle = {
+      margin: 20,
+      width: 700, // same as the containing svg
+      height: 400 // same as the containing svg
+    };
+
+    const svgStyle = {
+      width: 700,
+      height: 400
     };
 
     return (
       <div className="demo">
         <div>
           <h1>Default Axis</h1>
-          <VictoryAxis style={style}
+          <VictoryAxis style={baseStyle}
             tickValues={this.state.tickValues}
             animate={true}
             showGridLines={true}/>
@@ -74,7 +73,7 @@ class App extends React.Component {
         </div>
         <div>
         <h1>X-Y Axis</h1>
-          <svg style={style.svg}>
+          <svg style={svgStyle}>
             <VictoryAxis
               domain={this.state.domain}
               showGridLines={true}

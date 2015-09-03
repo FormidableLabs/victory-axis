@@ -17,28 +17,8 @@ class VAxis extends React.Component {
       width: 500,
       height: 300,
       margin: 20,
-      axis: {
-        stroke: "#756f6a",
-        fill: "#756f6a",
-        strokeWidth: 2,
-        strokeLinecap: "round"
-      },
-      ticksLines: {
-        stroke: "#756f6a",
-        fill: "#756f6a",
-        strokeWidth: 2,
-        strokeLinecap: "round"
-      },
-      gridLines: {
-        stroke: "#c9c5bb",
-        fill: "#c9c5bb",
-        strokeWidth: 1,
-        strokeLinecap: "round"
-      },
-      text: {
-        color: "#756f6a",
-        fontFamily: "sans-serif"
-      }
+      fontFamily: "Helvetica",
+      fontSize: 15
     }, this.props.style);
   }
 
@@ -184,8 +164,8 @@ class VAxis extends React.Component {
       y: [style.margin, style.height - style.margin]
     };
     return this.isVertical() ?
-      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={style.axis}/> :
-      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={style.axis}/>;
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.props.axisStyle}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.props.axisStyle}/>;
   }
 
   getActiveScale(tick) {
@@ -236,11 +216,11 @@ class VAxis extends React.Component {
           <line
             x2={properties.x2}
             y2={properties.y2}
-            style={style.ticksLines}/>
+            style={this.props.tickStyle}/>
           <text x={properties.x}
             y={properties.y}
             dy={properties.dy}
-            style={style.text}
+            style={style}
             textAnchor={properties.textAnchor}>
             {this.getTickFormat().call(this, tick)}
           </text>
@@ -273,7 +253,7 @@ class VAxis extends React.Component {
             <line
               x2={x2}
               y2={y2}
-              style={style.gridLines}/>
+              style={this.props.gridStyle}/>
           </g>
           );
       });
@@ -290,7 +270,7 @@ class VAxis extends React.Component {
         textAnchor="middle"
         y={sign * this.getLabelPadding()}
         x={x}
-        style={style.text}
+        style={style}
         transform={this.isVertical() ? "rotate(-90)" : ""}>
         {this.props.label}
       </text>
@@ -338,6 +318,8 @@ class VictoryAxis extends React.Component {
                 orientation={this.props.orientation}
                 scale={this.props.scale}
                 tickFormat={this.props.tickFormat}
+                showGridLines={this.props.showGridLines}
+                animate={this.props.animate}
                 containerElement={this.props.containerElement}/>
             );
           }}
@@ -366,7 +348,10 @@ const propTypes = {
   showGridLines: React.PropTypes.bool,
   crossAxis: React.PropTypes.bool,
   containerElement: React.PropTypes.oneOf(["svg", "g"]),
-  animate: React.PropTypes.bool
+  animate: React.PropTypes.bool,
+  axisStyle: React.PropTypes.node,
+  tickStyle: React.PropTypes.node,
+  gridStyle: React.PropTypes.node
 };
 
 const defaultProps = {
@@ -377,7 +362,27 @@ const defaultProps = {
   tickPadding: 3,
   showGridLines: false,
   containerElement: "svg",
-  animate: false
+  animate: false,
+  axisStyle: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  tickStyle: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    color: "#756f6a",
+    fontFamily: "sans-serif"
+  },
+  gridStyle: {
+    stroke: "#c9c5bb",
+    fill: "#c9c5bb",
+    strokeWidth: 1,
+    strokeLinecap: "round"
+  }
 };
 
 VictoryAxis.propTypes = propTypes;
