@@ -334,7 +334,7 @@ class VictoryAxis extends React.Component {
 
 const propTypes = {
   style: React.PropTypes.node,
-  domain: React.PropTypes.arrayOf(React.PropTypes.number),
+  domain: React.PropTypes.array,
   range: React.PropTypes.arrayOf(React.PropTypes.number),
   orientation: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
   scale: React.PropTypes.func, // is this right, or should we pass a string?
