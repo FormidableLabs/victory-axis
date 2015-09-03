@@ -1,11 +1,41 @@
 /*global document:false*/
+/*global window:false */
 import React from "react";
 import {VictoryAxis} from "../src/index";
 import d3 from "d3";
+import _ from "lodash";
 import Radium from "radium";
 
 @Radium
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tickValues: [0],
+      domain: [0, 1]
+    };
+  }
+
+  getTickValues() {
+    return _.map(_.range(5), (i) => {
+      return 10 * i + _.random(5);
+    });
+  }
+
+  getDomain() {
+    const someNumber = _.random(2, 5);
+    return [-someNumber, someNumber];
+  }
+
+  componentDidMount() {
+    window.setInterval(() => {
+      this.setState({
+        tickValues: this.getTickValues(),
+        domain: this.getDomain()
+      });
+    }, 2000);
+  }
+
   render() {
     const style = {
       base: {
@@ -24,6 +54,8 @@ class App extends React.Component {
         <div>
           <h1>Default Axis</h1>
           <VictoryAxis style={style}
+            tickValues={this.state.tickValues}
+            animate={true}
             showGridLines={true}/>
         </div>
         <div>
@@ -44,7 +76,7 @@ class App extends React.Component {
         <h1>X-Y Axis</h1>
           <svg style={style.svg}>
             <VictoryAxis
-              domain={[-1, 1]}
+              domain={this.state.domain}
               showGridLines={true}
               crossAxis={true}
               orientation="bottom"
@@ -52,7 +84,7 @@ class App extends React.Component {
               offsetY={150}
               containerElement="g"/>
             <VictoryAxis
-              domain={[1, -1]}
+              domain={this.state.domain.concat().reverse()}
               showGridLines={true}
               crossAxis={true}
               orientation="left"

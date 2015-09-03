@@ -3,9 +3,10 @@ import Radium from "radium";
 import d3 from "d3";
 import _ from "lodash";
 import log from "../log";
+import {VictoryAnimation} from "victory-animation";
 
 @Radium
-class VictoryAxis extends React.Component {
+class VAxis extends React.Component {
 
   constructor(props) {
     super(props);
@@ -320,7 +321,34 @@ class VictoryAxis extends React.Component {
   }
 }
 
-VictoryAxis.propTypes = {
+@Radium
+class VictoryAxis extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    if (this.props.animate) {
+      return (
+        <VictoryAnimation data={this.props}>
+          {(props) => {
+            return (
+              <VAxis
+                {...props}
+                orientation={this.props.orientation}
+                scale={this.props.scale}
+                tickFormat={this.props.tickFormat}
+                containerElement={this.props.containerElement}/>
+            );
+          }}
+        </VictoryAnimation>
+      );
+    }
+    return (<VAxis {...this.props}/>);
+  }
+}
+
+const propTypes = {
   style: React.PropTypes.node,
   domain: React.PropTypes.arrayOf(React.PropTypes.number),
   range: React.PropTypes.arrayOf(React.PropTypes.number),
@@ -337,17 +365,24 @@ VictoryAxis.propTypes = {
   offsetY: React.PropTypes.number,
   showGridLines: React.PropTypes.bool,
   crossAxis: React.PropTypes.bool,
-  containerElement: React.PropTypes.oneOf(["svg", "g"])
+  containerElement: React.PropTypes.oneOf(["svg", "g"]),
+  animate: React.PropTypes.bool
 };
 
-VictoryAxis.defaultProps = {
+const defaultProps = {
   orientation: "bottom",
   scale: () => d3.scale.linear(),
   tickCount: 5,
   tickSize: 4,
   tickPadding: 3,
   showGridLines: false,
-  containerElement: "svg"
+  containerElement: "svg",
+  animate: false
 };
+
+VictoryAxis.propTypes = propTypes;
+VictoryAxis.defaultProps = defaultProps;
+VAxis.propTypes = propTypes;
+VAxis.defaultProps = defaultProps;
 
 export default VictoryAxis;
