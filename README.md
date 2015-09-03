@@ -61,7 +61,7 @@ With a little more code, you can make a time scale with custom tick values and f
 ```
 <svg width={500} height={500}>
   <VictoryAxis
-    <VictoryAxis style={style.axis}
+    <VictoryAxis
       orientation="left"
       scale={() => d3.scale.log()}
       offsetX={75}
@@ -80,16 +80,6 @@ There are tons of configuration options for Victory Axis. Some map directly to d
 ### Props
 
 All props are optional for linear scales, but some of the more exotic scales require explicit configuration. Victory Axis will warn you if the axis you select isn't receiving the options it requires. Required props for each scale are also enumerated at the end of this section.
-
-#### width 
-The maximum width the axis can take up in number of pixels.  This should be equal to or less than the width of the containing svg.  
-**Default** width: 500
-**PropType** number
-
-#### height 
-The maximum height the axis can take up in number of pixels.  This should be equal to or less than the height of the containing svg.  
-**Default** height: 300
-**PropType** number
 
 #### scale
 This prop determines what scale your axis should use. This prop should return a function. Most d3 scale functions are supported.  
@@ -132,16 +122,6 @@ Causing each tick to display only years.  By default, `tickFormat` will be set t
 if no scale is found. This prop will work with d3 formats and arbitrary functions.  
 **Default** calculated
 **PropType** func
-
-#### tickSize
-This value determines the length of the tick lines.  
-**Default** tickSize: 4
-**PropType** number
-
-#### tickPadding
-This value determines the padding between the tick lines and the tick values.  
-**Default** tickPadding: 3
-**PropType** number
 
 #### label 
 That's your axis label.  
@@ -201,6 +181,29 @@ Victory Axis is styled inline with [Radium](http://github.com/formidablelabs/rad
 Any styles passed in as props will be merged with this set of default styles.  
 **Default** See above
 **PropType** node
+
+### containerElement
+
+This prop determines whether to render Victory Scatter in a `<g>` or `<svg>` element. It is useful to set this prop to "g" if you are composing Victory Scatter with other victory components.
+
+**PropTypes** "g" or "svg"
+
+**Default** `containerElement: "svg"`
+
+#### animate
+
+This prop determines whether or not to animate transitions as data changes.  Animation is handled by [Victory Animation](https://github.com/FormidableLabs/victory-animation)
+
+**PropTypes** bool
+
+**Default** `animate: false`
+
+**TODO: write detailed descriptions for the following props**
+  - showGridLines: React.PropTypes.bool
+  - crossAxis: React.PropTypes.bool
+  - axisStyle: React.PropTypes.node
+  - tickStyle: React.PropTypes.node
+  - gridStyle: React.PropTypes.node
 
 ### Required Prop Types by Scale
 
