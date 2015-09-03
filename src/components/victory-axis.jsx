@@ -88,7 +88,7 @@ class VAxis extends React.Component {
     const offsetY = this.props.offsetY || style.margin;
     const fontSize = this.getFontSize();
     const totalPadding = fontSize +
-      (2 * this.props.tickSize) +
+      (2 * this.props.tickStyle.size) +
       this.getLabelPadding();
     const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical() ? totalPadding : minimumPadding;
@@ -178,14 +178,15 @@ class VAxis extends React.Component {
 
   getTickProperties() {
     const verticalAxis = this.isVertical();
-    const tickSpacing = _.max([this.props.tickSize, 0]) + this.props.tickPadding;
+    const tickSpacing = _.max([this.props.tickStyle.size, 0]) +
+      this.props.tickStyle.padding;
     // determine axis orientation and layout
     const sign = this.props.orientation === "top" || this.props.orientation === "left" ? -1 : 1;
     // determine tick formatting constants based on orientationation and layout
     const x = verticalAxis ? sign * tickSpacing : 0;
     const y = verticalAxis ? 0 : sign * tickSpacing;
-    const x2 = verticalAxis ? sign * this.props.tickSize : 0;
-    const y2 = verticalAxis ? 0 : sign * this.props.tickSize;
+    const x2 = verticalAxis ? sign * this.props.tickStyle.size : 0;
+    const y2 = verticalAxis ? 0 : sign * this.props.tickStyle.size;
     let dy;
     let textAnchor;
     if (verticalAxis) {
@@ -320,6 +321,7 @@ class VictoryAxis extends React.Component {
                 tickFormat={this.props.tickFormat}
                 showGridLines={this.props.showGridLines}
                 animate={this.props.animate}
+                crossAxis={this.props.crossAxis}
                 containerElement={this.props.containerElement}/>
             );
           }}
@@ -338,8 +340,6 @@ const propTypes = {
   scale: React.PropTypes.func, // is this right, or should we pass a string?
   tickCount: React.PropTypes.number,
   tickValues: React.PropTypes.array,
-  tickSize: React.PropTypes.number,
-  tickPadding: React.PropTypes.number,
   tickFormat: React.PropTypes.func,
   label: React.PropTypes.string,
   labelPadding: React.PropTypes.number,
@@ -358,8 +358,6 @@ const defaultProps = {
   orientation: "bottom",
   scale: () => d3.scale.linear(),
   tickCount: 5,
-  tickSize: 4,
-  tickPadding: 3,
   showGridLines: false,
   containerElement: "svg",
   animate: false,
@@ -375,7 +373,9 @@ const defaultProps = {
     strokeWidth: 2,
     strokeLinecap: "round",
     color: "#756f6a",
-    fontFamily: "sans-serif"
+    fontFamily: "sans-serif",
+    size: 4,
+    padding: 5
   },
   gridStyle: {
     stroke: "#c9c5bb",
