@@ -22,20 +22,29 @@ class VAxis extends React.Component {
   }
 
   getDomain() {
+    let d;
     if (this.props.domain) {
-      return this.props.domain;
+      d = this.props.domain;
     } else if (this.props.tickValues) {
-      return this._getDomainFromTickValues();
+      d = this._getDomainFromTickValues();
     } else {
-      return this._getDomainFromScale();
+      d = this._getDomainFromScale();
     }
+    return d;
   }
 
   // helper for getDomain()
   _getDomainFromTickValues() {
-    // coerce ticks to numbers
-    const ticks = _.map(this.props.tickValues, (value) => +value);
-    const domain = [_.min(ticks), _.max(ticks)];
+
+    let domain;
+    // need smarter checking for ordinal
+    if (typeof this.props.tickValues[0] === "string") {
+      domain = this.props.tickValues;
+    } else {
+      const ticks = _.map(this.props.tickValues, (value) => +value);
+      // coerce ticks to numbers
+      domain = [_.min(ticks), _.max(ticks)];
+    }
     return this.isVertical() ? domain.concat().reverse() : domain;
   }
 
@@ -56,13 +65,27 @@ class VAxis extends React.Component {
   }
 
   getRange() {
-    if (this.props.range) {
-      return this.props.range;
-    }
     const style = this.getStyles();
-    return this.isVertical() ?
-      [style.margin, style.height - style.margin] :
-      [style.margin, style.width - style.margin];
+    let range;
+    if (this.props.range) {
+      range = this.props.range;
+    } else if (this.props.tickValues && typeof this.props.tickValues[0] === "string") {
+      // https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangePoints
+      // not sure if this vertical check will hold up in all cases
+      const padding = 1; // this.props.padding
+      const rangeFromDomain = d3.scale.ordinal()
+                              .domain(this.props.tickValues)
+                              .rangeRoundPoints([
+                                0,
+                                this.isVertical() ? style.height : style.width
+                              ], padding);
+      range = rangeFromDomain.range();
+    } else {
+      range = this.isVertical() ?
+        [style.margin, style.height - style.margin] :
+        [style.margin, style.width - style.margin];
+    }
+    return range;
   }
 
   isVertical() {
@@ -130,19 +153,21 @@ class VAxis extends React.Component {
 
   getTicks() {
     const scale = this.getScale();
+    let t;
     if (this.props.tickValues) {
-      return this.props.tickValues;
+      t = this.props.tickValues;
     } else if (_.isFunction(scale.ticks)) {
       const ticks = scale.ticks(this.props.tickCount);
       if (this.props.crossAxis) {
-        return _.includes(ticks, 0) ? _.without(ticks, 0) :
+        t = _.includes(ticks, 0) ? _.without(ticks, 0) :
           _.without(ticks, _.min(ticks));
       } else {
-        return ticks;
+        t = ticks;
       }
     } else {
-      return scale.domain();
+      t = scale.domain();
     }
+    return t;
   }
 
   getTickFormat() {
@@ -189,10 +214,10 @@ class VAxis extends React.Component {
     let dy;
     let textAnchor;
     if (verticalAxis) {
-      dy = ".32em"; // code smell: magic numbers from d3
+      dy = ".32em"; // todo: magic numbers from d3
       textAnchor = sign < 0 ? "end" : "start";
     } else {
-      dy = sign < 0 ? "0em" : ".71em"; // code smell: magic numbers from d3
+      dy = sign < 0 ? "0em" : ".71em"; // todo: magic numbers from d3
       textAnchor = "middle";
     }
     return {x, y, x2, y2, dy, textAnchor};

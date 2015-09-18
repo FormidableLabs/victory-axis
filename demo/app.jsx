@@ -11,8 +11,8 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tickValues: [0],
-      domain: [0, 1]
+      tickValues: [5, 10, 25, 31, 42],
+      domain: [-5, 5]
     };
   }
 
@@ -21,6 +21,7 @@ class App extends React.Component {
       return 10 * i + _.random(5);
     });
   }
+
 
   getDomain() {
     const someNumber = _.random(2, 5);
@@ -54,6 +55,7 @@ class App extends React.Component {
           <h1>Default Axis</h1>
           <VictoryAxis style={baseStyle}
             tickValues={this.state.tickValues}
+            identifier={"DefaultAxis"}
             animate={true}
             showGridLines={true}/>
         </div>
@@ -62,6 +64,7 @@ class App extends React.Component {
           <VictoryAxis
             label="Decades"
             showGridLines={true}
+            identifier={"time scale"}
             scale={() => d3.time.scale()}
             tickValues={[
               new Date(1980, 1, 1),
@@ -78,6 +81,7 @@ class App extends React.Component {
               domain={this.state.domain}
               showGridLines={true}
               crossAxis={true}
+            identifier={"xy x"}
               orientation="bottom"
               offsetX={50}
               offsetY={150}
@@ -86,6 +90,7 @@ class App extends React.Component {
               domain={this.state.domain.concat().reverse()}
               showGridLines={true}
               crossAxis={true}
+            identifier={"xy y"}
               orientation="left"
               offsetX={250}
               offsetY={50}
@@ -97,9 +102,24 @@ class App extends React.Component {
           <VictoryAxis
             showGridLines={true}
             orientation="left"
+            identifier={"Log Scale"}
             scale={() => d3.scale.log()}
             domain={[1, 5]}
             offsetX={50}/>
+        </div>
+        <div>
+          <h1>Ordinal Scales</h1>
+          <VictoryAxis
+            style={baseStyle}
+            identifier={"Ordinal"}
+            scale={() => d3.scale.ordinal()}
+            tickValues={[
+              "Mets",
+              "Giants",
+              "Yankees",
+              "Nationals",
+              "Mariners"
+            ]}/>
         </div>
       </div>
     );
