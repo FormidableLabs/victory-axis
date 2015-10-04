@@ -148,7 +148,7 @@ class VAxis extends React.Component {
   getTickFormat() {
     const scale = this.getScale();
     if (this.props.tickFormat) {
-      return this.props.tickFormat();
+      return this.props.tickFormat;
     } else if (_.isFunction(scale.tickFormat)) {
       return scale.tickFormat(this.getTicks().length);
     } else {
@@ -265,16 +265,20 @@ class VAxis extends React.Component {
     const orientation = this.props.orientation;
     const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
     const x = this.isVertical() ? -((style.height) / 2) : ((style.width) / 2);
-    return (
-      <text
-        textAnchor="middle"
-        y={sign * this.getLabelPadding()}
-        x={x}
-        style={style}
-        transform={this.isVertical() ? "rotate(-90)" : ""}>
-        {this.props.label}
-      </text>
-    );
+    if (this.props.label) {
+      return (
+        <text
+          textAnchor="middle"
+          y={sign * this.getLabelPadding()}
+          x={x}
+          style={style}
+          transform={this.isVertical() ? "rotate(-90)" : ""}>
+          {this.props.label}
+        </text>
+      );
+    } else {
+      return <text/>
+    }
   }
 
   render() {
