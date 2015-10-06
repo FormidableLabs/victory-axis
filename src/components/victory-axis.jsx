@@ -159,8 +159,7 @@ class VAxis extends React.Component {
     } else if (_.isFunction(scale.ticks)) {
       const ticks = scale.ticks(this.props.tickCount);
       if (this.props.crossAxis) {
-        t = _.includes(ticks, 0) ? _.without(ticks, 0) :
-          _.without(ticks, _.min(ticks));
+        t = _.includes(ticks, 0) ? _.without(ticks, 0) : ticks;
       } else {
         t = ticks;
       }
@@ -237,7 +236,7 @@ class VAxis extends React.Component {
       translate = verticalAxis ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
-        <g key={"tick-" + index} transform={translate}>
+        <g key={"tick-" + index + Math.random()} transform={translate}>
           <line
             x2={properties.x2}
             y2={properties.y2}
