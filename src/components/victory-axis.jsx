@@ -231,7 +231,7 @@ class VAxis extends React.Component {
       translate = verticalAxis ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
-        <g key={"tick-" + index + Math.random()} transform={translate}>
+        <g key={"tick-" + index} transform={translate}>
           <line
             x2={properties.x2}
             y2={properties.y2}
