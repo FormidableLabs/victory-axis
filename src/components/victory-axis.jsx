@@ -296,7 +296,7 @@ class VAxis extends React.Component {
         </text>
       );
     } else {
-      return <text/>
+      return <text/>;
     }
   }
 
