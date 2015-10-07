@@ -6,11 +6,6 @@ import log from "../log";
 import {VictoryAnimation} from "victory-animation";
 
 class VAxis extends React.Component {
-
-  constructor(props) {
-    super(props);
-  }
-
   getStyles() {
     return _.merge({
       width: 500,
@@ -166,7 +161,7 @@ class VAxis extends React.Component {
     } else {
       t = scale.domain();
     }
-    return t;
+    return _.isArray(t) ? t : [t];
   }
 
   getTickFormat() {
@@ -331,10 +326,6 @@ class VAxis extends React.Component {
 
 @Radium
 class VictoryAxis extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     if (this.props.animate) {
       return (
