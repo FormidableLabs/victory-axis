@@ -6,46 +6,87 @@ import log from "../log";
 import {VictoryAnimation} from "victory-animation";
 
 class VAxis extends React.Component {
-  getStyles() {
+  constructor(props) {
+    super(props);
+    this.getCalculatedValues(props);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.getCalculatedValues(nextProps);
+  }
+
+  getCalculatedValues(props) {
+    // order matters!
+    this.style = this.getStyles(props);
+    this.isVertical = props.orientation === "left" || props.orientation === "right";
+    this.fontSize = this.style.fontSize || 16;
+    this.stringMap = this.createStringMap(props);
+    this.range = this.getRange(props);
+    this.domain = this.getDomain(props);
+    this.scale = this.getScale(props);
+    this.ticks = this.getTicks(props);
+    this.tickFormat = this.getTickFormat(props);
+    this.labelPadding = this.getLabelPadding(props);
+    this.offset = this.getOffset(props);
+    this.tickProperties = this.getTickProperties(props);
+    this.transform = this.getTransform(props);
+  }
+
+  getStyles(props) {
     return _.merge({
       width: 500,
       height: 300,
       margin: 20,
       fontFamily: "Helvetica",
       fontSize: 15
-    }, this.props.style);
+    }, props.style);
   }
 
-  getDomain() {
-    let d;
-    if (this.props.domain) {
-      d = this.props.domain;
-    } else if (this.props.tickValues) {
-      d = this._getDomainFromTickValues();
-    } else {
-      d = this._getDomainFromScale();
+  createStringMap(props) {
+    // if tickValues exist and are strings, create a map using only those strings
+    // dont alter the order.
+    const containsStrings = function (collection) {
+      return _.some(collection, function (item) {
+        return _.isString(item);
+      });
+    };
+
+    if (props.tickValues && containsStrings(props.tickValues)) {
+      return _.zipObject(_.map(props.tickValues, (tick, index) => {
+        return ["" + tick, index + 1];
+      }));
     }
-    return d;
+  }
+
+  getDomain(props) {
+    let domain;
+    if (props.domain) {
+      domain = props.domain;
+    } else if (props.tickValues) {
+      domain = this._getDomainFromTickValues(props);
+    } else {
+      domain = this._getDomainFromScale(props);
+    }
+    return domain;
   }
 
   // helper for getDomain()
-  _getDomainFromTickValues() {
-
+  _getDomainFromTickValues(props) {
     let domain;
-    // need smarter checking for ordinal
-    if (typeof this.props.tickValues[0] === "string") {
-      domain = this.props.tickValues;
+    if (this.stringMap) {
+      const values = _.values(this.stringMap);
+      domain = [_.min(values), _.max(values)];
     } else {
-      const ticks = _.map(this.props.tickValues, (value) => +value);
+      const ticks = _.map(props.tickValues, (value) => +value);
       // coerce ticks to numbers
       domain = [_.min(ticks), _.max(ticks)];
     }
-    return this.isVertical() ? domain.concat().reverse() : domain;
+    return this.isVertical ? domain.concat().reverse() : domain;
   }
 
   // helper for getDomain()
-  _getDomainFromScale() {
-    const scaleDomain = this.props.scale().domain();
+  _getDomainFromScale(props) {
+    const scaleDomain = props.scale().domain();
     // Warn when domains need more information to produce meaningful axes
     if (_.isDate(scaleDomain[0])) {
       log.warn("please specify tickValues or domain when creating a time scale axis");
@@ -56,158 +97,103 @@ class VAxis extends React.Component {
       log.warn("please specify tickValues or domain when creating an axis using " +
         "a threshold scale");
     }
-    return this.isVertical() ? scaleDomain.concat().reverse() : scaleDomain;
+    return this.isVertical ? scaleDomain.concat().reverse() : scaleDomain;
   }
 
-  getRange() {
-    const style = this.getStyles();
-    let range;
-    if (this.props.range) {
-      range = this.props.range;
-    } else if (this.props.tickValues && typeof this.props.tickValues[0] === "string") {
-      // https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangePoints
-      // not sure if this vertical check will hold up in all cases
-      const padding = 1; // this.props.padding
-      const rangeFromDomain = d3.scale.ordinal()
-                              .domain(this.props.tickValues)
-                              .rangeRoundPoints([
-                                0,
-                                this.isVertical() ? style.height : style.width
-                              ], padding);
-      range = rangeFromDomain.range();
-    } else {
-      range = this.isVertical() ?
-        [style.margin, style.height - style.margin] :
-        [style.margin, style.width - style.margin];
+  getRange(props) {
+    if (props.range) {
+      return props.range;
     }
-    return range;
+    return this.isVertical ?
+      [this.style.margin, this.style.height - this.style.margin] :
+      [this.style.margin, this.style.width - this.style.margin];
   }
 
-  isVertical() {
-    return (this.props.orientation === "left" || this.props.orientation === "right");
-  }
-
-  getFontSize() {
-    return this.getStyles().fontSize || 16;
-  }
-
-  getLabelPadding() {
-    if (this.props.labelPadding) {
-      return this.props.labelPadding;
-    }
-    // TODO: magic numbers
-    return this.props.label ? (this.getFontSize() * 2.4) : 0;
-  }
-
-  getOffset() {
-    const style = this.getStyles();
-    const offsetX = this.props.offsetX || style.margin;
-    const offsetY = this.props.offsetY || style.margin;
-    const fontSize = this.getFontSize();
-    const totalPadding = fontSize +
-      (2 * this.props.tickStyle.size) +
-      this.getLabelPadding();
-    const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
-    const x = this.isVertical() ? totalPadding : minimumPadding;
-    const y = this.isVertical() ? minimumPadding : totalPadding;
-    return {
-      x: offsetX || x,
-      y: offsetY || y
-    };
-  }
-
-  getTransform() {
-    const orientation = this.props.orientation;
-    const offset = this.getOffset();
-    const style = this.getStyles();
-    const transform = {
-      top: [0, offset.y],
-      bottom: [0, (style.height - offset.y)],
-      left: [offset.x, 0],
-      right: [(style.width - offset.x), 0]
-    };
-    return "translate(" + transform[orientation][0] + "," + transform[orientation][1] + ")";
-  }
-
-  getScale() {
-    const scale = this.props.scale().copy();
-    const range = this.getRange();
-    const domain = this.getDomain();
-    scale.range(range);
-    scale.domain(domain);
+  getScale(props) {
+    const scale = props.scale().copy();
+    scale.range(this.range);
+    scale.domain(this.domain);
     // hacky check for identity scale
-    if (_.difference(scale.range(), range).length !== 0) {
+    if (_.difference(scale.range(), this.range).length !== 0) {
       // identity scale, reset the domain and range
-      scale.range(range);
-      scale.domain(range);
+      scale.range(this.range);
+      scale.domain(this.range);
       log.warn("Identity Scale: domain and range must be identical. " +
         "Domain has been reset to match range.");
     }
     return scale;
   }
 
-  getTicks() {
-    const scale = this.getScale();
+  getTicks(props) {
     let t;
-    if (this.props.tickValues) {
-      t = this.props.tickValues;
-    } else if (_.isFunction(scale.ticks)) {
-      const ticks = scale.ticks(this.props.tickCount);
-      if (this.props.crossAxis) {
+    if (this.stringMap) {
+      t = _.values(this.stringMap);
+    } else if (props.tickValues) {
+      t = props.tickValues;
+    } else if (_.isFunction(this.scale.ticks)) {
+      const ticks = this.scale.ticks(props.tickCount);
+      if (props.crossAxis) {
         t = _.includes(ticks, 0) ? _.without(ticks, 0) : ticks;
       } else {
         t = ticks;
       }
     } else {
-      t = scale.domain();
+      t = this.scale.domain();
     }
     return _.isArray(t) ? t : [t];
   }
 
-  getTickFormat() {
-    const scale = this.getScale();
-    if (this.props.tickFormat) {
-      return this.props.tickFormat;
-    } else if (_.isFunction(scale.tickFormat)) {
-      return scale.tickFormat(this.getTicks().length);
+  getTickFormat(props) {
+    if (props.tickFormat) {
+      return props.tickFormat;
+    } else if (this.stringMap) {
+      const dataNames = _.keys(this.stringMap);
+      // string ticks should have one tick of padding on either side
+      const dataTicks = ["", ...dataNames, ""];
+      return (x) => dataTicks[x];
+    } else if (_.isFunction(this.scale.tickFormat)) {
+      return this.scale.tickFormat(this.ticks.length);
     } else {
       return (x) => x;
     }
   }
 
-  getAxisLine() {
-    const style = this.getStyles();
-    const extent = {
-      x: [style.margin, style.width - style.margin],
-      y: [style.margin, style.height - style.margin]
-    };
-    return this.isVertical() ?
-      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.props.axisStyle}/> :
-      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.props.axisStyle}/>;
-  }
-
-  getActiveScale(tick) {
-    const scale = this.getScale();
-    if (scale.rangeBand) {
-      return scale(tick) + scale.rangeBand() / 2;
+  getLabelPadding(props) {
+    if (props.labelPadding) {
+      return props.labelPadding;
     }
-    return scale(tick);
+    // TODO: magic numbers
+    return props.label ? (this.fontSize * 2.4) : 0;
   }
 
-  getTickProperties() {
-    const verticalAxis = this.isVertical();
-    const tickSpacing = _.max([this.props.tickStyle.size, 0]) +
-      this.props.tickStyle.padding;
+  getOffset(props) {
+    const offsetX = props.offsetX || this.style.margin;
+    const offsetY = props.offsetY || this.style.margin;
+    const totalPadding = this.fontSize +
+      (2 * props.tickStyle.size) +
+      this.labelPadding;
+    const minimumPadding = 1.2 * this.fontSize; // TODO: magic numbers
+    const x = this.isVertical ? totalPadding : minimumPadding;
+    const y = this.isVertical ? minimumPadding : totalPadding;
+    return {
+      x: offsetX || x,
+      y: offsetY || y
+    };
+  }
+
+  getTickProperties(props) {
+    const tickSpacing = _.max([props.tickStyle.size, 0]) +
+      props.tickStyle.padding;
     // determine axis orientation and layout
-    const sign = this.props.orientation === "top" || this.props.orientation === "left" ? -1 : 1;
+    const sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
     // determine tick formatting constants based on orientationation and layout
-    const x = verticalAxis ? sign * tickSpacing : 0;
-    const y = verticalAxis ? 0 : sign * tickSpacing;
-    const x2 = verticalAxis ? sign * this.props.tickStyle.size : 0;
-    const y2 = verticalAxis ? 0 : sign * this.props.tickStyle.size;
+    const x = this.isVertical ? sign * tickSpacing : 0;
+    const y = this.isVertical ? 0 : sign * tickSpacing;
+    const x2 = this.isVertical ? sign * props.tickStyle.size : 0;
+    const y2 = this.isVertical ? 0 : sign * props.tickStyle.size;
     let dy;
     let textAnchor;
-    if (verticalAxis) {
+    if (this.isVertical) {
       dy = ".32em"; // todo: magic numbers from d3
       textAnchor = sign < 0 ? "end" : "start";
     } else {
@@ -217,31 +203,47 @@ class VAxis extends React.Component {
     return {x, y, x2, y2, dy, textAnchor};
   }
 
+  getTransform(props) {
+    const transform = {
+      top: [0, this.offset.y],
+      bottom: [0, (this.style.height - this.offset.y)],
+      left: [this.offset.x, 0],
+      right: [(this.style.width - this.offset.x), 0]
+    };
+    return "translate(" + transform[props.orientation][0] + "," +
+      transform[props.orientation][1] + ")";
+  }
+
+  getAxisLine() {
+    const extent = {
+      x: [this.style.margin, this.style.width - this.style.margin],
+      y: [this.style.margin, this.style.height - this.style.margin]
+    };
+    return this.isVertical ?
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.props.axisStyle}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.props.axisStyle}/>;
+  }
 
   getTickLines() {
-    const verticalAxis = this.isVertical();
-    const ticks = this.getTicks();
-    const properties = this.getTickProperties();
-    const style = this.getStyles();
     let position;
     let translate;
     // determine the position and translation of each tick
-    return _.map(ticks, (tick, index) => {
-      position = this.getActiveScale(tick);
-      translate = verticalAxis ?
+    return _.map(this.ticks, (tick, index) => {
+      position = this.scale(tick);
+      translate = this.isVertical ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       return (
         <g key={"tick-" + index} transform={translate}>
           <line
-            x2={properties.x2}
-            y2={properties.y2}
+            x2={this.tickProperties.x2}
+            y2={this.tickProperties.y2}
             style={this.props.tickStyle}/>
-          <text x={properties.x}
-            y={properties.y}
-            dy={properties.dy}
-            style={style}
-            textAnchor={properties.textAnchor}>
-            {this.getTickFormat().call(this, tick)}
+          <text x={this.tickProperties.x}
+            y={this.tickProperties.y}
+            dy={this.tickProperties.dy}
+            style={this.style}
+            textAnchor={this.tickProperties.textAnchor}>
+            {this.tickFormat.call(this, tick)}
           </text>
         </g>
       );
@@ -249,22 +251,18 @@ class VAxis extends React.Component {
   }
 
   getGridLines() {
-    const style = this.getStyles();
     if (this.props.showGridLines) {
       const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
-      const verticalAxis = this.isVertical();
-      const ticks = this.getTicks();
-      const offset = this.getOffset();
-      const xOffset = this.props.crossAxis ? offset.x - style.margin : 0;
-      const yOffset = this.props.crossAxis ? offset.y - style.margin : 0;
-      const x2 = verticalAxis ? sign * (style.width - (2 * style.margin)) : 0;
-      const y2 = verticalAxis ? 0 : sign * (style.height - (2 * style.margin));
+      const xOffset = this.props.crossAxis ? this.offset.x - this.style.margin : 0;
+      const yOffset = this.props.crossAxis ? this.offset.y - this.style.margin : 0;
+      const x2 = this.isVertical ? sign * (this.style.width - (2 * this.style.margin)) : 0;
+      const y2 = this.isVertical ? 0 : sign * (this.style.height - (2 * this.style.margin));
       let position;
       let translate;
       // determine the position and translation of each gridline
-      return _.map(ticks, (tick, index) => {
-        position = this.getActiveScale(tick);
-        translate = verticalAxis ?
+      return _.map(this.ticks, (tick, index) => {
+        position = this.scale(tick);
+        translate = this.isVertical ?
           "translate(" + -xOffset + ", " + position + ")" :
           "translate(" + position + ", " + yOffset + ")";
         return (
@@ -280,18 +278,17 @@ class VAxis extends React.Component {
   }
 
   getLabelElements() {
-    const style = this.getStyles();
     const orientation = this.props.orientation;
     const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
-    const x = this.isVertical() ? -((style.height) / 2) : ((style.width) / 2);
+    const x = this.isVertical ? -((this.style.height) / 2) : ((this.style.width) / 2);
     if (this.props.label) {
       return (
         <text
           textAnchor="middle"
-          y={sign * this.getLabelPadding()}
+          y={sign * this.labelPadding}
           x={x}
-          style={style}
-          transform={this.isVertical() ? "rotate(-90)" : ""}>
+          style={this.style}
+          transform={this.isVertical ? "rotate(-90)" : ""}>
           {this.props.label}
         </text>
       );
@@ -303,8 +300,8 @@ class VAxis extends React.Component {
   render() {
     if (this.props.containerElement === "svg") {
       return (
-        <svg style={this.getStyles()}>
-          <g style={this.getStyles()} transform={this.getTransform()}>
+        <svg style={this.style}>
+          <g style={this.style} transform={this.transform}>
             {this.getGridLines()}
             {this.getAxisLine()}
             {this.getTickLines()}
@@ -314,7 +311,7 @@ class VAxis extends React.Component {
       );
     }
     return (
-      <g style={this.getStyles()} transform={this.getTransform()}>
+      <g style={this.style} transform={this.transform}>
         {this.getGridLines()}
         {this.getAxisLine()}
         {this.getTickLines()}
