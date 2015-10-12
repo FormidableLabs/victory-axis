@@ -1,6 +1,6 @@
 {
   "name": "victory-axis",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Axis Component for Victory",
   "main": "lib/index.js",
   "repository": {

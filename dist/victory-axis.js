@@ -78,6 +78,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -111,48 +113,97 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _classCallCheck(this, VAxis);
 	
 	    _get(Object.getPrototypeOf(VAxis.prototype), "constructor", this).call(this, props);
+	    this.getCalculatedValues(props);
 	  }
 	
 	  _createClass(VAxis, [{
+	    key: "componentWillReceiveProps",
+	    value: function componentWillReceiveProps(nextProps) {
+	      this.getCalculatedValues(nextProps);
+	    }
+	  }, {
+	    key: "getCalculatedValues",
+	    value: function getCalculatedValues(props) {
+	      // order matters!
+	      this.style = this.getStyles(props);
+	      this.isVertical = props.orientation === "left" || props.orientation === "right";
+	      this.fontSize = this.style.fontSize || 16;
+	      this.stringMap = this.createStringMap(props);
+	      this.range = this.getRange(props);
+	      this.domain = this.getDomain(props);
+	      this.scale = this.getScale(props);
+	      this.ticks = this.getTicks(props);
+	      this.tickFormat = this.getTickFormat(props);
+	      this.labelPadding = this.getLabelPadding(props);
+	      this.offset = this.getOffset(props);
+	      this.tickProperties = this.getTickProperties(props);
+	      this.transform = this.getTransform(props);
+	    }
+	  }, {
 	    key: "getStyles",
-	    value: function getStyles() {
+	    value: function getStyles(props) {
 	      return _lodash2["default"].merge({
 	        width: 500,
 	        height: 300,
 	        margin: 20,
 	        fontFamily: "Helvetica",
 	        fontSize: 15
-	      }, this.props.style);
+	      }, props.style);
+	    }
+	  }, {
+	    key: "createStringMap",
+	    value: function createStringMap(props) {
+	      // if tickValues exist and are strings, create a map using only those strings
+	      // dont alter the order.
+	      var containsStrings = function containsStrings(collection) {
+	        return _lodash2["default"].some(collection, function (item) {
+	          return _lodash2["default"].isString(item);
+	        });
+	      };
+	
+	      if (props.tickValues && containsStrings(props.tickValues)) {
+	        return _lodash2["default"].zipObject(_lodash2["default"].map(props.tickValues, function (tick, index) {
+	          return ["" + tick, index + 1];
+	        }));
+	      }
 	    }
 	  }, {
 	    key: "getDomain",
-	    value: function getDomain() {
-	      if (this.props.domain) {
-	        return this.props.domain;
-	      } else if (this.props.tickValues) {
-	        return this._getDomainFromTickValues();
+	    value: function getDomain(props) {
+	      var domain = undefined;
+	      if (props.domain) {
+	        domain = props.domain;
+	      } else if (props.tickValues) {
+	        domain = this._getDomainFromTickValues(props);
 	      } else {
-	        return this._getDomainFromScale();
+	        domain = this._getDomainFromScale(props);
 	      }
+	      return domain;
 	    }
 	
 	    // helper for getDomain()
 	  }, {
 	    key: "_getDomainFromTickValues",
-	    value: function _getDomainFromTickValues() {
-	      // coerce ticks to numbers
-	      var ticks = _lodash2["default"].map(this.props.tickValues, function (value) {
-	        return +value;
-	      });
-	      var domain = [_lodash2["default"].min(ticks), _lodash2["default"].max(ticks)];
-	      return this.isVertical() ? domain.concat().reverse() : domain;
+	    value: function _getDomainFromTickValues(props) {
+	      var domain = undefined;
+	      if (this.stringMap) {
+	        var values = _lodash2["default"].values(this.stringMap);
+	        domain = [_lodash2["default"].min(values), _lodash2["default"].max(values)];
+	      } else {
+	        var ticks = _lodash2["default"].map(props.tickValues, function (value) {
+	          return +value;
+	        });
+	        // coerce ticks to numbers
+	        domain = [_lodash2["default"].min(ticks), _lodash2["default"].max(ticks)];
+	      }
+	      return this.isVertical ? domain.concat().reverse() : domain;
 	    }
 	
 	    // helper for getDomain()
 	  }, {
 	    key: "_getDomainFromScale",
-	    value: function _getDomainFromScale() {
-	      var scaleDomain = this.props.scale().domain();
+	    value: function _getDomainFromScale(props) {
+	      var scaleDomain = props.scale().domain();
 	      // Warn when domains need more information to produce meaningful axes
 	      if (_lodash2["default"].isDate(scaleDomain[0])) {
 	        _log2["default"].warn("please specify tickValues or domain when creating a time scale axis");
@@ -161,108 +212,73 @@ return /******/ (function(modules) { // webpackBootstrap
 	      } else if (scaleDomain.length === 1) {
 	        _log2["default"].warn("please specify tickValues or domain when creating an axis using " + "a threshold scale");
 	      }
-	      return this.isVertical() ? scaleDomain.concat().reverse() : scaleDomain;
+	      return this.isVertical ? scaleDomain.concat().reverse() : scaleDomain;
 	    }
 	  }, {
 	    key: "getRange",
-	    value: function getRange() {
-	      if (this.props.range) {
-	        return this.props.range;
+	    value: function getRange(props) {
+	      if (props.range) {
+	        return props.range;
 	      }
-	      var style = this.getStyles();
-	      return this.isVertical() ? [style.margin, style.height - style.margin] : [style.margin, style.width - style.margin];
-	    }
-	  }, {
-	    key: "isVertical",
-	    value: function isVertical() {
-	      return this.props.orientation === "left" || this.props.orientation === "right";
-	    }
-	  }, {
-	    key: "getFontSize",
-	    value: function getFontSize() {
-	      return this.getStyles().fontSize || 16;
-	    }
-	  }, {
-	    key: "getLabelPadding",
-	    value: function getLabelPadding() {
-	      if (this.props.labelPadding) {
-	        return this.props.labelPadding;
-	      }
-	      // TODO: magic numbers
-	      return this.props.label ? this.getFontSize() * 2.4 : 0;
-	    }
-	  }, {
-	    key: "getOffset",
-	    value: function getOffset() {
-	      var style = this.getStyles();
-	      var offsetX = this.props.offsetX || style.margin;
-	      var offsetY = this.props.offsetY || style.margin;
-	      var fontSize = this.getFontSize();
-	      var totalPadding = fontSize + 2 * this.props.tickStyle.size + this.getLabelPadding();
-	      var minimumPadding = 1.2 * fontSize; // TODO: magic numbers
-	      var x = this.isVertical() ? totalPadding : minimumPadding;
-	      var y = this.isVertical() ? minimumPadding : totalPadding;
-	      return {
-	        x: offsetX || x,
-	        y: offsetY || y
-	      };
-	    }
-	  }, {
-	    key: "getTransform",
-	    value: function getTransform() {
-	      var orientation = this.props.orientation;
-	      var offset = this.getOffset();
-	      var style = this.getStyles();
-	      var transform = {
-	        top: [0, offset.y],
-	        bottom: [0, style.height - offset.y],
-	        left: [offset.x, 0],
-	        right: [style.width - offset.x, 0]
-	      };
-	      return "translate(" + transform[orientation][0] + "," + transform[orientation][1] + ")";
+	      return this.isVertical ? [this.style.margin, this.style.height - this.style.margin] : [this.style.margin, this.style.width - this.style.margin];
 	    }
 	  }, {
 	    key: "getScale",
-	    value: function getScale() {
-	      var scale = this.props.scale().copy();
-	      var range = this.getRange();
-	      var domain = this.getDomain();
-	      scale.range(range);
-	      scale.domain(domain);
+	    value: function getScale(props) {
+	      var scale = props.scale().copy();
+	      scale.range(this.range);
+	      scale.domain(this.domain);
 	      // hacky check for identity scale
-	      if (_lodash2["default"].difference(scale.range(), range).length !== 0) {
+	      if (_lodash2["default"].difference(scale.range(), this.range).length !== 0) {
 	        // identity scale, reset the domain and range
-	        scale.range(range);
-	        scale.domain(range);
+	        scale.range(this.range);
+	        scale.domain(this.range);
 	        _log2["default"].warn("Identity Scale: domain and range must be identical. " + "Domain has been reset to match range.");
 	      }
 	      return scale;
 	    }
 	  }, {
 	    key: "getTicks",
-	    value: function getTicks() {
-	      var scale = this.getScale();
-	      if (this.props.tickValues) {
-	        return this.props.tickValues;
-	      } else if (_lodash2["default"].isFunction(scale.ticks)) {
-	        var ticks = scale.ticks(this.props.tickCount);
-	        if (this.props.crossAxis) {
-	          return _lodash2["default"].includes(ticks, 0) ? _lodash2["default"].without(ticks, 0) : _lodash2["default"].without(ticks, _lodash2["default"].min(ticks));
+	    value: function getTicks(props) {
+	      var t = undefined;
+	      if (this.stringMap) {
+	        t = _lodash2["default"].values(this.stringMap);
+	      } else if (props.tickValues) {
+	        t = props.tickValues;
+	      } else if (_lodash2["default"].isFunction(this.scale.ticks)) {
+	        var ticks = this.scale.ticks(props.tickCount);
+	        if (props.crossAxis) {
+	          t = _lodash2["default"].includes(ticks, 0) ? _lodash2["default"].without(ticks, 0) : ticks;
 	        } else {
-	          return ticks;
+	          t = ticks;
 	        }
 	      } else {
-	        return scale.domain();
+	        t = this.scale.domain();
 	      }
+	      return _lodash2["default"].isArray(t) ? t : [t];
 	    }
 	  }, {
 	    key: "getTickFormat",
-	    value: function getTickFormat() {
-	      var scale = this.getScale();
-	      if (this.props.tickFormat) {
-	        return this.props.tickFormat();
-	      } else if (_lodash2["default"].isFunction(scale.tickFormat)) {
-	        return scale.tickFormat(this.getTicks().length);
+	    value: function getTickFormat(props) {
+	      var _this = this;
+	
+	      if (props.tickFormat) {
+	        return props.tickFormat();
+	      } else if (this.stringMap) {
+	        var _ret = (function () {
+	          var dataNames = _lodash2["default"].keys(_this.stringMap);
+	          // string ticks should have one tick of padding on either side
+	          var dataTicks = [""].concat(_toConsumableArray(dataNames), [""]);
+	          return {
+	            v: function (x) {
+	              return dataTicks[x];
+	            }
+	          };
+	        })();
+	
+	        if (typeof _ret === "object") return _ret.v;
+	      } else if (_lodash2["default"].isFunction(this.scale.tickFormat)) {
+	        return this.scale.tickFormat(this.ticks.length);
 	      } else {
 	        return function (x) {
 	          return x;
@@ -270,77 +286,96 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }, {
-	    key: "getAxisLine",
-	    value: function getAxisLine() {
-	      var style = this.getStyles();
-	      var extent = {
-	        x: [style.margin, style.width - style.margin],
-	        y: [style.margin, style.height - style.margin]
-	      };
-	      return this.isVertical() ? _react2["default"].createElement("line", { y1: _lodash2["default"].min(extent.y), y2: _lodash2["default"].max(extent.y), style: this.props.axisStyle }) : _react2["default"].createElement("line", { x1: _lodash2["default"].min(extent.x), x2: _lodash2["default"].max(extent.x), style: this.props.axisStyle });
+	    key: "getLabelPadding",
+	    value: function getLabelPadding(props) {
+	      if (props.labelPadding) {
+	        return props.labelPadding;
+	      }
+	      // TODO: magic numbers
+	      return props.label ? this.fontSize * 2.4 : 0;
 	    }
 	  }, {
-	    key: "getActiveScale",
-	    value: function getActiveScale(tick) {
-	      var scale = this.getScale();
-	      if (scale.rangeBand) {
-	        return scale(tick) + scale.rangeBand() / 2;
-	      }
-	      return scale(tick);
+	    key: "getOffset",
+	    value: function getOffset(props) {
+	      var offsetX = props.offsetX || this.style.margin;
+	      var offsetY = props.offsetY || this.style.margin;
+	      var totalPadding = this.fontSize + 2 * props.tickStyle.size + this.labelPadding;
+	      var minimumPadding = 1.2 * this.fontSize; // TODO: magic numbers
+	      var x = this.isVertical ? totalPadding : minimumPadding;
+	      var y = this.isVertical ? minimumPadding : totalPadding;
+	      return {
+	        x: offsetX || x,
+	        y: offsetY || y
+	      };
 	    }
 	  }, {
 	    key: "getTickProperties",
-	    value: function getTickProperties() {
-	      var verticalAxis = this.isVertical();
-	      var tickSpacing = _lodash2["default"].max([this.props.tickStyle.size, 0]) + this.props.tickStyle.padding;
+	    value: function getTickProperties(props) {
+	      var tickSpacing = _lodash2["default"].max([props.tickStyle.size, 0]) + props.tickStyle.padding;
 	      // determine axis orientation and layout
-	      var sign = this.props.orientation === "top" || this.props.orientation === "left" ? -1 : 1;
+	      var sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
 	      // determine tick formatting constants based on orientationation and layout
-	      var x = verticalAxis ? sign * tickSpacing : 0;
-	      var y = verticalAxis ? 0 : sign * tickSpacing;
-	      var x2 = verticalAxis ? sign * this.props.tickStyle.size : 0;
-	      var y2 = verticalAxis ? 0 : sign * this.props.tickStyle.size;
+	      var x = this.isVertical ? sign * tickSpacing : 0;
+	      var y = this.isVertical ? 0 : sign * tickSpacing;
+	      var x2 = this.isVertical ? sign * props.tickStyle.size : 0;
+	      var y2 = this.isVertical ? 0 : sign * props.tickStyle.size;
 	      var dy = undefined;
 	      var textAnchor = undefined;
-	      if (verticalAxis) {
-	        dy = ".32em"; // code smell: magic numbers from d3
+	      if (this.isVertical) {
+	        dy = ".32em"; // todo: magic numbers from d3
 	        textAnchor = sign < 0 ? "end" : "start";
 	      } else {
-	        dy = sign < 0 ? "0em" : ".71em"; // code smell: magic numbers from d3
+	        dy = sign < 0 ? "0em" : ".71em"; // todo: magic numbers from d3
 	        textAnchor = "middle";
 	      }
 	      return { x: x, y: y, x2: x2, y2: y2, dy: dy, textAnchor: textAnchor };
 	    }
 	  }, {
+	    key: "getTransform",
+	    value: function getTransform(props) {
+	      var transform = {
+	        top: [0, this.offset.y],
+	        bottom: [0, this.style.height - this.offset.y],
+	        left: [this.offset.x, 0],
+	        right: [this.style.width - this.offset.x, 0]
+	      };
+	      return "translate(" + transform[props.orientation][0] + "," + transform[props.orientation][1] + ")";
+	    }
+	  }, {
+	    key: "getAxisLine",
+	    value: function getAxisLine() {
+	      var extent = {
+	        x: [this.style.margin, this.style.width - this.style.margin],
+	        y: [this.style.margin, this.style.height - this.style.margin]
+	      };
+	      return this.isVertical ? _react2["default"].createElement("line", { y1: _lodash2["default"].min(extent.y), y2: _lodash2["default"].max(extent.y), style: this.props.axisStyle }) : _react2["default"].createElement("line", { x1: _lodash2["default"].min(extent.x), x2: _lodash2["default"].max(extent.x), style: this.props.axisStyle });
+	    }
+	  }, {
 	    key: "getTickLines",
 	    value: function getTickLines() {
-	      var _this = this;
+	      var _this2 = this;
 	
-	      var verticalAxis = this.isVertical();
-	      var ticks = this.getTicks();
-	      var properties = this.getTickProperties();
-	      var style = this.getStyles();
 	      var position = undefined;
 	      var translate = undefined;
 	      // determine the position and translation of each tick
-	      return _lodash2["default"].map(ticks, function (tick, index) {
-	        position = _this.getActiveScale(tick);
-	        translate = verticalAxis ? "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+	      return _lodash2["default"].map(this.ticks, function (tick, index) {
+	        position = _this2.scale(tick);
+	        translate = _this2.isVertical ? "translate(0, " + position + ")" : "translate(" + position + ", 0)";
 	        return _react2["default"].createElement(
 	          "g",
 	          { key: "tick-" + index, transform: translate },
 	          _react2["default"].createElement("line", {
-	            x2: properties.x2,
-	            y2: properties.y2,
-	            style: _this.props.tickStyle }),
+	            x2: _this2.tickProperties.x2,
+	            y2: _this2.tickProperties.y2,
+	            style: _this2.props.tickStyle }),
 	          _react2["default"].createElement(
 	            "text",
-	            { x: properties.x,
-	              y: properties.y,
-	              dy: properties.dy,
-	              style: style,
-	              textAnchor: properties.textAnchor },
-	            _this.getTickFormat().call(_this, tick)
+	            { x: _this2.tickProperties.x,
+	              y: _this2.tickProperties.y,
+	              dy: _this2.tickProperties.dy,
+	              style: _this2.style,
+	              textAnchor: _this2.tickProperties.textAnchor },
+	            _this2.tickFormat.call(_this2, tick)
 	          )
 	        );
 	      });
@@ -348,58 +383,55 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "getGridLines",
 	    value: function getGridLines() {
-	      var _this2 = this;
+	      var _this3 = this;
 	
-	      var style = this.getStyles();
 	      if (this.props.showGridLines) {
-	        var _ret = (function () {
-	          var sign = _this2.props.orientation === "top" || _this2.props.orientation === "left" ? 1 : -1;
-	          var verticalAxis = _this2.isVertical();
-	          var ticks = _this2.getTicks();
-	          var offset = _this2.getOffset();
-	          var xOffset = _this2.props.crossAxis ? offset.x - style.margin : 0;
-	          var yOffset = _this2.props.crossAxis ? offset.y - style.margin : 0;
-	          var x2 = verticalAxis ? sign * (style.width - 2 * style.margin) : 0;
-	          var y2 = verticalAxis ? 0 : sign * (style.height - 2 * style.margin);
+	        var _ret2 = (function () {
+	          var sign = _this3.props.orientation === "top" || _this3.props.orientation === "left" ? 1 : -1;
+	          var xOffset = _this3.props.crossAxis ? _this3.offset.x - _this3.style.margin : 0;
+	          var yOffset = _this3.props.crossAxis ? _this3.offset.y - _this3.style.margin : 0;
+	          var x2 = _this3.isVertical ? sign * (_this3.style.width - 2 * _this3.style.margin) : 0;
+	          var y2 = _this3.isVertical ? 0 : sign * (_this3.style.height - 2 * _this3.style.margin);
 	          var position = undefined;
 	          var translate = undefined;
 	          // determine the position and translation of each gridline
 	          return {
-	            v: _lodash2["default"].map(ticks, function (tick, index) {
-	              position = _this2.getActiveScale(tick);
-	              translate = verticalAxis ? "translate(" + -xOffset + ", " + position + ")" : "translate(" + position + ", " + yOffset + ")";
+	            v: _lodash2["default"].map(_this3.ticks, function (tick, index) {
+	              position = _this3.scale(tick);
+	              translate = _this3.isVertical ? "translate(" + -xOffset + ", " + position + ")" : "translate(" + position + ", " + yOffset + ")";
 	              return _react2["default"].createElement(
 	                "g",
 	                { key: "grid-" + index, transform: translate },
 	                _react2["default"].createElement("line", {
 	                  x2: x2,
 	                  y2: y2,
-	                  style: _this2.props.gridStyle })
+	                  style: _this3.props.gridStyle })
 	              );
 	            })
 	          };
 	        })();
 	
-	        if (typeof _ret === "object") return _ret.v;
+	        if (typeof _ret2 === "object") return _ret2.v;
 	      }
 	    }
 	  }, {
 	    key: "getLabelElements",
 	    value: function getLabelElements() {
-	      var style = this.getStyles();
-	      var orientation = this.props.orientation;
-	      var sign = orientation === "top" || orientation === "left" ? -1 : 1;
-	      var x = this.isVertical() ? -(style.height / 2) : style.width / 2;
-	      return _react2["default"].createElement(
-	        "text",
-	        {
-	          textAnchor: "middle",
-	          y: sign * this.getLabelPadding(),
-	          x: x,
-	          style: style,
-	          transform: this.isVertical() ? "rotate(-90)" : "" },
-	        this.props.label
-	      );
+	      if (this.props.label) {
+	        var orientation = this.props.orientation;
+	        var sign = orientation === "top" || orientation === "left" ? -1 : 1;
+	        var x = this.isVertical ? -(this.style.height / 2) : this.style.width / 2;
+	        return _react2["default"].createElement(
+	          "text",
+	          {
+	            textAnchor: "middle",
+	            y: sign * this.labelPadding,
+	            x: x,
+	            style: this.style,
+	            transform: this.isVertical ? "rotate(-90)" : "" },
+	          this.props.label
+	        );
+	      }
 	    }
 	  }, {
 	    key: "render",
@@ -407,10 +439,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (this.props.containerElement === "svg") {
 	        return _react2["default"].createElement(
 	          "svg",
-	          { style: this.getStyles() },
+	          { style: this.style },
 	          _react2["default"].createElement(
 	            "g",
-	            { style: this.getStyles(), transform: this.getTransform() },
+	            { style: this.style, transform: this.transform },
 	            this.getGridLines(),
 	            this.getAxisLine(),
 	            this.getTickLines(),
@@ -420,7 +452,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      return _react2["default"].createElement(
 	        "g",
-	        { style: this.getStyles(), transform: this.getTransform() },
+	        { style: this.style, transform: this.transform },
 	        this.getGridLines(),
 	        this.getAxisLine(),
 	        this.getTickLines(),
@@ -435,16 +467,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	var VictoryAxis = (function (_React$Component2) {
 	  _inherits(VictoryAxis, _React$Component2);
 	
-	  function VictoryAxis(props) {
+	  function VictoryAxis() {
 	    _classCallCheck(this, _VictoryAxis);
 	
-	    _get(Object.getPrototypeOf(_VictoryAxis.prototype), "constructor", this).call(this, props);
+	    _get(Object.getPrototypeOf(_VictoryAxis.prototype), "constructor", this).apply(this, arguments);
 	  }
 	
 	  _createClass(VictoryAxis, [{
 	    key: "render",
 	    value: function render() {
-	      var _this3 = this;
+	      var _this4 = this;
 	
 	      if (this.props.animate) {
 	        return _react2["default"].createElement(
@@ -452,13 +484,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	          { data: this.props },
 	          function (props) {
 	            return _react2["default"].createElement(VAxis, _extends({}, props, {
-	              orientation: _this3.props.orientation,
-	              scale: _this3.props.scale,
-	              tickFormat: _this3.props.tickFormat,
-	              showGridLines: _this3.props.showGridLines,
-	              animate: _this3.props.animate,
-	              crossAxis: _this3.props.crossAxis,
-	              containerElement: _this3.props.containerElement }));
+	              orientation: _this4.props.orientation,
+	              scale: _this4.props.scale,
+	              tickFormat: _this4.props.tickFormat,
+	              showGridLines: _this4.props.showGridLines,
+	              animate: _this4.props.animate,
+	              crossAxis: _this4.props.crossAxis,
+	              containerElement: _this4.props.containerElement }));
 	          }
 	        );
 	      }
@@ -472,24 +504,113 @@ return /******/ (function(modules) { // webpackBootstrap
 	})(_react2["default"].Component);
 	
 	var propTypes = {
+	  /**
+	   * The style prop specifies styles for your chart. Victory Axis relies on Radium,
+	   * so valid Radium style objects should work for this prop, however height, width, and margin
+	   * are used to calculate range, and need to be expressed as a number of pixels.
+	   * styles for axis lines, gridlines, and ticks are scoped to separate props.
+	   * @example {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
+	   */
 	  style: _react2["default"].PropTypes.node,
+	  /**
+	   * The domain prop describes the range of values your axis will include. This prop should be
+	   * given as a array of the minimum and maximum expected values for your axis.
+	   * If this value is not given it will be calculated based on the scale or tickValues.
+	   * @exampes [-1, 1]
+	   */
 	  domain: _react2["default"].PropTypes.array,
+	  /**
+	   * The range prop describes the range of pixels your axis will cover. This prop can be
+	   * given as a array of the minimum and maximum expected values for your axis area.
+	   * If this prop is not provided, a range will be calculated based on the height,
+	   * or width, and the margin provided in the style prop, or in default styles. It is usually
+	   * a good idea to let the chart component calculate its own range.
+	   * @exampes [0, 500]
+	   */
 	  range: _react2["default"].PropTypes.arrayOf(_react2["default"].PropTypes.number),
+	  /**
+	   * The orientation prop specifies the position and orientation of your axis.
+	   */
 	  orientation: _react2["default"].PropTypes.oneOf(["top", "bottom", "left", "right"]),
-	  scale: _react2["default"].PropTypes.func, // is this right, or should we pass a string?
+	  /**
+	   * The scale prop determines which scales your axis should use. This prop should be
+	   * given as a function,
+	   * @exampes () => d3.time.scale()
+	   */
+	  scale: _react2["default"].PropTypes.func,
+	  /**
+	   * The tickCount prop specifies how many ticks should be drawn on the axis if
+	   * ticksValues are not explicitly provided.
+	   */
 	  tickCount: _react2["default"].PropTypes.number,
+	  /**
+	   * The tickValues prop explicity specifies which ticks values to draw on the axis.
+	   * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
+	   */
 	  tickValues: _react2["default"].PropTypes.array,
+	  /**
+	   * The tickFormat prop specifies how tick values should be expressed visually.
+	   * @examples () => d3.time.format("%Y"), () => {return (x) => x.toPrecision(2)}
+	   */
 	  tickFormat: _react2["default"].PropTypes.func,
+	  /**
+	   * The label prop specifies the label for your axis
+	   */
 	  label: _react2["default"].PropTypes.string,
+	  /**
+	   * The labelPadding prop specifies the padding in pixels for you axis label
+	   */
 	  labelPadding: _react2["default"].PropTypes.number,
+	  /**
+	   * This value describes how far from the "edge" of it's permitted area each axis
+	   * will be set back in the x-direction.  If this prop is not given,
+	   * the offset is calculated based on font size, axis orientation, and label padding.
+	   */
 	  offsetX: _react2["default"].PropTypes.number,
+	  /**
+	   * This value describes how far from the "edge" of it's permitted area each axis
+	   * will be set back in the y-direction.  If this prop is not given,
+	   * the offset is calculated based on font size, axis orientation, and label padding.
+	   */
 	  offsetY: _react2["default"].PropTypes.number,
+	  /**
+	   * This value determines whether or not to draw gridlines for an axis. Note: gridlines
+	   * for an axis are drawn perpendicularly from each axis starting at the axis ticks.
+	   */
 	  showGridLines: _react2["default"].PropTypes.bool,
+	  /**
+	   * This prop determines whether this axis is expected to be composed with another
+	   * axis in such a way that the two axes will cross each other.
+	   */
 	  crossAxis: _react2["default"].PropTypes.bool,
+	  /**
+	   * The containerElement prop specifies which element the component will render.
+	   * For a standalone axis, the containerElement prop should be "svg". If you need to
+	   * compose this axis with other chart components, the containerElement prop should
+	   * be "g", and will need to be rendered within an svg tag.
+	   */
 	  containerElement: _react2["default"].PropTypes.oneOf(["svg", "g"]),
+	  /**
+	   * The animate prop determines whether the axis should animate with changing props.
+	   */
 	  animate: _react2["default"].PropTypes.bool,
+	  /**
+	   * The axisStyle prop specifies styles scoped only to the axis lines.
+	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+	   * @example {strokeWidth: 2, stroke: "black"}
+	   */
 	  axisStyle: _react2["default"].PropTypes.node,
+	  /**
+	   * The tickStyle prop specifies styles scoped only to the axis ticks.
+	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+	   * @example {fontSize: 15, fontFamily: "helvetica"}
+	   */
 	  tickStyle: _react2["default"].PropTypes.node,
+	  /**
+	   * The gridStyle prop specifies styles scoped only to the grid lines.
+	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+	   * @example {strokeWidth: 1, stroke: "#c9c5bb"}
+	   */
 	  gridStyle: _react2["default"].PropTypes.node
 	};
 	
