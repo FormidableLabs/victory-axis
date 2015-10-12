@@ -145,7 +145,7 @@ class VAxis extends React.Component {
 
   getTickFormat(props) {
     if (props.tickFormat) {
-      return props.tickFormat;
+      return props.tickFormat();
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
       // string ticks should have one tick of padding on either side
@@ -278,10 +278,10 @@ class VAxis extends React.Component {
   }
 
   getLabelElements() {
-    const orientation = this.props.orientation;
-    const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
-    const x = this.isVertical ? -((this.style.height) / 2) : ((this.style.width) / 2);
     if (this.props.label) {
+      const orientation = this.props.orientation;
+      const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
+      const x = this.isVertical ? -((this.style.height) / 2) : ((this.style.width) / 2);
       return (
         <text
           textAnchor="middle"
@@ -292,8 +292,6 @@ class VAxis extends React.Component {
           {this.props.label}
         </text>
       );
-    } else {
-      return <text/>;
     }
   }
 
@@ -348,24 +346,113 @@ class VictoryAxis extends React.Component {
 }
 
 const propTypes = {
+  /**
+   * The style prop specifies styles for your chart. Victory Axis relies on Radium,
+   * so valid Radium style objects should work for this prop, however height, width, and margin
+   * are used to calculate range, and need to be expressed as a number of pixels.
+   * styles for axis lines, gridlines, and ticks are scoped to separate props.
+   * @example {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
+   */
   style: React.PropTypes.node,
+  /**
+   * The domain prop describes the range of values your axis will include. This prop should be
+   * given as a array of the minimum and maximum expected values for your axis.
+   * If this value is not given it will be calculated based on the scale or tickValues.
+   * @exampes [-1, 1]
+   */
   domain: React.PropTypes.array,
+  /**
+   * The range prop describes the range of pixels your axis will cover. This prop can be
+   * given as a array of the minimum and maximum expected values for your axis area.
+   * If this prop is not provided, a range will be calculated based on the height,
+   * or width, and the margin provided in the style prop, or in default styles. It is usually
+   * a good idea to let the chart component calculate its own range.
+   * @exampes [0, 500]
+   */
   range: React.PropTypes.arrayOf(React.PropTypes.number),
+  /**
+   * The orientation prop specifies the position and orientation of your axis.
+   */
   orientation: React.PropTypes.oneOf(["top", "bottom", "left", "right"]),
-  scale: React.PropTypes.func, // is this right, or should we pass a string?
+  /**
+   * The scale prop determines which scales your axis should use. This prop should be
+   * given as a function,
+   * @exampes () => d3.time.scale()
+   */
+  scale: React.PropTypes.func,
+  /**
+   * The tickCount prop specifies how many ticks should be drawn on the axis if
+   * ticksValues are not explicitly provided.
+   */
   tickCount: React.PropTypes.number,
+  /**
+   * The tickValues prop explicity specifies which ticks values to draw on the axis.
+   * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
+   */
   tickValues: React.PropTypes.array,
+  /**
+   * The tickFormat prop specifies how tick values should be expressed visually.
+   * @examples () => d3.time.format("%Y"), () => {return (x) => x.toPrecision(2)}
+   */
   tickFormat: React.PropTypes.func,
+  /**
+   * The label prop specifies the label for your axis
+   */
   label: React.PropTypes.string,
+  /**
+   * The labelPadding prop specifies the padding in pixels for you axis label
+   */
   labelPadding: React.PropTypes.number,
+  /**
+   * This value describes how far from the "edge" of it's permitted area each axis
+   * will be set back in the x-direction.  If this prop is not given,
+   * the offset is calculated based on font size, axis orientation, and label padding.
+   */
   offsetX: React.PropTypes.number,
+  /**
+   * This value describes how far from the "edge" of it's permitted area each axis
+   * will be set back in the y-direction.  If this prop is not given,
+   * the offset is calculated based on font size, axis orientation, and label padding.
+   */
   offsetY: React.PropTypes.number,
+  /**
+   * This value determines whether or not to draw gridlines for an axis. Note: gridlines
+   * for an axis are drawn perpendicularly from each axis starting at the axis ticks.
+   */
   showGridLines: React.PropTypes.bool,
+  /**
+   * This prop determines whether this axis is expected to be composed with another
+   * axis in such a way that the two axes will cross each other.
+   */
   crossAxis: React.PropTypes.bool,
+  /**
+   * The containerElement prop specifies which element the component will render.
+   * For a standalone axis, the containerElement prop should be "svg". If you need to
+   * compose this axis with other chart components, the containerElement prop should
+   * be "g", and will need to be rendered within an svg tag.
+   */
   containerElement: React.PropTypes.oneOf(["svg", "g"]),
+  /**
+   * The animate prop determines whether the axis should animate with changing props.
+   */
   animate: React.PropTypes.bool,
+  /**
+   * The axisStyle prop specifies styles scoped only to the axis lines.
+   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+   * @example {strokeWidth: 2, stroke: "black"}
+   */
   axisStyle: React.PropTypes.node,
+  /**
+   * The tickStyle prop specifies styles scoped only to the axis ticks.
+   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+   * @example {fontSize: 15, fontFamily: "helvetica"}
+   */
   tickStyle: React.PropTypes.node,
+  /**
+   * The gridStyle prop specifies styles scoped only to the grid lines.
+   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
+   * @example {strokeWidth: 1, stroke: "#c9c5bb"}
+   */
   gridStyle: React.PropTypes.node
 };
 

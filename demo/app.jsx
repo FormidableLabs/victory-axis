@@ -61,7 +61,6 @@ class App extends React.Component {
         <div>
           <h1>Time Scale Axis</h1>
           <VictoryAxis
-            label="Decades"
             showGridLines={true}
             scale={() => d3.time.scale()}
             tickValues={[

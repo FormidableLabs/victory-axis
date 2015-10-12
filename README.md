@@ -152,6 +152,57 @@ This value is how much padding your label should get. If Victory Axis has a labe
 Victory Axis is styled inline with [Radium](http://github.com/formidablelabs/radium). The default styles are as follows:
 
 ```
+style: {
+  width: 500,
+  height: 300,
+  margin: 20,
+  fontFamily: "Helvetica",
+  fontSize: 15
+}
+```
+
+#### axisStyle
+the axisStyle prop is scoped to the axis lines The default styles are as follows:
+
+```
+axisStyle: {
+  stroke: "#756f6a",
+  fill: "#756f6a",
+  strokeWidth: 2,
+  strokeLinecap: "round"
+}
+```
+
+#### gridStyle
+the gridStyle prop is scoped to the grid lines The default styles are as follows:
+
+```
+gridStyle: {
+  stroke: "#c9c5bb",
+  fill: "#c9c5bb",
+  strokeWidth: 1,
+  strokeLinecap: "round"
+}
+```
+
+#### tickStyle
+the tickStyle prop is scoped to the ticks The default styles are as follows:
+
+```
+tickStyle: {
+  stroke: "#756f6a",
+  fill: "#756f6a",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  color: "#756f6a",
+  fontFamily: "sans-serif",
+  size: 4,
+  padding: 5
+}
+```
+
+
+```
 {
   axis: {
     stroke: "#756f6a",
