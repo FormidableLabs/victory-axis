@@ -18,8 +18,10 @@ class VAxis extends React.Component {
   getCalculatedValues(props) {
     // order matters!
     this.style = this.getStyles(props);
+    this.axisStyle = this.getAxisStyle(props);
+    this.gridStyle = this.getGridStyle(props);
+    this.tickStyle = this.getTickStyle(props);
     this.isVertical = props.orientation === "left" || props.orientation === "right";
-    this.fontSize = this.style.fontSize || 16;
     this.stringMap = this.createStringMap(props);
     this.range = this.getRange(props);
     this.domain = this.getDomain(props);
@@ -40,6 +42,37 @@ class VAxis extends React.Component {
       fontFamily: "Helvetica",
       fontSize: 15
     }, props.style);
+  }
+
+  getAxisStyle(props) {
+    return _.merge({
+      stroke: "#756f6a",
+      fill: "#756f6a",
+      strokeWidth: 2,
+      strokeLinecap: "round"
+    }, props.axisStyle);
+  }
+
+  getGridStyle(props) {
+    return _.merge({
+      stroke: "#c9c5bb",
+      fill: "#c9c5bb",
+      strokeWidth: 1,
+      strokeLinecap: "round"
+    }, props.gridStyle);
+  }
+
+  getTickStyle(props) {
+    return _.merge({
+      stroke: "#756f6a",
+      fill: "#756f6a",
+      strokeWidth: 2,
+      strokeLinecap: "round",
+      color: "#756f6a",
+      fontFamily: "sans-serif",
+      size: 4,
+      padding: 5
+    }, props.tickStyle);
   }
 
   createStringMap(props) {
@@ -86,7 +119,7 @@ class VAxis extends React.Component {
 
   // helper for getDomain()
   _getDomainFromScale(props) {
-    const scaleDomain = props.scale().domain();
+    const scaleDomain = props.scale.domain();
     // Warn when domains need more information to produce meaningful axes
     if (_.isDate(scaleDomain[0])) {
       log.warn("please specify tickValues or domain when creating a time scale axis");
@@ -110,7 +143,7 @@ class VAxis extends React.Component {
   }
 
   getScale(props) {
-    const scale = props.scale().copy();
+    const scale = props.scale.copy();
     scale.range(this.range);
     scale.domain(this.domain);
     // hacky check for identity scale
@@ -145,13 +178,13 @@ class VAxis extends React.Component {
 
   getTickFormat(props) {
     if (props.tickFormat) {
-      return props.tickFormat();
+      return props.tickFormat;
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
       // string ticks should have one tick of padding on either side
       const dataTicks = ["", ...dataNames, ""];
       return (x) => dataTicks[x];
-    } else if (_.isFunction(this.scale.tickFormat)) {
+    } else if (_.isFunction(this.scale.tickFormat())) {
       return this.scale.tickFormat(this.ticks.length);
     } else {
       return (x) => x;
@@ -163,16 +196,18 @@ class VAxis extends React.Component {
       return props.labelPadding;
     }
     // TODO: magic numbers
-    return props.label ? (this.fontSize * 2.4) : 0;
+    const fontSize = this.style.fontSize || 15;
+    return props.label ? (fontSize * 2.4) : 0;
   }
 
   getOffset(props) {
+    const fontSize = this.style.fontSize || 15;
     const offsetX = props.offsetX || this.style.margin;
     const offsetY = props.offsetY || this.style.margin;
-    const totalPadding = this.fontSize +
-      (2 * props.tickStyle.size) +
+    const totalPadding = fontSize +
+      (2 * this.tickStyle.size) +
       this.labelPadding;
-    const minimumPadding = 1.2 * this.fontSize; // TODO: magic numbers
+    const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical ? totalPadding : minimumPadding;
     const y = this.isVertical ? minimumPadding : totalPadding;
     return {
@@ -182,15 +217,15 @@ class VAxis extends React.Component {
   }
 
   getTickProperties(props) {
-    const tickSpacing = _.max([props.tickStyle.size, 0]) +
-      props.tickStyle.padding;
+    const tickSpacing = _.max([this.tickStyle.size, 0]) +
+      this.tickStyle.padding;
     // determine axis orientation and layout
     const sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
     // determine tick formatting constants based on orientationation and layout
     const x = this.isVertical ? sign * tickSpacing : 0;
     const y = this.isVertical ? 0 : sign * tickSpacing;
-    const x2 = this.isVertical ? sign * props.tickStyle.size : 0;
-    const y2 = this.isVertical ? 0 : sign * props.tickStyle.size;
+    const x2 = this.isVertical ? sign * this.tickStyle.size : 0;
+    const y2 = this.isVertical ? 0 : sign * this.tickStyle.size;
     let dy;
     let textAnchor;
     if (this.isVertical) {
@@ -220,8 +255,8 @@ class VAxis extends React.Component {
       y: [this.style.margin, this.style.height - this.style.margin]
     };
     return this.isVertical ?
-      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.props.axisStyle}/> :
-      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.props.axisStyle}/>;
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.axisStyle}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.axisStyle}/>;
   }
 
   getTickLines() {
@@ -237,7 +272,7 @@ class VAxis extends React.Component {
           <line
             x2={this.tickProperties.x2}
             y2={this.tickProperties.y2}
-            style={this.props.tickStyle}/>
+            style={this.tickStyle}/>
           <text x={this.tickProperties.x}
             y={this.tickProperties.y}
             dy={this.tickProperties.dy}
@@ -270,7 +305,7 @@ class VAxis extends React.Component {
             <line
               x2={x2}
               y2={y2}
-              style={this.props.gridStyle}/>
+              style={this.gridStyle}/>
           </g>
           );
       });
@@ -324,7 +359,7 @@ class VictoryAxis extends React.Component {
   render() {
     if (this.props.animate) {
       return (
-        <VictoryAnimation data={this.props}>
+        <VictoryAnimation {...this.props.animate} data={this.props}>
           {(props) => {
             return (
               <VAxis
@@ -351,7 +386,7 @@ const propTypes = {
    * so valid Radium style objects should work for this prop, however height, width, and margin
    * are used to calculate range, and need to be expressed as a number of pixels.
    * styles for axis lines, gridlines, and ticks are scoped to separate props.
-   * @example {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
+   * @examples {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
    */
   style: React.PropTypes.node,
   /**
@@ -377,7 +412,7 @@ const propTypes = {
   /**
    * The scale prop determines which scales your axis should use. This prop should be
    * given as a function,
-   * @exampes () => d3.time.scale()
+   * @exampes d3.time.scale()
    */
   scale: React.PropTypes.func,
   /**
@@ -392,7 +427,7 @@ const propTypes = {
   tickValues: React.PropTypes.array,
   /**
    * The tickFormat prop specifies how tick values should be expressed visually.
-   * @examples () => d3.time.format("%Y"), () => {return (x) => x.toPrecision(2)}
+   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2)
    */
   tickFormat: React.PropTypes.func,
   /**
@@ -433,58 +468,38 @@ const propTypes = {
    */
   containerElement: React.PropTypes.oneOf(["svg", "g"]),
   /**
-   * The animate prop determines whether the axis should animate with changing props.
+   * The animate prop specifies props for victory-animation to use. It this prop is
+   * not given, the axis will not tween between changing data / style props.
+   * Large datasets might animate slowly due to the inherent limits of svg rendering.
+   * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
    */
-  animate: React.PropTypes.bool,
+  animate: React.PropTypes.object,
   /**
    * The axisStyle prop specifies styles scoped only to the axis lines.
    * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @example {strokeWidth: 2, stroke: "black"}
+   * @examples {strokeWidth: 2, stroke: "black"}
    */
   axisStyle: React.PropTypes.node,
   /**
    * The tickStyle prop specifies styles scoped only to the axis ticks.
    * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @example {fontSize: 15, fontFamily: "helvetica"}
+   * @examples {fontSize: 15, fontFamily: "helvetica"}
    */
   tickStyle: React.PropTypes.node,
   /**
    * The gridStyle prop specifies styles scoped only to the grid lines.
    * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @example {strokeWidth: 1, stroke: "#c9c5bb"}
+   * @examples {strokeWidth: 1, stroke: "#c9c5bb"}
    */
   gridStyle: React.PropTypes.node
 };
 
 const defaultProps = {
   orientation: "bottom",
-  scale: () => d3.scale.linear(),
+  scale: d3.scale.linear(),
   tickCount: 5,
   showGridLines: false,
-  containerElement: "svg",
-  animate: false,
-  axisStyle: {
-    stroke: "#756f6a",
-    fill: "#756f6a",
-    strokeWidth: 2,
-    strokeLinecap: "round"
-  },
-  tickStyle: {
-    stroke: "#756f6a",
-    fill: "#756f6a",
-    strokeWidth: 2,
-    strokeLinecap: "round",
-    color: "#756f6a",
-    fontFamily: "sans-serif",
-    size: 4,
-    padding: 5
-  },
-  gridStyle: {
-    stroke: "#c9c5bb",
-    fill: "#c9c5bb",
-    strokeWidth: 1,
-    strokeLinecap: "round"
-  }
+  containerElement: "svg"
 };
 
 VictoryAxis.propTypes = propTypes;
