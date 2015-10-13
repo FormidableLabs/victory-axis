@@ -126,8 +126,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function getCalculatedValues(props) {
 	      // order matters!
 	      this.style = this.getStyles(props);
+	      this.axisStyle = this.getAxisStyle(props);
+	      this.gridStyle = this.getGridStyle(props);
+	      this.tickStyle = this.getTickStyle(props);
 	      this.isVertical = props.orientation === "left" || props.orientation === "right";
-	      this.fontSize = this.style.fontSize || 16;
 	      this.stringMap = this.createStringMap(props);
 	      this.range = this.getRange(props);
 	      this.domain = this.getDomain(props);
@@ -149,6 +151,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	        fontFamily: "Helvetica",
 	        fontSize: 15
 	      }, props.style);
+	    }
+	  }, {
+	    key: "getAxisStyle",
+	    value: function getAxisStyle(props) {
+	      return _lodash2["default"].merge({
+	        stroke: "#756f6a",
+	        fill: "#756f6a",
+	        strokeWidth: 2,
+	        strokeLinecap: "round"
+	      }, props.axisStyle);
+	    }
+	  }, {
+	    key: "getGridStyle",
+	    value: function getGridStyle(props) {
+	      return _lodash2["default"].merge({
+	        stroke: "#c9c5bb",
+	        fill: "#c9c5bb",
+	        strokeWidth: 1,
+	        strokeLinecap: "round"
+	      }, props.gridStyle);
+	    }
+	  }, {
+	    key: "getTickStyle",
+	    value: function getTickStyle(props) {
+	      return _lodash2["default"].merge({
+	        stroke: "#756f6a",
+	        fill: "#756f6a",
+	        strokeWidth: 2,
+	        strokeLinecap: "round",
+	        color: "#756f6a",
+	        fontFamily: "sans-serif",
+	        size: 4,
+	        padding: 5
+	      }, props.tickStyle);
 	    }
 	  }, {
 	    key: "createStringMap",
@@ -203,7 +239,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "_getDomainFromScale",
 	    value: function _getDomainFromScale(props) {
-	      var scaleDomain = props.scale().domain();
+	      var scaleDomain = props.scale.domain();
 	      // Warn when domains need more information to produce meaningful axes
 	      if (_lodash2["default"].isDate(scaleDomain[0])) {
 	        _log2["default"].warn("please specify tickValues or domain when creating a time scale axis");
@@ -225,7 +261,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "getScale",
 	    value: function getScale(props) {
-	      var scale = props.scale().copy();
+	      var scale = props.scale.copy();
 	      scale.range(this.range);
 	      scale.domain(this.domain);
 	      // hacky check for identity scale
@@ -263,7 +299,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this = this;
 	
 	      if (props.tickFormat) {
-	        return props.tickFormat();
+	        return props.tickFormat;
 	      } else if (this.stringMap) {
 	        var _ret = (function () {
 	          var dataNames = _lodash2["default"].keys(_this.stringMap);
@@ -277,7 +313,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        })();
 	
 	        if (typeof _ret === "object") return _ret.v;
-	      } else if (_lodash2["default"].isFunction(this.scale.tickFormat)) {
+	      } else if (_lodash2["default"].isFunction(this.scale.tickFormat())) {
 	        return this.scale.tickFormat(this.ticks.length);
 	      } else {
 	        return function (x) {
@@ -292,15 +328,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return props.labelPadding;
 	      }
 	      // TODO: magic numbers
-	      return props.label ? this.fontSize * 2.4 : 0;
+	      var fontSize = this.style.fontSize || 15;
+	      return props.label ? fontSize * 2.4 : 0;
 	    }
 	  }, {
 	    key: "getOffset",
 	    value: function getOffset(props) {
+	      var fontSize = this.style.fontSize || 15;
 	      var offsetX = props.offsetX || this.style.margin;
 	      var offsetY = props.offsetY || this.style.margin;
-	      var totalPadding = this.fontSize + 2 * props.tickStyle.size + this.labelPadding;
-	      var minimumPadding = 1.2 * this.fontSize; // TODO: magic numbers
+	      var totalPadding = fontSize + 2 * this.tickStyle.size + this.labelPadding;
+	      var minimumPadding = 1.2 * fontSize; // TODO: magic numbers
 	      var x = this.isVertical ? totalPadding : minimumPadding;
 	      var y = this.isVertical ? minimumPadding : totalPadding;
 	      return {
@@ -311,14 +349,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "getTickProperties",
 	    value: function getTickProperties(props) {
-	      var tickSpacing = _lodash2["default"].max([props.tickStyle.size, 0]) + props.tickStyle.padding;
+	      var tickSpacing = _lodash2["default"].max([this.tickStyle.size, 0]) + this.tickStyle.padding;
 	      // determine axis orientation and layout
 	      var sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
 	      // determine tick formatting constants based on orientationation and layout
 	      var x = this.isVertical ? sign * tickSpacing : 0;
 	      var y = this.isVertical ? 0 : sign * tickSpacing;
-	      var x2 = this.isVertical ? sign * props.tickStyle.size : 0;
-	      var y2 = this.isVertical ? 0 : sign * props.tickStyle.size;
+	      var x2 = this.isVertical ? sign * this.tickStyle.size : 0;
+	      var y2 = this.isVertical ? 0 : sign * this.tickStyle.size;
 	      var dy = undefined;
 	      var textAnchor = undefined;
 	      if (this.isVertical) {
@@ -348,7 +386,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        x: [this.style.margin, this.style.width - this.style.margin],
 	        y: [this.style.margin, this.style.height - this.style.margin]
 	      };
-	      return this.isVertical ? _react2["default"].createElement("line", { y1: _lodash2["default"].min(extent.y), y2: _lodash2["default"].max(extent.y), style: this.props.axisStyle }) : _react2["default"].createElement("line", { x1: _lodash2["default"].min(extent.x), x2: _lodash2["default"].max(extent.x), style: this.props.axisStyle });
+	      return this.isVertical ? _react2["default"].createElement("line", { y1: _lodash2["default"].min(extent.y), y2: _lodash2["default"].max(extent.y), style: this.axisStyle }) : _react2["default"].createElement("line", { x1: _lodash2["default"].min(extent.x), x2: _lodash2["default"].max(extent.x), style: this.axisStyle });
 	    }
 	  }, {
 	    key: "getTickLines",
@@ -367,7 +405,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          _react2["default"].createElement("line", {
 	            x2: _this2.tickProperties.x2,
 	            y2: _this2.tickProperties.y2,
-	            style: _this2.props.tickStyle }),
+	            style: _this2.tickStyle }),
 	          _react2["default"].createElement(
 	            "text",
 	            { x: _this2.tickProperties.x,
@@ -405,7 +443,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                _react2["default"].createElement("line", {
 	                  x2: x2,
 	                  y2: y2,
-	                  style: _this3.props.gridStyle })
+	                  style: _this3.gridStyle })
 	              );
 	            })
 	          };
@@ -481,7 +519,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (this.props.animate) {
 	        return _react2["default"].createElement(
 	          _victoryAnimation.VictoryAnimation,
-	          { data: this.props },
+	          _extends({}, this.props.animate, { data: this.props }),
 	          function (props) {
 	            return _react2["default"].createElement(VAxis, _extends({}, props, {
 	              orientation: _this4.props.orientation,
@@ -509,7 +547,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * so valid Radium style objects should work for this prop, however height, width, and margin
 	   * are used to calculate range, and need to be expressed as a number of pixels.
 	   * styles for axis lines, gridlines, and ticks are scoped to separate props.
-	   * @example {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
+	   * @examples {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
 	   */
 	  style: _react2["default"].PropTypes.node,
 	  /**
@@ -535,7 +573,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * The scale prop determines which scales your axis should use. This prop should be
 	   * given as a function,
-	   * @exampes () => d3.time.scale()
+	   * @exampes d3.time.scale()
 	   */
 	  scale: _react2["default"].PropTypes.func,
 	  /**
@@ -550,7 +588,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  tickValues: _react2["default"].PropTypes.array,
 	  /**
 	   * The tickFormat prop specifies how tick values should be expressed visually.
-	   * @examples () => d3.time.format("%Y"), () => {return (x) => x.toPrecision(2)}
+	   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2)
 	   */
 	  tickFormat: _react2["default"].PropTypes.func,
 	  /**
@@ -591,60 +629,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  containerElement: _react2["default"].PropTypes.oneOf(["svg", "g"]),
 	  /**
-	   * The animate prop determines whether the axis should animate with changing props.
+	   * The animate prop specifies props for victory-animation to use. It this prop is
+	   * not given, the axis will not tween between changing data / style props.
+	   * Large datasets might animate slowly due to the inherent limits of svg rendering.
+	   * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
 	   */
-	  animate: _react2["default"].PropTypes.bool,
+	  animate: _react2["default"].PropTypes.object,
 	  /**
 	   * The axisStyle prop specifies styles scoped only to the axis lines.
 	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-	   * @example {strokeWidth: 2, stroke: "black"}
+	   * @examples {strokeWidth: 2, stroke: "black"}
 	   */
 	  axisStyle: _react2["default"].PropTypes.node,
 	  /**
 	   * The tickStyle prop specifies styles scoped only to the axis ticks.
 	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-	   * @example {fontSize: 15, fontFamily: "helvetica"}
+	   * @examples {fontSize: 15, fontFamily: "helvetica"}
 	   */
 	  tickStyle: _react2["default"].PropTypes.node,
 	  /**
 	   * The gridStyle prop specifies styles scoped only to the grid lines.
 	   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-	   * @example {strokeWidth: 1, stroke: "#c9c5bb"}
+	   * @examples {strokeWidth: 1, stroke: "#c9c5bb"}
 	   */
 	  gridStyle: _react2["default"].PropTypes.node
 	};
 	
 	var defaultProps = {
 	  orientation: "bottom",
-	  scale: function scale() {
-	    return _d32["default"].scale.linear();
-	  },
+	  scale: _d32["default"].scale.linear(),
 	  tickCount: 5,
 	  showGridLines: false,
-	  containerElement: "svg",
-	  animate: false,
-	  axisStyle: {
-	    stroke: "#756f6a",
-	    fill: "#756f6a",
-	    strokeWidth: 2,
-	    strokeLinecap: "round"
-	  },
-	  tickStyle: {
-	    stroke: "#756f6a",
-	    fill: "#756f6a",
-	    strokeWidth: 2,
-	    strokeLinecap: "round",
-	    color: "#756f6a",
-	    fontFamily: "sans-serif",
-	    size: 4,
-	    padding: 5
-	  },
-	  gridStyle: {
-	    stroke: "#c9c5bb",
-	    fill: "#c9c5bb",
-	    strokeWidth: 1,
-	    strokeLinecap: "round"
-	  }
+	  containerElement: "svg"
 	};
 	
 	VictoryAxis.propTypes = propTypes;
