@@ -5,6 +5,38 @@ import _ from "lodash";
 import log from "../log";
 import {VictoryAnimation} from "victory-animation";
 
+const styles = {
+  base: {
+    width: 500,
+    height: 300,
+    margin: 50,
+    fontFamily: "Helvetica",
+    fontSize: 15
+  },
+  axis: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round"
+  },
+  grid: {
+    stroke: "#c9c5bb",
+    fill: "#c9c5bb",
+    strokeWidth: 1,
+    strokeLinecap: "round"
+  },
+  ticks: {
+    stroke: "#756f6a",
+    fill: "#756f6a",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    color: "#756f6a",
+    fontFamily: "sans-serif",
+    size: 4,
+    padding: 5
+  }
+};
+
 class VAxis extends React.Component {
   constructor(props) {
     super(props);
@@ -18,9 +50,6 @@ class VAxis extends React.Component {
   getCalculatedValues(props) {
     // order matters!
     this.style = this.getStyles(props);
-    this.axisStyle = this.getAxisStyle(props);
-    this.gridStyle = this.getGridStyle(props);
-    this.tickStyle = this.getTickStyle(props);
     this.isVertical = props.orientation === "left" || props.orientation === "right";
     this.stringMap = this.createStringMap(props);
     this.range = this.getRange(props);
@@ -35,44 +64,16 @@ class VAxis extends React.Component {
   }
 
   getStyles(props) {
-    return _.merge({
-      width: 500,
-      height: 300,
-      margin: 20,
-      fontFamily: "Helvetica",
-      fontSize: 15
-    }, props.style);
-  }
-
-  getAxisStyle(props) {
-    return _.merge({
-      stroke: "#756f6a",
-      fill: "#756f6a",
-      strokeWidth: 2,
-      strokeLinecap: "round"
-    }, props.axisStyle);
-  }
-
-  getGridStyle(props) {
-    return _.merge({
-      stroke: "#c9c5bb",
-      fill: "#c9c5bb",
-      strokeWidth: 1,
-      strokeLinecap: "round"
-    }, props.gridStyle);
-  }
-
-  getTickStyle(props) {
-    return _.merge({
-      stroke: "#756f6a",
-      fill: "#756f6a",
-      strokeWidth: 2,
-      strokeLinecap: "round",
-      color: "#756f6a",
-      fontFamily: "sans-serif",
-      size: 4,
-      padding: 5
-    }, props.tickStyle);
+    if (!props.style) {
+      return styles
+    }
+    const {axis, grid, ticks, ...base} = props.style;
+    return {
+      base: _.merge({}, styles.base, base),
+      axis: _.merge({}, styles.axis, axis),
+      grid: _.merge({}, styles.grid, grid),
+      ticks: _.merge({}, styles.ticks, ticks)
+    }
   }
 
   createStringMap(props) {
@@ -137,9 +138,10 @@ class VAxis extends React.Component {
     if (props.range) {
       return props.range;
     }
+    const style = this.style.base;
     return this.isVertical ?
-      [this.style.margin, this.style.height - this.style.margin] :
-      [this.style.margin, this.style.width - this.style.margin];
+      [style.margin, style.height - style.margin] :
+      [style.margin, style.width - style.margin];
   }
 
   getScale(props) {
@@ -196,16 +198,16 @@ class VAxis extends React.Component {
       return props.labelPadding;
     }
     // TODO: magic numbers
-    const fontSize = this.style.fontSize || 15;
+    const fontSize = this.style.base.fontSize || 15;
     return props.label ? (fontSize * 2.4) : 0;
   }
 
   getOffset(props) {
-    const fontSize = this.style.fontSize || 15;
-    const offsetX = props.offsetX || this.style.margin;
-    const offsetY = props.offsetY || this.style.margin;
+    const fontSize = this.style.base.fontSize || 15;
+    const offsetX = props.offsetX || this.style.base.margin;
+    const offsetY = props.offsetY || this.style.base.margin;
     const totalPadding = fontSize +
-      (2 * this.tickStyle.size) +
+      (2 * this.style.ticks.size) +
       this.labelPadding;
     const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical ? totalPadding : minimumPadding;
@@ -217,15 +219,15 @@ class VAxis extends React.Component {
   }
 
   getTickProperties(props) {
-    const tickSpacing = _.max([this.tickStyle.size, 0]) +
-      this.tickStyle.padding;
+    const tickSpacing = _.max([this.style.ticks.size, 0]) +
+      this.style.ticks.padding;
     // determine axis orientation and layout
     const sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
     // determine tick formatting constants based on orientationation and layout
     const x = this.isVertical ? sign * tickSpacing : 0;
     const y = this.isVertical ? 0 : sign * tickSpacing;
-    const x2 = this.isVertical ? sign * this.tickStyle.size : 0;
-    const y2 = this.isVertical ? 0 : sign * this.tickStyle.size;
+    const x2 = this.isVertical ? sign * this.style.ticks.size : 0;
+    const y2 = this.isVertical ? 0 : sign * this.style.ticks.size;
     let dy;
     let textAnchor;
     if (this.isVertical) {
@@ -241,22 +243,23 @@ class VAxis extends React.Component {
   getTransform(props) {
     const transform = {
       top: [0, this.offset.y],
-      bottom: [0, (this.style.height - this.offset.y)],
+      bottom: [0, (this.style.base.height - this.offset.y)],
       left: [this.offset.x, 0],
-      right: [(this.style.width - this.offset.x), 0]
+      right: [(this.style.base.width - this.offset.x), 0]
     };
     return "translate(" + transform[props.orientation][0] + "," +
       transform[props.orientation][1] + ")";
   }
 
   getAxisLine() {
+    const style = this.style.base;
     const extent = {
-      x: [this.style.margin, this.style.width - this.style.margin],
-      y: [this.style.margin, this.style.height - this.style.margin]
+      x: [style.margin, style.width - style.margin],
+      y: [style.margin, style.height - style.margin]
     };
     return this.isVertical ?
-      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.axisStyle}/> :
-      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.axisStyle}/>;
+      <line y1={_.min(extent.y)} y2={_.max(extent.y)} style={this.style.axis}/> :
+      <line x1={_.min(extent.x)} x2={_.max(extent.x)} style={this.style.axis}/>;
   }
 
   getTickLines() {
@@ -272,13 +275,13 @@ class VAxis extends React.Component {
           <line
             x2={this.tickProperties.x2}
             y2={this.tickProperties.y2}
-            style={this.tickStyle}/>
+            style={this.style.ticks}/>
           <text x={this.tickProperties.x}
             y={this.tickProperties.y}
             dy={this.tickProperties.dy}
-            style={this.style}
+            style={this.style.base}
             textAnchor={this.tickProperties.textAnchor}>
-            {this.tickFormat.call(this, tick)}
+            {this.getTextLines(this.tickFormat.call(this, tick), this.tickProperties.x)}
           </text>
         </g>
       );
@@ -286,12 +289,13 @@ class VAxis extends React.Component {
   }
 
   getGridLines() {
+    const style = this.style.base;
     if (this.props.showGridLines) {
       const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
-      const xOffset = this.props.crossAxis ? this.offset.x - this.style.margin : 0;
-      const yOffset = this.props.crossAxis ? this.offset.y - this.style.margin : 0;
-      const x2 = this.isVertical ? sign * (this.style.width - (2 * this.style.margin)) : 0;
-      const y2 = this.isVertical ? 0 : sign * (this.style.height - (2 * this.style.margin));
+      const xOffset = this.props.crossAxis ? this.offset.x - style.margin : 0;
+      const yOffset = this.props.crossAxis ? this.offset.y - style.margin : 0;
+      const x2 = this.isVertical ? sign * (style.width - (2 * style.margin)) : 0;
+      const y2 = this.isVertical ? 0 : sign * (style.height - (2 * style.margin));
       let position;
       let translate;
       // determine the position and translation of each gridline
@@ -305,26 +309,38 @@ class VAxis extends React.Component {
             <line
               x2={x2}
               y2={y2}
-              style={this.gridStyle}/>
+              style={this.style.grid}/>
           </g>
           );
       });
     }
   }
 
+  getTextLines(text, x) {
+    // TODO: split text to new lines based on font size, number of characters and total width
+    // TODO: determine line height ("1.2em") based on font size
+    const textLines = text.split("\n");
+    return _.map(textLines, (line, index) => {
+      return index === 0 ?
+      <tspan x={x} key={"text" + index}>{line}</tspan> :
+      <tspan x={x} dy="1.2em" key={"text" + index}>{line}</tspan>;
+    });
+  }
+
   getLabelElements() {
+    const style = this.style.base;
     if (this.props.label) {
       const orientation = this.props.orientation;
       const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
-      const x = this.isVertical ? -((this.style.height) / 2) : ((this.style.width) / 2);
+      const x = this.isVertical ? -((style.height) / 2) : ((style.width) / 2);
       return (
         <text
           textAnchor="middle"
           y={sign * this.labelPadding}
           x={x}
-          style={this.style}
+          style={style}
           transform={this.isVertical ? "rotate(-90)" : ""}>
-          {this.props.label}
+          {this.getTextLines(this.props.label, x)}
         </text>
       );
     }
@@ -333,8 +349,8 @@ class VAxis extends React.Component {
   render() {
     if (this.props.containerElement === "svg") {
       return (
-        <svg style={this.style}>
-          <g style={this.style} transform={this.transform}>
+        <svg style={this.style.base}>
+          <g style={this.style.base} transform={this.transform}>
             {this.getGridLines()}
             {this.getAxisLine()}
             {this.getTickLines()}
@@ -344,7 +360,7 @@ class VAxis extends React.Component {
       );
     }
     return (
-      <g style={this.style} transform={this.transform}>
+      <g style={this.style.base} transform={this.transform}>
         {this.getGridLines()}
         {this.getAxisLine()}
         {this.getTickLines()}
@@ -388,7 +404,7 @@ const propTypes = {
    * styles for axis lines, gridlines, and ticks are scoped to separate props.
    * @examples {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
    */
-  style: React.PropTypes.node,
+  style: React.PropTypes.object,
   /**
    * The domain prop describes the range of values your axis will include. This prop should be
    * given as a array of the minimum and maximum expected values for your axis.
@@ -473,25 +489,7 @@ const propTypes = {
    * Large datasets might animate slowly due to the inherent limits of svg rendering.
    * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
    */
-  animate: React.PropTypes.object,
-  /**
-   * The axisStyle prop specifies styles scoped only to the axis lines.
-   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @examples {strokeWidth: 2, stroke: "black"}
-   */
-  axisStyle: React.PropTypes.node,
-  /**
-   * The tickStyle prop specifies styles scoped only to the axis ticks.
-   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @examples {fontSize: 15, fontFamily: "helvetica"}
-   */
-  tickStyle: React.PropTypes.node,
-  /**
-   * The gridStyle prop specifies styles scoped only to the grid lines.
-   * VictoryAxis relies on Radium, so valid Radium style objects should work for this prop.
-   * @examples {strokeWidth: 1, stroke: "#c9c5bb"}
-   */
-  gridStyle: React.PropTypes.node
+  animate: React.PropTypes.object
 };
 
 const defaultProps = {
