@@ -28,12 +28,24 @@ const styles = {
   ticks: {
     stroke: "#756f6a",
     fill: "#756f6a",
+    padding: 5,
     strokeWidth: 2,
     strokeLinecap: "round",
     color: "#756f6a",
-    fontFamily: "sans-serif",
     size: 4,
+  },
+  tickLabels: {
+    stroke: "#756f6a",
+    fill: "none",
+    fontFamily: "Helvetica",
+    fontSize: 10,
     padding: 5
+  },
+  axisLabels: {
+    stroke: "#756f6a",
+    fill: "none",
+    fontSize: 16,
+    fontFamily: "Helvetica"
   }
 };
 
@@ -67,12 +79,14 @@ class VAxis extends React.Component {
     if (!props.style) {
       return styles;
     }
-    const {axis, grid, ticks, ...base} = props.style;
+    const {axis, grid, ticks, tickLabels, axisLabels, ...base} = props.style;
     return {
       base: _.merge({}, styles.base, base),
       axis: _.merge({}, styles.axis, axis),
       grid: _.merge({}, styles.grid, grid),
-      ticks: _.merge({}, styles.ticks, ticks)
+      ticks: _.merge({}, styles.ticks, ticks),
+      tickLabels: _.merge({}, styles.tickLabels, tickLabels),
+      axisLabels: _.merge({}, styles.axisLabels, axisLabels)
     };
   }
 
@@ -194,16 +208,16 @@ class VAxis extends React.Component {
   }
 
   getLabelPadding(props) {
-    if (props.labelPadding) {
-      return props.labelPadding;
+    if (this.style.axisLabels.padding) {
+      return this.style.axisLabels.padding;
     }
     // TODO: magic numbers
-    const fontSize = this.style.base.fontSize || 15;
+    const fontSize = this.style.axisLabels.fontSize;
     return props.label ? (fontSize * 2.4) : 0;
   }
 
   getOffset(props) {
-    const fontSize = this.style.base.fontSize || 15;
+    const fontSize = this.style.axisLabels.fontSize;
     const offsetX = props.offsetX || this.style.base.margin;
     const offsetY = props.offsetY || this.style.base.margin;
     const totalPadding = fontSize +
