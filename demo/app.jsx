@@ -1,6 +1,7 @@
 /*global document:false*/
 /*global window:false */
 import React from "react";
+import ReactDOM from "react-dom";
 import {VictoryAxis} from "../src/index";
 import d3 from "d3";
 import _ from "lodash";
@@ -38,25 +39,33 @@ class App extends React.Component {
   }
 
   render() {
-    const baseStyle = {
-      margin: 20,
-      width: 700, // same as the containing svg
-      height: 400 // same as the containing svg
-    };
-
     const svgStyle = {
       width: 700,
       height: 400
+    };
+
+    const styleOverrides = {
+      height: 500,
+      width: 500,
+      margin: 60,
+      axis: {
+        stroke: "red"
+      },
+      grid: {
+        strokeWidth: 4
+      },
+      ticks: {
+        strokeWidth: 5
+      }
     };
 
     return (
       <div className="demo">
         <div>
           <h1>Default Axis</h1>
-          <VictoryAxis style={baseStyle}
+          <VictoryAxis style={styleOverrides}
+            label={"animation\nwow!"}
             tickValues={this.state.tickValues}
-            tickStyle={{strokeWidth: 3}}
-            gridStyle={{strokeWidth: 3}}
             animate={{velocity: 0.01}}
             showGridLines={true}/>
         </div>
@@ -106,13 +115,13 @@ class App extends React.Component {
         <div>
           <h1>Ordinal Scales</h1>
           <VictoryAxis
-            style={baseStyle}
+            style={styleOverrides}
             tickValues={[
-              "Mets",
-              "Giants",
-              "Yankees",
-              "Nationals",
-              "Mariners"
+              "Mets\nNY",
+              "Giants\nSF",
+              "Yankees\nNY",
+              "Nationals\nDC",
+              "Mariners\nSEA"
             ]}/>
         </div>
       </div>
@@ -122,4 +131,4 @@ class App extends React.Component {
 
 const content = document.getElementById("content");
 
-React.render(<App/>, content);
+ReactDOM.render(<App/>, content);
