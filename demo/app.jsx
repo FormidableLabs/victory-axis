@@ -38,12 +38,6 @@ class App extends React.Component {
   }
 
   render() {
-    const baseStyle = {
-      margin: 50,
-      width: 700, // same as the containing svg
-      height: 400 // same as the containing svg
-    };
-
     const svgStyle = {
       width: 700,
       height: 400
@@ -52,7 +46,7 @@ class App extends React.Component {
     const styleOverrides = {
       height: 500,
       width: 500,
-      margin:60,
+      margin: 60,
       axis: {
         stroke: "red"
       },
@@ -62,7 +56,7 @@ class App extends React.Component {
       ticks: {
         strokeWidth: 5
       }
-    }
+    };
 
     return (
       <div className="demo">

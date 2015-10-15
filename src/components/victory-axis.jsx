@@ -65,7 +65,7 @@ class VAxis extends React.Component {
 
   getStyles(props) {
     if (!props.style) {
-      return styles
+      return styles;
     }
     const {axis, grid, ticks, ...base} = props.style;
     return {
@@ -73,7 +73,7 @@ class VAxis extends React.Component {
       axis: _.merge({}, styles.axis, axis),
       grid: _.merge({}, styles.grid, grid),
       ticks: _.merge({}, styles.ticks, ticks)
-    }
+    };
   }
 
   createStringMap(props) {
@@ -317,13 +317,16 @@ class VAxis extends React.Component {
   }
 
   getTextLines(text, x) {
+    if (!text) {
+      return "";
+    }
     // TODO: split text to new lines based on font size, number of characters and total width
     // TODO: determine line height ("1.2em") based on font size
     const textLines = text.split("\n");
     return _.map(textLines, (line, index) => {
       return index === 0 ?
-      <tspan x={x} key={"text" + index}>{line}</tspan> :
-      <tspan x={x} dy="1.2em" key={"text" + index}>{line}</tspan>;
+      (<tspan x={x} key={"text" + index}>{line}</tspan>) :
+      (<tspan x={x} dy="1.2em" key={"text" + index}>{line}</tspan>);
     });
   }
 
