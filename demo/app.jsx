@@ -1,6 +1,7 @@
 /*global document:false*/
 /*global window:false */
 import React from "react";
+import ReactDOM from "react-dom";
 import {VictoryAxis} from "../src/index";
 import d3 from "d3";
 import _ from "lodash";
@@ -130,4 +131,4 @@ class App extends React.Component {
 
 const content = document.getElementById("content");
 
-React.render(<App/>, content);
+ReactDOM.render(<App/>, content);

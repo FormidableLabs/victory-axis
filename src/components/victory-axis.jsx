@@ -197,8 +197,8 @@ class VAxis extends React.Component {
       return props.tickFormat;
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
-      // string ticks should have one tick of padding on either side
-      const dataTicks = ["", ...dataNames, ""];
+      // string ticks should have one tick of padding
+      const dataTicks = ["", ...dataNames];
       return (x) => dataTicks[x];
     } else if (_.isFunction(this.scale.tickFormat())) {
       return this.scale.tickFormat(this.ticks.length);
@@ -339,8 +339,8 @@ class VAxis extends React.Component {
     const textLines = text.split("\n");
     return _.map(textLines, (line, index) => {
       return index === 0 ?
-      (<tspan x={x} key={"text" + index}>{line}</tspan>) :
-      (<tspan x={x} dy="1.2em" key={"text" + index}>{line}</tspan>);
+      (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
+      (<tspan x={x} dy="1.2em" key={"text-line-" + index}>{line}</tspan>);
     });
   }
 
@@ -419,7 +419,9 @@ const propTypes = {
    * so valid Radium style objects should work for this prop, however height, width, and margin
    * are used to calculate range, and need to be expressed as a number of pixels.
    * styles for axis lines, gridlines, and ticks are scoped to separate props.
-   * @examples {fontSize: 15, fontFamily: "helvetica", width: 500, height: 300}
+   * @examples {width: 500, height: 300, margin: 50, axis: {stroke: "#756f6a"},
+   * grid: {stroke: "#c9c5bb"}, ticks: {stroke: "#756f6a", padding: 5},
+   * tickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}
    */
   style: React.PropTypes.object,
   /**
