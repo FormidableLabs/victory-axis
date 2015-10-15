@@ -32,7 +32,7 @@ const styles = {
     strokeWidth: 2,
     strokeLinecap: "round",
     color: "#756f6a",
-    size: 4,
+    size: 4
   },
   tickLabels: {
     stroke: "#756f6a",
