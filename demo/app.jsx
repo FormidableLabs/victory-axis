@@ -66,6 +66,7 @@ class App extends React.Component {
           <VictoryAxis style={styleOverrides}
             label={"animation\nwow!"}
             tickValues={this.state.tickValues}
+            tickFormat={["first", "second", "third", "fourth", "fifth"]}
             animate={{velocity: 0.01}}
             showGridLines={true}/>
         </div>

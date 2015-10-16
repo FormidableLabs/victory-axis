@@ -35,15 +35,15 @@ const styles = {
     size: 4
   },
   tickLabels: {
-    stroke: "#756f6a",
-    fill: "none",
+    stroke: "transparent",
+    fill: "#756f6a",
     fontFamily: "Helvetica",
     fontSize: 10,
     padding: 5
   },
   axisLabels: {
-    stroke: "#756f6a",
-    fill: "none",
+    stroke: "transparent",
+    fill: "#756f6a",
     fontSize: 16,
     fontFamily: "Helvetica"
   }
@@ -193,8 +193,10 @@ class VAxis extends React.Component {
   }
 
   getTickFormat(props) {
-    if (props.tickFormat) {
+    if (props.tickFormat && _.isFunction(props.tickFormat)) {
       return props.tickFormat;
+    } else if (props.tickFormat && _.isArray(props.tickFormat)) {
+      return (x, index) => props.tickFormat[index];
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
       // string ticks should have one tick of padding
@@ -293,9 +295,9 @@ class VAxis extends React.Component {
           <text x={this.tickProperties.x}
             y={this.tickProperties.y}
             dy={this.tickProperties.dy}
-            style={this.style.base}
+            style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
-            {this.getTextLines(this.tickFormat.call(this, tick), this.tickProperties.x)}
+            {this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x)}
           </text>
         </g>
       );
@@ -356,7 +358,7 @@ class VAxis extends React.Component {
           textAnchor="middle"
           y={sign * this.labelPadding}
           x={x}
-          style={style}
+          style={this.style.axisLabels}
           transform={this.isVertical ? "rotate(-90)" : ""}>
           {this.getTextLines(this.props.label, x)}
         </text>
@@ -463,9 +465,11 @@ const propTypes = {
   tickValues: React.PropTypes.array,
   /**
    * The tickFormat prop specifies how tick values should be expressed visually.
-   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2)
+   * tickFormat can be given as a function to be applied to every tickValue, or as
+   * an array of display values for each tickValue
+   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2), ["first", "second", "third"]
    */
-  tickFormat: React.PropTypes.func,
+  tickFormat: React.PropTypes.oneOfType([React.PropTypes.func, React.PropTypes.array]),
   /**
    * The label prop specifies the label for your axis
    */
