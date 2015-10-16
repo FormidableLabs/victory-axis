@@ -193,8 +193,10 @@ class VAxis extends React.Component {
   }
 
   getTickFormat(props) {
-    if (props.tickFormat) {
+    if (props.tickFormat && _.isFunction(props.tickFormat)) {
       return props.tickFormat;
+    } else if (props.tickFormat && _.isArray(props.tickFormat)) {
+      return (x) => props.tickFormat[_.indexOf(this.ticks, x)];
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
       // string ticks should have one tick of padding
@@ -463,9 +465,11 @@ const propTypes = {
   tickValues: React.PropTypes.array,
   /**
    * The tickFormat prop specifies how tick values should be expressed visually.
-   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2)
+   * tickFormat can be given as a function to be applied to every tickValue, or as
+   * an array of display values for each tickValue
+   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2), ["first", "second", "third"]
    */
-  tickFormat: React.PropTypes.func,
+  tickFormat: React.PropTypes.oneOfType([React.PropTypes.func, React.PropTypes.array]),
   /**
    * The label prop specifies the label for your axis
    */
