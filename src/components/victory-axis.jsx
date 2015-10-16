@@ -35,15 +35,15 @@ const styles = {
     size: 4
   },
   tickLabels: {
-    stroke: "#756f6a",
-    fill: "none",
+    stroke: "transparent",
+    fill: "#756f6a",
     fontFamily: "Helvetica",
     fontSize: 10,
     padding: 5
   },
   axisLabels: {
-    stroke: "#756f6a",
-    fill: "none",
+    stroke: "transparent",
+    fill: "#756f6a",
     fontSize: 16,
     fontFamily: "Helvetica"
   }
@@ -196,7 +196,7 @@ class VAxis extends React.Component {
     if (props.tickFormat && _.isFunction(props.tickFormat)) {
       return props.tickFormat;
     } else if (props.tickFormat && _.isArray(props.tickFormat)) {
-      return (x) => props.tickFormat[_.indexOf(this.ticks, x)];
+      return (x, index) => props.tickFormat[index];
     } else if (this.stringMap) {
       const dataNames = _.keys(this.stringMap);
       // string ticks should have one tick of padding
@@ -297,7 +297,7 @@ class VAxis extends React.Component {
             dy={this.tickProperties.dy}
             style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
-            {this.getTextLines(this.tickFormat.call(this, tick), this.tickProperties.x)}
+            {this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x)}
           </text>
         </g>
       );
