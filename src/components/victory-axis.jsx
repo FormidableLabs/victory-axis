@@ -293,7 +293,7 @@ class VAxis extends React.Component {
           <text x={this.tickProperties.x}
             y={this.tickProperties.y}
             dy={this.tickProperties.dy}
-            style={this.style.base}
+            style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
             {this.getTextLines(this.tickFormat.call(this, tick), this.tickProperties.x)}
           </text>
@@ -356,7 +356,7 @@ class VAxis extends React.Component {
           textAnchor="middle"
           y={sign * this.labelPadding}
           x={x}
-          style={style}
+          style={this.style.axisLabels}
           transform={this.isVertical ? "rotate(-90)" : ""}>
           {this.getTextLines(this.props.label, x)}
         </text>
