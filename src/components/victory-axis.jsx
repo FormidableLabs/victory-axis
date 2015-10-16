@@ -336,7 +336,8 @@ class VAxis extends React.Component {
     }
     // TODO: split text to new lines based on font size, number of characters and total width
     // TODO: determine line height ("1.2em") based on font size
-    const textLines = text.split("\n");
+    const textString = "" + text;
+    const textLines = textString.split("\n");
     return _.map(textLines, (line, index) => {
       return index === 0 ?
       (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
