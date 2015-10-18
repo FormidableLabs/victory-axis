@@ -394,21 +394,16 @@ class VAxis extends React.Component {
 class VictoryAxis extends React.Component {
   render() {
     if (this.props.animate) {
+      // Do less work by having `VictoryAnimation` tween only values that
+      // make sense to tween. In the future, allow customization of animated
+      // prop whitelist/blacklist?
+      const animateData = _.omit(this.props, [
+        "orientation", "scale", "tickFormat", "showGridLines", "animate",
+        "crossAxis", "containerElement"
+      ]);
       return (
-        <VictoryAnimation {...this.props.animate} data={this.props}>
-          {(props) => {
-            return (
-              <VAxis
-                {...props}
-                orientation={this.props.orientation}
-                scale={this.props.scale}
-                tickFormat={this.props.tickFormat}
-                showGridLines={this.props.showGridLines}
-                animate={this.props.animate}
-                crossAxis={this.props.crossAxis}
-                containerElement={this.props.containerElement}/>
-            );
-          }}
+        <VictoryAnimation {...this.props.animate} data={animateData}>
+          {props => <VAxis {...this.props} {...props}/>}
         </VictoryAnimation>
       );
     }
