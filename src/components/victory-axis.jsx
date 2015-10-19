@@ -511,7 +511,7 @@ export default class VictoryAxis extends React.Component {
       // prop whitelist/blacklist?
       const animateData = _.omit(this.props, [
         "orientation", "scale", "tickFormat", "showGridLines", "animate",
-        "crossAxis", "containerElement"
+        "crossAxis", "standalone"
       ]);
       return (
         <VictoryAnimation {...this.props.animate} data={animateData}>
