@@ -135,12 +135,11 @@ class VAxis extends React.Component {
      */
     crossAxis: React.PropTypes.bool,
     /**
-     * The containerElement prop specifies which element the component will render.
-     * For a standalone axis, the containerElement prop should be "svg". If you need to
-     * compose this axis with other chart components, the containerElement prop should
-     * be "g", and will need to be rendered within an svg tag.
+     * The standalone prop determines whether the component will render a standalone svg
+     * or a <g> tag that will be included in an external svg. Set standalone to false to
+     * compose VictoryAxis with other components within an enclosing <svg> tag.
      */
-    containerElement: React.PropTypes.oneOf(["svg", "g"]),
+    standalone: React.PropTypes.bool,
     /**
      * The animate prop specifies props for victory-animation to use. It this prop is
      * not given, the axis will not tween between changing data / style props.
@@ -155,7 +154,7 @@ class VAxis extends React.Component {
     scale: d3.scale.linear(),
     tickCount: 5,
     showGridLines: false,
-    containerElement: "svg"
+    standalone: true
   };
 
   constructor(props) {
@@ -475,7 +474,7 @@ class VAxis extends React.Component {
   }
 
   render() {
-    if (this.props.containerElement === "svg") {
+    if (this.props.standalone === true) {
       return (
         <svg style={this.style.base}>
           <g style={this.style.base} transform={this.transform}>
@@ -512,7 +511,7 @@ export default class VictoryAxis extends React.Component {
       // prop whitelist/blacklist?
       const animateData = _.omit(this.props, [
         "orientation", "scale", "tickFormat", "showGridLines", "animate",
-        "crossAxis", "containerElement"
+        "crossAxis", "standalone"
       ]);
       return (
         <VictoryAnimation {...this.props.animate} data={animateData}>
