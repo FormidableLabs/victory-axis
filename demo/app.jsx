@@ -45,14 +45,16 @@ class App extends React.Component {
     };
 
     const styleOverrides = {
-      height: 500,
-      width: 500,
-      margin: 60,
+      parent: {
+        height: 500,
+        width: 500,
+        margin: 60
+      },
       axis: {
         stroke: "red"
       },
       grid: {
-        strokeWidth: 4
+        strokeWidth: 2
       },
       ticks: {
         strokeWidth: 5
@@ -67,14 +69,13 @@ class App extends React.Component {
             label={"animation\nwow!"}
             tickValues={this.state.tickValues}
             tickFormat={["first", "second", "third", "fourth", "fifth"]}
-            animate={{velocity: 0.01}}
-            showGridLines={true}/>
+            animate={{velocity: 0.01}}/>
         </div>
         <div>
           <h1>Time Scale Axis</h1>
           <VictoryAxis
-            showGridLines={true}
             scale={d3.time.scale()}
+            style={{grid: {stroke: "black", strokeWidth: 1}}}
             tickValues={[
               new Date(1980, 1, 1),
               new Date(1990, 1, 1),
@@ -88,7 +89,6 @@ class App extends React.Component {
           <svg style={svgStyle}>
             <VictoryAxis
               domain={this.state.domain}
-              showGridLines={true}
               crossAxis={true}
               orientation="bottom"
               offsetX={50}
@@ -96,7 +96,6 @@ class App extends React.Component {
               containerElement="g"/>
             <VictoryAxis
               domain={this.state.domain.concat().reverse()}
-              showGridLines={true}
               crossAxis={true}
               orientation="left"
               offsetX={250}
@@ -107,7 +106,6 @@ class App extends React.Component {
         <div>
         <h1>Log Scale Axis</h1>
           <VictoryAxis
-            showGridLines={true}
             orientation="left"
             scale={d3.scale.log()}
             domain={[1, 5]}
