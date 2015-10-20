@@ -6,28 +6,26 @@ import log from "../log";
 import {VictoryAnimation} from "victory-animation";
 
 const styles = {
-  base: {
+  parent: {
     width: 500,
     height: 300,
-    margin: 50,
-    fontFamily: "Helvetica",
-    fontSize: 15
+    margin: 50
   },
   axis: {
     stroke: "#756f6a",
-    fill: "#756f6a",
+    fill: "none",
     strokeWidth: 2,
     strokeLinecap: "round"
   },
   grid: {
     stroke: "#c9c5bb",
-    fill: "#c9c5bb",
-    strokeWidth: 1,
+    fill: "none",
+    strokeWidth: 0,
     strokeLinecap: "round"
   },
   ticks: {
     stroke: "#756f6a",
-    fill: "#756f6a",
+    fill: "none",
     padding: 5,
     strokeWidth: 2,
     strokeLinecap: "round",
@@ -128,11 +126,6 @@ class VAxis extends React.Component {
      * This value determines whether or not to draw gridlines for an axis. Note: gridlines
      * for an axis are drawn perpendicularly from each axis starting at the axis ticks.
      */
-    showGridLines: React.PropTypes.bool,
-    /**
-     * This prop determines whether this axis is expected to be composed with another
-     * axis in such a way that the two axes will cross each other.
-     */
     crossAxis: React.PropTypes.bool,
     /**
      * The standalone prop determines whether the component will render a standalone svg
@@ -153,7 +146,6 @@ class VAxis extends React.Component {
     orientation: "bottom",
     scale: d3.scale.linear(),
     tickCount: 5,
-    showGridLines: false,
     standalone: true
   };
 
@@ -186,9 +178,9 @@ class VAxis extends React.Component {
     if (!props.style) {
       return styles;
     }
-    const {axis, grid, ticks, tickLabels, axisLabels, ...base} = props.style;
+    const {axis, grid, ticks, tickLabels, axisLabels, parent} = props.style;
     return {
-      base: _.merge({}, styles.base, base),
+      parent: _.merge({}, styles.parent, parent),
       axis: _.merge({}, styles.axis, axis),
       grid: _.merge({}, styles.grid, grid),
       ticks: _.merge({}, styles.ticks, ticks),
@@ -259,7 +251,7 @@ class VAxis extends React.Component {
     if (props.range) {
       return props.range;
     }
-    const style = this.style.base;
+    const style = this.style.parent;
     return this.isVertical ?
       [style.margin, style.height - style.margin] :
       [style.margin, style.width - style.margin];
@@ -327,8 +319,8 @@ class VAxis extends React.Component {
 
   getOffset(props) {
     const fontSize = this.style.axisLabels.fontSize;
-    const offsetX = props.offsetX || this.style.base.margin;
-    const offsetY = props.offsetY || this.style.base.margin;
+    const offsetX = props.offsetX || this.style.parent.margin;
+    const offsetY = props.offsetY || this.style.parent.margin;
     const totalPadding = fontSize +
       (2 * this.style.ticks.size) +
       this.labelPadding;
@@ -366,16 +358,16 @@ class VAxis extends React.Component {
   getTransform(props) {
     const transform = {
       top: [0, this.offset.y],
-      bottom: [0, (this.style.base.height - this.offset.y)],
+      bottom: [0, (this.style.parent.height - this.offset.y)],
       left: [this.offset.x, 0],
-      right: [(this.style.base.width - this.offset.x), 0]
+      right: [(this.style.parent.width - this.offset.x), 0]
     };
     return "translate(" + transform[props.orientation][0] + "," +
       transform[props.orientation][1] + ")";
   }
 
   getAxisLine() {
-    const style = this.style.base;
+    const style = this.style.parent;
     const extent = {
       x: [style.margin, style.width - style.margin],
       y: [style.margin, style.height - style.margin]
@@ -412,31 +404,29 @@ class VAxis extends React.Component {
   }
 
   getGridLines() {
-    const style = this.style.base;
-    if (this.props.showGridLines) {
-      const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
-      const xOffset = this.props.crossAxis ? this.offset.x - style.margin : 0;
-      const yOffset = this.props.crossAxis ? this.offset.y - style.margin : 0;
-      const x2 = this.isVertical ? sign * (style.width - (2 * style.margin)) : 0;
-      const y2 = this.isVertical ? 0 : sign * (style.height - (2 * style.margin));
-      let position;
-      let translate;
-      // determine the position and translation of each gridline
-      return _.map(this.ticks, (tick, index) => {
-        position = this.scale(tick);
-        translate = this.isVertical ?
-          "translate(" + -xOffset + ", " + position + ")" :
-          "translate(" + position + ", " + yOffset + ")";
-        return (
-          <g key={"grid-" + index} transform={translate}>
-            <line
-              x2={x2}
-              y2={y2}
-              style={this.style.grid}/>
-          </g>
-          );
-      });
-    }
+    const style = this.style.parent;
+    const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
+    const xOffset = this.props.crossAxis ? this.offset.x - style.margin : 0;
+    const yOffset = this.props.crossAxis ? this.offset.y - style.margin : 0;
+    const x2 = this.isVertical ? sign * (style.width - (2 * style.margin)) : 0;
+    const y2 = this.isVertical ? 0 : sign * (style.height - (2 * style.margin));
+    let position;
+    let translate;
+    // determine the position and translation of each gridline
+    return _.map(this.ticks, (tick, index) => {
+      position = this.scale(tick);
+      translate = this.isVertical ?
+        "translate(" + -xOffset + ", " + position + ")" :
+        "translate(" + position + ", " + yOffset + ")";
+      return (
+        <g key={"grid-" + index} transform={translate}>
+          <line
+            x2={x2}
+            y2={y2}
+            style={this.style.grid}/>
+        </g>
+        );
+    });
   }
 
   getTextLines(text, x) {
@@ -455,7 +445,7 @@ class VAxis extends React.Component {
   }
 
   getLabelElements() {
-    const style = this.style.base;
+    const style = this.style.parent;
     if (this.props.label) {
       const orientation = this.props.orientation;
       const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
@@ -476,8 +466,8 @@ class VAxis extends React.Component {
   render() {
     if (this.props.standalone === true) {
       return (
-        <svg style={this.style.base}>
-          <g style={this.style.base} transform={this.transform}>
+        <svg style={this.style.parent}>
+          <g style={this.style.parent} transform={this.transform}>
             {this.getGridLines()}
             {this.getAxisLine()}
             {this.getTickLines()}
@@ -487,7 +477,7 @@ class VAxis extends React.Component {
       );
     }
     return (
-      <g style={this.style.base} transform={this.transform}>
+      <g style={this.style.parent} transform={this.transform}>
         {this.getGridLines()}
         {this.getAxisLine()}
         {this.getTickLines()}
@@ -510,7 +500,7 @@ export default class VictoryAxis extends React.Component {
       // make sense to tween. In the future, allow customization of animated
       // prop whitelist/blacklist?
       const animateData = _.omit(this.props, [
-        "orientation", "scale", "tickFormat", "showGridLines", "animate",
+        "orientation", "scale", "tickFormat", "animate",
         "crossAxis", "standalone"
       ]);
       return (
