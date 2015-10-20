@@ -80,8 +80,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
-	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -109,28 +107,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _victoryAnimation = __webpack_require__(31);
 	
 	var styles = {
-	  base: {
+	  parent: {
 	    width: 500,
 	    height: 300,
-	    margin: 50,
-	    fontFamily: "Helvetica",
-	    fontSize: 15
+	    margin: 50
 	  },
 	  axis: {
 	    stroke: "#756f6a",
-	    fill: "#756f6a",
+	    fill: "none",
 	    strokeWidth: 2,
 	    strokeLinecap: "round"
 	  },
 	  grid: {
 	    stroke: "#c9c5bb",
-	    fill: "#c9c5bb",
-	    strokeWidth: 1,
+	    fill: "none",
+	    strokeWidth: 0,
 	    strokeLinecap: "round"
 	  },
 	  ticks: {
 	    stroke: "#756f6a",
-	    fill: "#756f6a",
+	    fill: "none",
 	    padding: 5,
 	    strokeWidth: 2,
 	    strokeLinecap: "round",
@@ -154,6 +150,113 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var VAxis = (function (_React$Component) {
 	  _inherits(VAxis, _React$Component);
+	
+	  _createClass(VAxis, null, [{
+	    key: "propTypes",
+	    value: {
+	      /**
+	       * The style prop specifies styles for your chart. Victory Axis relies on Radium,
+	       * so valid Radium style objects should work for this prop, however height, width, and margin
+	       * are used to calculate range, and need to be expressed as a number of pixels.
+	       * styles for axis lines, gridlines, and ticks are scoped to separate props.
+	       * @examples {width: 500, height: 300, margin: 50, axis: {stroke: "#756f6a"},
+	       * grid: {stroke: "#c9c5bb"}, ticks: {stroke: "#756f6a", padding: 5},
+	       * tickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}
+	       */
+	      style: _react2["default"].PropTypes.object,
+	      /**
+	       * The domain prop describes the range of values your axis will include. This prop should be
+	       * given as a array of the minimum and maximum expected values for your axis.
+	       * If this value is not given it will be calculated based on the scale or tickValues.
+	       * @exampes [-1, 1]
+	       */
+	      domain: _react2["default"].PropTypes.array,
+	      /**
+	       * The range prop describes the range of pixels your axis will cover. This prop can be
+	       * given as a array of the minimum and maximum expected values for your axis area.
+	       * If this prop is not provided, a range will be calculated based on the height,
+	       * or width, and the margin provided in the style prop, or in default styles. It is usually
+	       * a good idea to let the chart component calculate its own range.
+	       * @exampes [0, 500]
+	       */
+	      range: _react2["default"].PropTypes.arrayOf(_react2["default"].PropTypes.number),
+	      /**
+	       * The orientation prop specifies the position and orientation of your axis.
+	       */
+	      orientation: _react2["default"].PropTypes.oneOf(["top", "bottom", "left", "right"]),
+	      /**
+	       * The scale prop determines which scales your axis should use. This prop should be
+	       * given as a function,
+	       * @exampes d3.time.scale()
+	       */
+	      scale: _react2["default"].PropTypes.func,
+	      /**
+	       * The tickCount prop specifies how many ticks should be drawn on the axis if
+	       * ticksValues are not explicitly provided.
+	       */
+	      tickCount: _react2["default"].PropTypes.number,
+	      /**
+	       * The tickValues prop explicity specifies which ticks values to draw on the axis.
+	       * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
+	       */
+	      tickValues: _react2["default"].PropTypes.array,
+	      /**
+	       * The tickFormat prop specifies how tick values should be expressed visually.
+	       * tickFormat can be given as a function to be applied to every tickValue, or as
+	       * an array of display values for each tickValue
+	       * @examples d3.time.format("%Y"), (x) => x.toPrecision(2), ["first", "second", "third"]
+	       */
+	      tickFormat: _react2["default"].PropTypes.oneOfType([_react2["default"].PropTypes.func, _react2["default"].PropTypes.array]),
+	      /**
+	       * The label prop specifies the label for your axis
+	       */
+	      label: _react2["default"].PropTypes.string,
+	      /**
+	       * The labelPadding prop specifies the padding in pixels for you axis label
+	       */
+	      labelPadding: _react2["default"].PropTypes.number,
+	      /**
+	       * This value describes how far from the "edge" of it's permitted area each axis
+	       * will be set back in the x-direction.  If this prop is not given,
+	       * the offset is calculated based on font size, axis orientation, and label padding.
+	       */
+	      offsetX: _react2["default"].PropTypes.number,
+	      /**
+	       * This value describes how far from the "edge" of it's permitted area each axis
+	       * will be set back in the y-direction.  If this prop is not given,
+	       * the offset is calculated based on font size, axis orientation, and label padding.
+	       */
+	      offsetY: _react2["default"].PropTypes.number,
+	      /**
+	       * This value determines whether or not to draw gridlines for an axis. Note: gridlines
+	       * for an axis are drawn perpendicularly from each axis starting at the axis ticks.
+	       */
+	      crossAxis: _react2["default"].PropTypes.bool,
+	      /**
+	       * The standalone prop determines whether the component will render a standalone svg
+	       * or a <g> tag that will be included in an external svg. Set standalone to false to
+	       * compose VictoryAxis with other components within an enclosing <svg> tag.
+	       */
+	      standalone: _react2["default"].PropTypes.bool,
+	      /**
+	       * The animate prop specifies props for victory-animation to use. It this prop is
+	       * not given, the axis will not tween between changing data / style props.
+	       * Large datasets might animate slowly due to the inherent limits of svg rendering.
+	       * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
+	       */
+	      animate: _react2["default"].PropTypes.object
+	    },
+	    enumerable: true
+	  }, {
+	    key: "defaultProps",
+	    value: {
+	      orientation: "bottom",
+	      scale: _d32["default"].scale.linear(),
+	      tickCount: 5,
+	      standalone: true
+	    },
+	    enumerable: true
+	  }]);
 	
 	  function VAxis(props) {
 	    _classCallCheck(this, VAxis);
@@ -196,11 +299,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var ticks = _props$style.ticks;
 	      var tickLabels = _props$style.tickLabels;
 	      var axisLabels = _props$style.axisLabels;
-	
-	      var base = _objectWithoutProperties(_props$style, ["axis", "grid", "ticks", "tickLabels", "axisLabels"]);
+	      var parent = _props$style.parent;
 	
 	      return {
-	        base: _lodash2["default"].merge({}, styles.base, base),
+	        parent: _lodash2["default"].merge({}, styles.parent, parent),
 	        axis: _lodash2["default"].merge({}, styles.axis, axis),
 	        grid: _lodash2["default"].merge({}, styles.grid, grid),
 	        ticks: _lodash2["default"].merge({}, styles.ticks, ticks),
@@ -278,7 +380,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (props.range) {
 	        return props.range;
 	      }
-	      var style = this.style.base;
+	      var style = this.style.parent;
 	      return this.isVertical ? [style.margin, style.height - style.margin] : [style.margin, style.width - style.margin];
 	    }
 	  }, {
@@ -362,8 +464,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: "getOffset",
 	    value: function getOffset(props) {
 	      var fontSize = this.style.axisLabels.fontSize;
-	      var offsetX = props.offsetX || this.style.base.margin;
-	      var offsetY = props.offsetY || this.style.base.margin;
+	      var offsetX = props.offsetX || this.style.parent.margin;
+	      var offsetY = props.offsetY || this.style.parent.margin;
 	      var totalPadding = fontSize + 2 * this.style.ticks.size + this.labelPadding;
 	      var minimumPadding = 1.2 * fontSize; // TODO: magic numbers
 	      var x = this.isVertical ? totalPadding : minimumPadding;
@@ -400,16 +502,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function getTransform(props) {
 	      var transform = {
 	        top: [0, this.offset.y],
-	        bottom: [0, this.style.base.height - this.offset.y],
+	        bottom: [0, this.style.parent.height - this.offset.y],
 	        left: [this.offset.x, 0],
-	        right: [this.style.base.width - this.offset.x, 0]
+	        right: [this.style.parent.width - this.offset.x, 0]
 	      };
 	      return "translate(" + transform[props.orientation][0] + "," + transform[props.orientation][1] + ")";
 	    }
 	  }, {
 	    key: "getAxisLine",
 	    value: function getAxisLine() {
-	      var style = this.style.base;
+	      var style = this.style.parent;
 	      var extent = {
 	        x: [style.margin, style.width - style.margin],
 	        y: [style.margin, style.height - style.margin]
@@ -451,35 +553,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function getGridLines() {
 	      var _this3 = this;
 	
-	      var style = this.style.base;
-	      if (this.props.showGridLines) {
-	        var _ret2 = (function () {
-	          var sign = _this3.props.orientation === "top" || _this3.props.orientation === "left" ? 1 : -1;
-	          var xOffset = _this3.props.crossAxis ? _this3.offset.x - style.margin : 0;
-	          var yOffset = _this3.props.crossAxis ? _this3.offset.y - style.margin : 0;
-	          var x2 = _this3.isVertical ? sign * (style.width - 2 * style.margin) : 0;
-	          var y2 = _this3.isVertical ? 0 : sign * (style.height - 2 * style.margin);
-	          var position = undefined;
-	          var translate = undefined;
-	          // determine the position and translation of each gridline
-	          return {
-	            v: _lodash2["default"].map(_this3.ticks, function (tick, index) {
-	              position = _this3.scale(tick);
-	              translate = _this3.isVertical ? "translate(" + -xOffset + ", " + position + ")" : "translate(" + position + ", " + yOffset + ")";
-	              return _react2["default"].createElement(
-	                "g",
-	                { key: "grid-" + index, transform: translate },
-	                _react2["default"].createElement("line", {
-	                  x2: x2,
-	                  y2: y2,
-	                  style: _this3.style.grid })
-	              );
-	            })
-	          };
-	        })();
-	
-	        if (typeof _ret2 === "object") return _ret2.v;
-	      }
+	      var style = this.style.parent;
+	      var sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
+	      var xOffset = this.props.crossAxis ? this.offset.x - style.margin : 0;
+	      var yOffset = this.props.crossAxis ? this.offset.y - style.margin : 0;
+	      var x2 = this.isVertical ? sign * (style.width - 2 * style.margin) : 0;
+	      var y2 = this.isVertical ? 0 : sign * (style.height - 2 * style.margin);
+	      var position = undefined;
+	      var translate = undefined;
+	      // determine the position and translation of each gridline
+	      return _lodash2["default"].map(this.ticks, function (tick, index) {
+	        position = _this3.scale(tick);
+	        translate = _this3.isVertical ? "translate(" + -xOffset + ", " + position + ")" : "translate(" + position + ", " + yOffset + ")";
+	        return _react2["default"].createElement(
+	          "g",
+	          { key: "grid-" + index, transform: translate },
+	          _react2["default"].createElement("line", {
+	            x2: x2,
+	            y2: y2,
+	            style: _this3.style.grid })
+	        );
+	      });
 	    }
 	  }, {
 	    key: "getTextLines",
@@ -506,7 +600,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "getLabelElements",
 	    value: function getLabelElements() {
-	      var style = this.style.base;
+	      var style = this.style.parent;
 	      if (this.props.label) {
 	        var orientation = this.props.orientation;
 	        var sign = orientation === "top" || orientation === "left" ? -1 : 1;
@@ -526,13 +620,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "render",
 	    value: function render() {
-	      if (this.props.containerElement === "svg") {
+	      if (this.props.standalone === true) {
 	        return _react2["default"].createElement(
 	          "svg",
-	          { style: this.style.base },
+	          { style: this.style.parent },
 	          _react2["default"].createElement(
 	            "g",
-	            { style: this.style.base, transform: this.transform },
+	            { style: this.style.parent, transform: this.transform },
 	            this.getGridLines(),
 	            this.getAxisLine(),
 	            this.getTickLines(),
@@ -542,7 +636,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      return _react2["default"].createElement(
 	        "g",
-	        { style: this.style.base, transform: this.transform },
+	        { style: this.style.parent, transform: this.transform },
 	        this.getGridLines(),
 	        this.getAxisLine(),
 	        this.getTickLines(),
@@ -569,142 +663,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this4 = this;
 	
 	      if (this.props.animate) {
+	        // Do less work by having `VictoryAnimation` tween only values that
+	        // make sense to tween. In the future, allow customization of animated
+	        // prop whitelist/blacklist?
+	        var animateData = _lodash2["default"].omit(this.props, ["orientation", "scale", "tickFormat", "animate", "crossAxis", "standalone"]);
 	        return _react2["default"].createElement(
 	          _victoryAnimation.VictoryAnimation,
-	          _extends({}, this.props.animate, { data: this.props }),
+	          _extends({}, this.props.animate, { data: animateData }),
 	          function (props) {
-	            return _react2["default"].createElement(VAxis, _extends({}, props, {
-	              orientation: _this4.props.orientation,
-	              scale: _this4.props.scale,
-	              tickFormat: _this4.props.tickFormat,
-	              showGridLines: _this4.props.showGridLines,
-	              animate: _this4.props.animate,
-	              crossAxis: _this4.props.crossAxis,
-	              containerElement: _this4.props.containerElement }));
+	            return _react2["default"].createElement(VAxis, _extends({}, _this4.props, props));
 	          }
 	        );
 	      }
 	      return _react2["default"].createElement(VAxis, this.props);
 	    }
+	  }], [{
+	    key: "propTypes",
+	
+	    /* eslint-disable react/prop-types */
+	    // ^ see: https://github.com/yannickcr/eslint-plugin-react/issues/106
+	    value: _extends({}, VAxis.propTypes),
+	    enumerable: true
+	  }, {
+	    key: "defaultProps",
+	    value: _extends({}, VAxis.defaultProps),
+	    enumerable: true
 	  }]);
 	
 	  var _VictoryAxis = VictoryAxis;
 	  VictoryAxis = (0, _radium2["default"])(VictoryAxis) || VictoryAxis;
 	  return VictoryAxis;
 	})(_react2["default"].Component);
-	
-	var propTypes = {
-	  /**
-	   * The style prop specifies styles for your chart. Victory Axis relies on Radium,
-	   * so valid Radium style objects should work for this prop, however height, width, and margin
-	   * are used to calculate range, and need to be expressed as a number of pixels.
-	   * styles for axis lines, gridlines, and ticks are scoped to separate props.
-	   * @examples {width: 500, height: 300, margin: 50, axis: {stroke: "#756f6a"},
-	   * grid: {stroke: "#c9c5bb"}, ticks: {stroke: "#756f6a", padding: 5},
-	   * tickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}
-	   */
-	  style: _react2["default"].PropTypes.object,
-	  /**
-	   * The domain prop describes the range of values your axis will include. This prop should be
-	   * given as a array of the minimum and maximum expected values for your axis.
-	   * If this value is not given it will be calculated based on the scale or tickValues.
-	   * @exampes [-1, 1]
-	   */
-	  domain: _react2["default"].PropTypes.array,
-	  /**
-	   * The range prop describes the range of pixels your axis will cover. This prop can be
-	   * given as a array of the minimum and maximum expected values for your axis area.
-	   * If this prop is not provided, a range will be calculated based on the height,
-	   * or width, and the margin provided in the style prop, or in default styles. It is usually
-	   * a good idea to let the chart component calculate its own range.
-	   * @exampes [0, 500]
-	   */
-	  range: _react2["default"].PropTypes.arrayOf(_react2["default"].PropTypes.number),
-	  /**
-	   * The orientation prop specifies the position and orientation of your axis.
-	   */
-	  orientation: _react2["default"].PropTypes.oneOf(["top", "bottom", "left", "right"]),
-	  /**
-	   * The scale prop determines which scales your axis should use. This prop should be
-	   * given as a function,
-	   * @exampes d3.time.scale()
-	   */
-	  scale: _react2["default"].PropTypes.func,
-	  /**
-	   * The tickCount prop specifies how many ticks should be drawn on the axis if
-	   * ticksValues are not explicitly provided.
-	   */
-	  tickCount: _react2["default"].PropTypes.number,
-	  /**
-	   * The tickValues prop explicity specifies which ticks values to draw on the axis.
-	   * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
-	   */
-	  tickValues: _react2["default"].PropTypes.array,
-	  /**
-	   * The tickFormat prop specifies how tick values should be expressed visually.
-	   * tickFormat can be given as a function to be applied to every tickValue, or as
-	   * an array of display values for each tickValue
-	   * @examples d3.time.format("%Y"), (x) => x.toPrecision(2), ["first", "second", "third"]
-	   */
-	  tickFormat: _react2["default"].PropTypes.oneOfType([_react2["default"].PropTypes.func, _react2["default"].PropTypes.array]),
-	  /**
-	   * The label prop specifies the label for your axis
-	   */
-	  label: _react2["default"].PropTypes.string,
-	  /**
-	   * The labelPadding prop specifies the padding in pixels for you axis label
-	   */
-	  labelPadding: _react2["default"].PropTypes.number,
-	  /**
-	   * This value describes how far from the "edge" of it's permitted area each axis
-	   * will be set back in the x-direction.  If this prop is not given,
-	   * the offset is calculated based on font size, axis orientation, and label padding.
-	   */
-	  offsetX: _react2["default"].PropTypes.number,
-	  /**
-	   * This value describes how far from the "edge" of it's permitted area each axis
-	   * will be set back in the y-direction.  If this prop is not given,
-	   * the offset is calculated based on font size, axis orientation, and label padding.
-	   */
-	  offsetY: _react2["default"].PropTypes.number,
-	  /**
-	   * This value determines whether or not to draw gridlines for an axis. Note: gridlines
-	   * for an axis are drawn perpendicularly from each axis starting at the axis ticks.
-	   */
-	  showGridLines: _react2["default"].PropTypes.bool,
-	  /**
-	   * This prop determines whether this axis is expected to be composed with another
-	   * axis in such a way that the two axes will cross each other.
-	   */
-	  crossAxis: _react2["default"].PropTypes.bool,
-	  /**
-	   * The containerElement prop specifies which element the component will render.
-	   * For a standalone axis, the containerElement prop should be "svg". If you need to
-	   * compose this axis with other chart components, the containerElement prop should
-	   * be "g", and will need to be rendered within an svg tag.
-	   */
-	  containerElement: _react2["default"].PropTypes.oneOf(["svg", "g"]),
-	  /**
-	   * The animate prop specifies props for victory-animation to use. It this prop is
-	   * not given, the axis will not tween between changing data / style props.
-	   * Large datasets might animate slowly due to the inherent limits of svg rendering.
-	   * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
-	   */
-	  animate: _react2["default"].PropTypes.object
-	};
-	
-	var defaultProps = {
-	  orientation: "bottom",
-	  scale: _d32["default"].scale.linear(),
-	  tickCount: 5,
-	  showGridLines: false,
-	  containerElement: "svg"
-	};
-	
-	VictoryAxis.propTypes = propTypes;
-	VictoryAxis.defaultProps = defaultProps;
-	VAxis.propTypes = propTypes;
-	VAxis.defaultProps = defaultProps;
 	
 	exports["default"] = VictoryAxis;
 	module.exports = exports["default"];
