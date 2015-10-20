@@ -9,9 +9,7 @@ const styles = {
   parent: {
     width: 500,
     height: 300,
-    margin: 50,
-    fontFamily: "Helvetica",
-    fontSize: 15
+    margin: 50
   },
   axis: {
     stroke: "#756f6a",
