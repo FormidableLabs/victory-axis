@@ -50,6 +50,12 @@ const styles = {
 class VAxis extends React.Component {
   static propTypes = {
     /**
+     * The independentAxis prop specifies whether the axis corresponds to the
+     * independent variable (usually x). This prop is useful when composing axis
+     * with other components to form a chart.
+     */
+    independentAxis: React.propTypes.bool,
+    /**
      * The style prop specifies styles for your chart. Victory Axis relies on Radium,
      * so valid Radium style objects should work for this prop, however height, width, and margin
      * are used to calculate range, and need to be expressed as a number of pixels.
@@ -489,6 +495,7 @@ class VAxis extends React.Component {
 
 @Radium
 export default class VictoryAxis extends React.Component {
+  static role = "axis";
   /* eslint-disable react/prop-types */
   // ^ see: https://github.com/yannickcr/eslint-plugin-react/issues/106
   static propTypes = {...VAxis.propTypes};
