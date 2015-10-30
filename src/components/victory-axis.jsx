@@ -444,7 +444,8 @@ class VAxis extends React.Component {
       (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
       (<tspan x={x} dy="1.2em" key={"text-line-" + index}>{line}</tspan>);
     });
-    const heightOfLines = (textLines.length - 1) * this.style.tickLabels.fontSize * 1.5;
+    const heightOfLines = this.props.orientation === "top" ?
+     (textLines.length - 1) * this.style.tickLabels.fontSize * 1.25 : 0;
     return [heightOfLines, HTMLtextLines];
   }
 
