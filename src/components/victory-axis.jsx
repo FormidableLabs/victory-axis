@@ -380,11 +380,13 @@ class VAxis extends React.Component {
   getTickLines() {
     let position;
     let translate;
+    let textLengthAndLines;
     // determine the position and translation of each tick
     return _.map(this.ticks, (tick, index) => {
       position = this.scale(tick);
       translate = this.isVertical ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+      textLengthAndLines = this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x);
       return (
         <g key={"tick-" + index} transform={translate}>
           <line
@@ -392,11 +394,11 @@ class VAxis extends React.Component {
             y2={this.tickProperties.y2}
             style={this.style.ticks}/>
           <text x={this.tickProperties.x}
-            y={this.tickProperties.y}
+            y={(this.tickProperties.y - textLengthAndLines[0])}
             dy={this.tickProperties.dy}
             style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
-            {this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x)}
+            {textLengthAndLines[1]}
           </text>
         </g>
       );
@@ -437,11 +439,13 @@ class VAxis extends React.Component {
     // TODO: determine line height ("1.2em") based on font size
     const textString = "" + text;
     const textLines = textString.split("\n");
-    return _.map(textLines, (line, index) => {
+    const HTMLtextLines = _.map(textLines, (line, index) => {
       return index === 0 ?
       (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
       (<tspan x={x} dy="1.2em" key={"text-line-" + index}>{line}</tspan>);
     });
+    const heightOfLines = (textLines.length - 1) * this.style.tickLabels.fontSize * 1.5;
+    return [heightOfLines, HTMLtextLines];
   }
 
   getLabelElements() {
@@ -457,7 +461,7 @@ class VAxis extends React.Component {
           x={x}
           style={this.style.axisLabels}
           transform={this.isVertical ? "rotate(-90)" : ""}>
-          {this.getTextLines(this.props.label, x)}
+          {this.getTextLines(this.props.label, x)[1]}
         </text>
       );
     }
