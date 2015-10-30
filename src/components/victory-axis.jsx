@@ -47,14 +47,16 @@ const styles = {
   }
 };
 
-class VAxis extends React.Component {
+@Radium
+export default class VictoryAxis extends React.Component {
+  static role = "axis";
   static propTypes = {
     /**
      * The independentAxis prop specifies whether the axis corresponds to the
      * independent variable (usually x). This prop is useful when composing axis
      * with other components to form a chart.
      */
-    independentAxis: React.propTypes.bool,
+    independentAxis: React.PropTypes.bool,
     /**
      * The style prop specifies styles for your chart. Victory Axis relies on Radium,
      * so valid Radium style objects should work for this prop, however height, width, and margin
@@ -155,6 +157,27 @@ class VAxis extends React.Component {
     standalone: true
   };
 
+  render() {
+    if (this.props.animate) {
+      // Do less work by having `VictoryAnimation` tween only values that
+      // make sense to tween. In the future, allow customization of animated
+      // prop whitelist/blacklist?
+      const animateData = _.omit(this.props, [
+        "orientation", "scale", "tickFormat", "animate",
+        "crossAxis", "standalone"
+      ]);
+      return (
+        <VictoryAnimation {...this.props.animate} data={animateData}>
+          {props => <VAxis {...this.props} {...props}/>}
+        </VictoryAnimation>
+      );
+    }
+    return (<VAxis {...this.props}/>);
+  }
+}
+
+class VAxis extends React.Component {
+  /* eslint-disable react/prop-types */
   constructor(props) {
     super(props);
     this.getCalculatedValues(props);
@@ -493,29 +516,4 @@ class VAxis extends React.Component {
   }
 }
 
-@Radium
-export default class VictoryAxis extends React.Component {
-  static role = "axis";
-  /* eslint-disable react/prop-types */
-  // ^ see: https://github.com/yannickcr/eslint-plugin-react/issues/106
-  static propTypes = {...VAxis.propTypes};
-  static defaultProps = {...VAxis.defaultProps};
 
-  render() {
-    if (this.props.animate) {
-      // Do less work by having `VictoryAnimation` tween only values that
-      // make sense to tween. In the future, allow customization of animated
-      // prop whitelist/blacklist?
-      const animateData = _.omit(this.props, [
-        "orientation", "scale", "tickFormat", "animate",
-        "crossAxis", "standalone"
-      ]);
-      return (
-        <VictoryAnimation {...this.props.animate} data={animateData}>
-          {props => <VAxis {...this.props} {...props}/>}
-        </VictoryAnimation>
-      );
-    }
-    return (<VAxis {...this.props}/>);
-  }
-}
