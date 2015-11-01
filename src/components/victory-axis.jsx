@@ -470,7 +470,7 @@ class VAxis extends React.Component {
           x={x}
           style={this.style.axisLabels}
           transform={this.isVertical ? "rotate(-90)" : ""}>
-          {this.getTextLines(this.props.label, x)[1]}
+          {this.getTextLines(this.props.label, x)}
         </text>
       );
     }
