@@ -380,14 +380,14 @@ class VAxis extends React.Component {
   getTickLines() {
     let position;
     let translate;
-    let textLengthAndLines;
+    let textLength;
     // determine the position and translation of each tick
     return _.map(this.ticks, (tick, index) => {
       position = this.scale(tick);
       translate = this.isVertical ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
-      textLengthAndLines =
-        this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x);
+      textLength =
+        this.getTextLength(this.tickFormat.call(this, tick, index));
       return (
         <g key={"tick-" + index} transform={translate}>
           <line
@@ -395,11 +395,11 @@ class VAxis extends React.Component {
             y2={this.tickProperties.y2}
             style={this.style.ticks}/>
           <text x={this.tickProperties.x}
-            y={(this.tickProperties.y - textLengthAndLines[0])}
+            y={(this.tickProperties.y - textLength)}
             dy={this.tickProperties.dy}
             style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
-            {textLengthAndLines[1]}
+            {this.getTextLines(this.tickFormat.call(this, tick, index), this.tickProperties.x)}
           </text>
         </g>
       );
@@ -440,14 +440,21 @@ class VAxis extends React.Component {
     // TODO: determine line height ("1.2em") based on font size
     const textString = "" + text;
     const textLines = textString.split("\n");
-    const HTMLtextLines = _.map(textLines, (line, index) => {
+    return _.map(textLines, (line, index) => {
       return index === 0 ?
       (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
       (<tspan x={x} dy="1.2em" key={"text-line-" + index}>{line}</tspan>);
     });
-    const heightOfLines = this.props.orientation === "top" ?
+  }
+
+  getTextLength(text) {
+    if (!text) {
+      return null;
+    }
+    const textString = "" + text;
+    const textLines = textString.split("\n");
+    return this.props.orientation === "top" ?
      (textLines.length - 1) * this.style.tickLabels.fontSize * 1.25 : 0;
-    return [heightOfLines, HTMLtextLines];
   }
 
   getLabelElements() {
