@@ -49,7 +49,6 @@ const styles = {
 
 @Radium
 export default class VictoryAxis extends React.Component {
-  static role = "axis";
   static propTypes = {
     /**
      * The independentAxis prop specifies whether the axis corresponds to the
