@@ -408,11 +408,14 @@ class VAxis extends React.Component {
   getTickLines() {
     let position;
     let translate;
+    let textLength;
     // determine the position and translation of each tick
     return _.map(this.ticks, (tick, index) => {
       position = this.scale(tick);
       translate = this.isVertical ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
+      textLength =
+        this.getTextHeight(this.tickFormat.call(this, tick, index));
       return (
         <g key={"tick-" + index} transform={translate}>
           <line
@@ -420,7 +423,7 @@ class VAxis extends React.Component {
             y2={this.tickProperties.y2}
             style={this.style.ticks}/>
           <text x={this.tickProperties.x}
-            y={this.tickProperties.y}
+            y={(this.tickProperties.y - textLength)}
             dy={this.tickProperties.dy}
             style={this.style.tickLabels}
             textAnchor={this.tickProperties.textAnchor}>
@@ -470,6 +473,16 @@ class VAxis extends React.Component {
       (<tspan x={x} key={"text-line-" + index}>{line}</tspan>) :
       (<tspan x={x} dy="1.2em" key={"text-line-" + index}>{line}</tspan>);
     });
+  }
+
+  getTextHeight(text) {
+    if (!text) {
+      return null;
+    }
+    const textString = "" + text;
+    const textLines = textString.split("\n");
+    return this.props.orientation === "top" ?
+     (textLines.length - 1) * this.style.tickLabels.fontSize * 1.25 : 0;
   }
 
   getLabelElements() {
