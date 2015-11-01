@@ -387,7 +387,7 @@ class VAxis extends React.Component {
       translate = this.isVertical ?
         "translate(0, " + position + ")" : "translate(" + position + ", 0)";
       textLength =
-        this.getTextLength(this.tickFormat.call(this, tick, index));
+        this.getTextHeight(this.tickFormat.call(this, tick, index));
       return (
         <g key={"tick-" + index} transform={translate}>
           <line
@@ -447,7 +447,7 @@ class VAxis extends React.Component {
     });
   }
 
-  getTextLength(text) {
+  getTextHeight(text) {
     if (!text) {
       return null;
     }
