@@ -51,11 +51,11 @@ const styles = {
 export default class VictoryAxis extends React.Component {
   static propTypes = {
     /**
-     * The independentAxis prop specifies whether the axis corresponds to the
-     * independent variable (usually x). This prop is useful when composing axis
+     * The dependentAxis prop specifies whether the axis corresponds to the
+     * dependent variable (usually y). This prop is useful when composing axis
      * with other components to form a chart.
      */
-    independentAxis: React.PropTypes.bool,
+    dependentAxis: React.PropTypes.bool,
     /**
      * The style prop specifies styles for your chart. Victory Axis relies on Radium,
      * so valid Radium style objects should work for this prop, however height, width, and margin
@@ -150,7 +150,6 @@ export default class VictoryAxis extends React.Component {
   };
 
   static defaultProps = {
-    orientation: "bottom",
     scale: d3.scale.linear(),
     tickCount: 5,
     standalone: true
@@ -189,7 +188,8 @@ class VAxis extends React.Component {
   getCalculatedValues(props) {
     // order matters!
     this.style = this.getStyles(props);
-    this.isVertical = props.orientation === "left" || props.orientation === "right";
+    this.orientation = this.getOrientation(props);
+    this.isVertical = this.orientation === "left" || this.orientation === "right";
     this.stringMap = this.createStringMap(props);
     this.range = this.getRange(props);
     this.domain = this.getDomain(props);
@@ -200,6 +200,13 @@ class VAxis extends React.Component {
     this.offset = this.getOffset(props);
     this.tickProperties = this.getTickProperties(props);
     this.transform = this.getTransform(props);
+  }
+
+  getOrientation(props) {
+    if (props.orientation) {
+      return props.orientation;
+    }
+    return props.dependentAxis ? "left" : "bottom";
   }
 
   getStyles(props) {
@@ -365,7 +372,7 @@ class VAxis extends React.Component {
     const tickSpacing = _.max([this.style.ticks.size, 0]) +
       this.style.ticks.padding;
     // determine axis orientation and layout
-    const sign = props.orientation === "top" || props.orientation === "left" ? -1 : 1;
+    const sign = this.orientation === "top" || this.orientation === "left" ? -1 : 1;
     // determine tick formatting constants based on orientationation and layout
     const x = this.isVertical ? sign * tickSpacing : 0;
     const y = this.isVertical ? 0 : sign * tickSpacing;
@@ -390,8 +397,8 @@ class VAxis extends React.Component {
       left: [this.offset.x, 0],
       right: [(this.style.parent.width - this.offset.x), 0]
     };
-    return "translate(" + transform[props.orientation][0] + "," +
-      transform[props.orientation][1] + ")";
+    return "translate(" + transform[this.orientation][0] + "," +
+      transform[this.orientation][1] + ")";
   }
 
   getAxisLine() {
@@ -436,7 +443,7 @@ class VAxis extends React.Component {
 
   getGridLines() {
     const style = this.style.parent;
-    const sign = this.props.orientation === "top" || this.props.orientation === "left" ? 1 : -1;
+    const sign = this.orientation === "top" || this.orientation === "left" ? 1 : -1;
     const xOffset = this.props.crossAxis ? this.offset.x - style.margin : 0;
     const yOffset = this.props.crossAxis ? this.offset.y - style.margin : 0;
     const x2 = this.isVertical ? sign * (style.width - (2 * style.margin)) : 0;
@@ -481,14 +488,14 @@ class VAxis extends React.Component {
     }
     const textString = "" + text;
     const textLines = textString.split("\n");
-    return this.props.orientation === "top" ?
+    return this.orientation === "top" ?
      (textLines.length - 1) * this.style.tickLabels.fontSize * 1.25 : 0;
   }
 
   getLabelElements() {
     const style = this.style.parent;
     if (this.props.label) {
-      const orientation = this.props.orientation;
+      const orientation = this.orientation;
       const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
       const x = this.isVertical ? -((style.height) / 2) : ((style.width) / 2);
       return (
