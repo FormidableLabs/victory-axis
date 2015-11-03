@@ -155,34 +155,20 @@ export default class VictoryAxis extends React.Component {
     standalone: true
   };
 
-  render() {
-    if (this.props.animate) {
-      // Do less work by having `VictoryAnimation` tween only values that
-      // make sense to tween. In the future, allow customization of animated
-      // prop whitelist/blacklist?
-      const animateData = _.omit(this.props, [
-        "orientation", "scale", "tickFormat", "animate",
-        "crossAxis", "standalone"
-      ]);
-      return (
-        <VictoryAnimation {...this.props.animate} data={animateData}>
-          {props => <VAxis {...this.props} {...props}/>}
-        </VictoryAnimation>
-      );
+  componentWillMount() {
+    // If animating, the `VictoryAxis` instance wrapped in `VictoryAnimation`
+    // will compute these values.
+    if (!this.props.animate) {
+      this.getCalculatedValues(this.props);
     }
-    return (<VAxis {...this.props}/>);
-  }
-}
-
-class VAxis extends React.Component {
-  /* eslint-disable react/prop-types */
-  constructor(props) {
-    super(props);
-    this.getCalculatedValues(props);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.getCalculatedValues(nextProps);
+    // If animating, the `VictoryAxis` instance wrapped in `VictoryAnimation`
+    // will compute these values.
+    if (!this.props.animate) {
+      this.getCalculatedValues(nextProps);
+    }
   }
 
   getCalculatedValues(props) {
@@ -512,19 +498,24 @@ class VAxis extends React.Component {
   }
 
   render() {
-    if (this.props.standalone === true) {
+    // If animating, return a `VictoryAnimation` element that will create
+    // a new `VictoryAxis` with nearly identical props, except (1) tweened
+    // and (2) `animate` set to null so we don't recurse forever.
+    if (this.props.animate) {
+      // Do less work by having `VictoryAnimation` tween only values that
+      // make sense to tween. In the future, allow customization of animated
+      // prop whitelist/blacklist?
+      const animateData = _.omit(this.props, [
+        "orientation", "scale", "tickFormat", "animate",
+        "crossAxis", "standalone"
+      ]);
       return (
-        <svg style={this.style.parent}>
-          <g style={this.style.parent} transform={this.transform}>
-            {this.getGridLines()}
-            {this.getAxisLine()}
-            {this.getTickLines()}
-            {this.getLabelElements()}
-          </g>
-        </svg>
+        <VictoryAnimation {...this.props.animate} data={animateData}>
+          {props => <VictoryAxis {...this.props} {...props} animate={null}/>}
+        </VictoryAnimation>
       );
     }
-    return (
+    const group = (
       <g style={this.style.parent} transform={this.transform}>
         {this.getGridLines()}
         {this.getAxisLine()}
@@ -532,7 +523,10 @@ class VAxis extends React.Component {
         {this.getLabelElements()}
       </g>
     );
+    return this.props.standalone ? (
+      <svg style={this.style.parent}>
+        {group}
+      </svg>
+    ) : group;
   }
 }
-
-
