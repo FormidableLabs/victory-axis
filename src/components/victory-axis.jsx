@@ -368,7 +368,7 @@ class VAxis extends React.Component {
     };
   }
 
-  getTickProperties(props) {
+  getTickProperties() {
     const tickSpacing = _.max([this.style.ticks.size, 0]) +
       this.style.ticks.padding;
     // determine axis orientation and layout
@@ -390,7 +390,7 @@ class VAxis extends React.Component {
     return {x, y, x2, y2, dy, textAnchor};
   }
 
-  getTransform(props) {
+  getTransform() {
     const transform = {
       top: [0, this.offset.y],
       bottom: [0, (this.style.parent.height - this.offset.y)],
