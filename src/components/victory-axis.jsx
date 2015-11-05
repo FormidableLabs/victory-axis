@@ -4,7 +4,7 @@ import d3 from "d3";
 import _ from "lodash";
 import {VictoryAnimation} from "victory-animation";
 
-const styles = {
+const defaultStyles = {
   axis: {
     stroke: "#756f6a",
     fill: "none",
@@ -208,14 +208,15 @@ export default class VictoryAxis extends React.Component {
   }
 
   getStyles(props) {
-    const {axis, grid, ticks, tickLabels, axisLabels, parent} = props.style;
+    const style = props.style || defaultStyles;
+    const {axis, grid, ticks, tickLabels, axisLabels, parent} = style;
     return {
       parent: _.merge({height: props.height, width: props.width}, parent),
-      axis: _.merge({}, styles.axis, axis),
-      grid: _.merge({}, styles.grid, grid),
-      ticks: _.merge({}, styles.ticks, ticks),
-      tickLabels: _.merge({}, styles.tickLabels, tickLabels),
-      axisLabels: _.merge({}, styles.axisLabels, axisLabels)
+      axis: _.merge({}, defaultStyles.axis, axis),
+      grid: _.merge({}, defaultStyles.grid, grid),
+      ticks: _.merge({}, defaultStyles.ticks, ticks),
+      tickLabels: _.merge({}, defaultStyles.tickLabels, tickLabels),
+      axisLabels: _.merge({}, defaultStyles.axisLabels, axisLabels)
     };
   }
 
