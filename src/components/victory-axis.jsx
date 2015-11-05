@@ -280,7 +280,7 @@ export default class VictoryAxis extends React.Component {
 
   getRange(props) {
     return this.isVertical ?
-      [this.padding.top, props.height - this.padding.bottom] :
+      [props.height - this.padding.bottom, this.padding.top] :
       [this.padding.left, props.width - this.padding.right];
   }
 
