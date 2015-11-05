@@ -208,9 +208,6 @@ export default class VictoryAxis extends React.Component {
   }
 
   getStyles(props) {
-    if (!props.style) {
-      return _.merge({parent: {height: props.height, width: props.width}}, styles);
-    }
     const {axis, grid, ticks, tickLabels, axisLabels, parent} = props.style;
     return {
       parent: _.merge({height: props.height, width: props.width}, parent),
