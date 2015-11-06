@@ -45,11 +45,6 @@ class App extends React.Component {
     };
 
     const styleOverrides = {
-      parent: {
-        height: 500,
-        width: 500,
-        margin: 60
-      },
       axis: {
         stroke: "red"
       },
@@ -64,8 +59,9 @@ class App extends React.Component {
     return (
       <div className="demo">
         <div>
-          <h1>Default Axis</h1>
+          <h1>Animating Axis</h1>
           <VictoryAxis style={styleOverrides}
+            padding={{bottom: 60}}
             label={"animation\nwow!"}
             tickValues={this.state.tickValues}
             tickFormat={["first", "second", "third", "fourth", "fifth"]}
@@ -90,17 +86,15 @@ class App extends React.Component {
             <VictoryAxis
               domain={this.state.domain}
               crossAxis={true}
-              orientation="bottom"
               offsetX={50}
               offsetY={150}
-              containerElement="g"/>
-            <VictoryAxis
+              standalone={false}/>
+            <VictoryAxis dependentAxis
               domain={this.state.domain.concat().reverse()}
               crossAxis={true}
-              orientation="left"
               offsetX={250}
               offsetY={50}
-              containerElement="g"/>
+              standalone={false}/>
             </svg>
         </div>
         <div>
