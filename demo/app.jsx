@@ -70,6 +70,8 @@ class App extends React.Component {
         <div>
           <h1>Time Scale Axis</h1>
           <VictoryAxis
+            label="time axis"
+            padding={{left: 10, right: 80}}
             scale={d3.time.scale()}
             style={{grid: {stroke: "black", strokeWidth: 1}}}
             tickValues={[
@@ -100,6 +102,8 @@ class App extends React.Component {
         <div>
         <h1>Log Scale Axis</h1>
           <VictoryAxis
+            label="cool log axis"
+            padding={{top: 10, bottom: 60}}
             orientation="left"
             scale={d3.scale.log()}
             domain={[1, 5]}

@@ -483,7 +483,9 @@ export default class VictoryAxis extends React.Component {
     if (this.props.label) {
       const orientation = this.orientation;
       const sign = (orientation === "top" || orientation === "left") ? -1 : 1;
-      const x = this.isVertical ? -((this.props.height) / 2) : ((this.props.width) / 2);
+      const x = this.isVertical ?
+        -((this.props.height - this.padding.top - this.padding.bottom) / 2) - this.padding.top :
+        ((this.props.width - this.padding.left - this.padding.right) / 2) + this.padding.left;
       return (
         <text
           textAnchor="middle"
