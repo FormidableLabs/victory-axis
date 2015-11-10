@@ -43,6 +43,7 @@ const defaultStyles = {
 
 @Radium
 export default class VictoryAxis extends React.Component {
+  static role = "axis";
   static propTypes = {
     /**
      * The animate prop specifies props for victory-animation to use. It this prop is
