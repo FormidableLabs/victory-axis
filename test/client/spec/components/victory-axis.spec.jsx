@@ -8,8 +8,8 @@ import Component from "src/components/victory-axis";
 // See: https://facebook.github.io/react/docs/test-utils.html
 const TestUtils = React.addons.TestUtils;
 
-describe("components/victory-axis", function () {
-  it.skip("has expected content with deep render", function () {
+describe("components/victory-axis", () => {
+  it.skip("has expected content with deep render", () => {
     // This is a "deep" render that renders children + all into an actual
     // browser DOM node.
     //
@@ -24,7 +24,7 @@ describe("components/victory-axis", function () {
     expect(divNode).to.have.property("innerHTML", "Edit me!");
   });
 
-  it("has expected content with shallow render", function () {
+  it("has expected content with shallow render", () => {
     // This is a "shallow" render that renders only the current component
     // without using the actual DOM.
     //

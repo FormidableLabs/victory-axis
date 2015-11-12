@@ -30,6 +30,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    /* eslint-disable react/no-did-mount-set-state */
     window.setInterval(() => {
       this.setState({
         tickValues: this.getTickValues(),
@@ -45,14 +46,16 @@ class App extends React.Component {
     };
 
     const styleOverrides = {
-      axis: {
+      line: {
         stroke: "red"
       },
       grid: {
         strokeWidth: 2
       },
       ticks: {
-        strokeWidth: 5
+        line: {
+          strokeWidth: 5
+        }
       }
     };
 
@@ -65,7 +68,8 @@ class App extends React.Component {
             label={"animation\nwow!"}
             tickValues={this.state.tickValues}
             tickFormat={["first", "second", "third", "fourth", "fifth"]}
-            animate={{velocity: 0.01}}/>
+            animate={{velocity: 0.01}}
+          />
         </div>
         <div>
           <h1>Time Scale Axis</h1>
@@ -80,24 +84,25 @@ class App extends React.Component {
               new Date(2000, 1, 1),
               new Date(2010, 1, 1),
               new Date(2020, 1, 1)]}
-              tickFormat={d3.time.format("%Y")}/>
+            tickFormat={d3.time.format("%Y")}
+          />
         </div>
         <div>
         <h1>X-Y Axis</h1>
           <svg style={svgStyle}>
-            <VictoryAxis
+            <VictoryAxis crossAxis
               domain={this.state.domain}
-              crossAxis={true}
               offsetX={50}
               offsetY={150}
-              standalone={false}/>
-            <VictoryAxis dependentAxis
-              domain={this.state.domain.concat().reverse()}
-              crossAxis={true}
+              standalone={false}
+            />
+            <VictoryAxis dependentAxis crossAxis
+              domain={this.state.domain}
               offsetX={250}
               offsetY={50}
-              standalone={false}/>
-            </svg>
+              standalone={false}
+            />
+          </svg>
         </div>
         <div>
         <h1>Log Scale Axis</h1>
@@ -107,11 +112,20 @@ class App extends React.Component {
             orientation="left"
             scale={d3.scale.log()}
             domain={[1, 5]}
-            offsetX={50}/>
+            offsetX={50}
+          />
+          <VictoryAxis
+            label="cool log axis"
+            padding={{top: 10, bottom: 60}}
+            orientation="right"
+            scale={d3.scale.log()}
+            domain={[1, 5]}
+          />
         </div>
         <div>
           <h1>Ordinal Scales</h1>
           <VictoryAxis
+            orientation="top"
             style={styleOverrides}
             tickValues={[
               "Mets\nNY",
@@ -119,7 +133,41 @@ class App extends React.Component {
               "Yankees\nNY",
               "Nationals\nDC",
               "Mariners\nSEA"
-            ]}/>
+            ]}
+          />
+          <VictoryAxis
+            orientation="right"
+            style={styleOverrides}
+            tickValues={[
+              "Mets\nNY",
+              "Giants\nSF",
+              "Yankees\nNY",
+              "Nationals\nDC",
+              "Mariners\nSEA"
+            ]}
+          />
+          <VictoryAxis
+            orientation="bottom"
+            style={styleOverrides}
+            tickValues={[
+              "Mets\nNY",
+              "Giants\nSF",
+              "Yankees\nNY",
+              "Nationals\nDC",
+              "Mariners\nSEA"
+            ]}
+          />
+          <VictoryAxis
+            orientation="left"
+            style={styleOverrides}
+            tickValues={[
+              "Mets\nNY",
+              "Giants\nSF",
+              "Yankees\nNY",
+              "Nationals\nDC",
+              "Mariners\nSEA"
+            ]}
+          />
         </div>
       </div>
     );

@@ -14,6 +14,8 @@ var webpackCfg = require("./webpack.config.test");
 //        formidable-react-component-boilerplate/issues/25
 
 module.exports = function (config) {
+  /* eslint-disable global-require */
+
   // Start with the "dev" (webpack-dev-server is already running) config
   // and add in the webpack stuff.
   require("./karma.conf.dev")(config);
