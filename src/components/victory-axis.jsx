@@ -49,7 +49,7 @@ export default class VictoryAxis extends React.Component {
      * The animate prop specifies props for victory-animation to use. It this prop is
      * not given, the axis will not tween between changing data / style props.
      * Large datasets might animate slowly due to the inherent limits of svg rendering.
-     * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
+     * @examples {velocity: 0.02, onEnd: () => alert("done!")}
      */
     animate: React.PropTypes.object,
     /**
@@ -115,7 +115,7 @@ export default class VictoryAxis extends React.Component {
     /**
      * The scale prop determines which scales your axis should use. This prop should be
      * given as a function,
-     * @exampes d3.time.scale()
+     * @examples d3.time.scale()
      */
     scale: React.PropTypes.func,
     /**
@@ -158,11 +158,11 @@ export default class VictoryAxis extends React.Component {
 
   static defaultProps = {
     height: 300,
-    padding: 30,
+    padding: 50,
     scale: d3.scale.linear(),
     standalone: true,
     tickCount: 5,
-    width: 500
+    width: 450
   };
 
   componentWillMount() {
@@ -274,8 +274,7 @@ export default class VictoryAxis extends React.Component {
 
   // helper for getDomain()
   _getDomainFromScale(props) {
-    const scaleDomain = props.scale.domain();
-    return this.isVertical ? scaleDomain.concat().reverse() : scaleDomain;
+    return props.scale.domain();
   }
 
   getRange(props) {
