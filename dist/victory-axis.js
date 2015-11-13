@@ -278,8 +278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "_getDomainFromScale",
 	    value: function _getDomainFromScale(props) {
-	      var scaleDomain = props.scale.domain();
-	      return this.isVertical ? scaleDomain.concat().reverse() : scaleDomain;
+	      return props.scale.domain();
 	    }
 	  }, {
 	    key: "getRange",
@@ -572,7 +571,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	       * The animate prop specifies props for victory-animation to use. It this prop is
 	       * not given, the axis will not tween between changing data / style props.
 	       * Large datasets might animate slowly due to the inherent limits of svg rendering.
-	       * @examples {line: {delay: 5, velocity: 10, onEnd: () => alert("woo!")}}
+	       * @examples {velocity: 0.02, onEnd: () => alert("done!")}
 	       */
 	      animate: _react2["default"].PropTypes.object,
 	      /**
@@ -635,7 +634,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      /**
 	       * The scale prop determines which scales your axis should use. This prop should be
 	       * given as a function,
-	       * @exampes d3.time.scale()
+	       * @examples d3.time.scale()
 	       */
 	      scale: _react2["default"].PropTypes.func,
 	      /**
@@ -680,11 +679,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: "defaultProps",
 	    value: {
 	      height: 300,
-	      padding: 30,
+	      padding: 50,
 	      scale: _d32["default"].scale.linear(),
 	      standalone: true,
 	      tickCount: 5,
-	      width: 500
+	      width: 450
 	    },
 	    enumerable: true
 	  }]);
