@@ -1,14 +1,14 @@
 /**
  * Client tests
  */
-import React from "react/addons";
+import React from "react";
 import Component from "src/components/victory-axis";
-
 // Use `TestUtils` to inject into DOM, simulate events, etc.
 // See: https://facebook.github.io/react/docs/test-utils.html
-const TestUtils = React.addons.TestUtils;
+import TestUtils from "react-addons-test-utils";
 
-describe("components/victory-axis", () => {
+describe("components/victory-component-boilerplate", () => {
+
   it.skip("has expected content with deep render", () => {
     // This is a "deep" render that renders children + all into an actual
     // browser DOM node.
@@ -17,11 +17,10 @@ describe("components/victory-axis", () => {
     const rendered = TestUtils.renderIntoDocument(<Component />);
 
     // This is a real DOM node to assert on.
-    const divNode = TestUtils
-      .findRenderedDOMComponentWithTag(rendered, "svg")
-      .getDOMNode();
+    const svgNode = TestUtils
+      .findRenderedDOMComponentWithTag(rendered, "svg");
 
-    expect(divNode).to.have.property("innerHTML", "Edit me!");
+    expect(svgNode).to.have.property("innerHTML", "Edit me!");
   });
 
   it("has expected content with shallow render", () => {
@@ -31,8 +30,8 @@ describe("components/victory-axis", () => {
     // https://facebook.github.io/react/docs/test-utils.html#shallow-rendering
     const renderer = TestUtils.createRenderer();
     renderer.render(<Component />);
-    // const output = renderer.getRenderOutput();
+    const output = renderer.getRenderOutput();
 
-    expect(true).to.equal(true);
+    expect(output.type).to.equal("svg");
   });
 });
