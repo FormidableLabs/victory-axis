@@ -64,7 +64,7 @@ class App extends React.Component {
         <div>
           <h1>Animating Axis</h1>
           <VictoryAxis style={styleOverrides}
-            padding={{bottom: 60}}
+            padding={60}
             label={"animation\nwow!"}
             tickValues={this.state.tickValues}
             tickFormat={["first", "second", "third", "fourth", "fifth"]}
@@ -89,17 +89,19 @@ class App extends React.Component {
         </div>
         <div>
         <h1>X-Y Axis</h1>
-          <svg style={svgStyle}>
+          <svg style={{width: 500, height: 400}}>
             <VictoryAxis crossAxis
+              width={500}
+              height={400}
               domain={this.state.domain}
-              offsetX={50}
-              offsetY={150}
+              offsetY={200} /* half of the height */
               standalone={false}
             />
             <VictoryAxis dependentAxis crossAxis
+              width={500}
+              height={400}
               domain={this.state.domain}
-              offsetX={250}
-              offsetY={50}
+              offsetX={250} /* half of the width */
               standalone={false}
             />
           </svg>
