@@ -40,11 +40,6 @@ class App extends React.Component {
   }
 
   render() {
-    const svgStyle = {
-      width: 700,
-      height: 400
-    };
-
     const styleOverrides = {
       line: {
         stroke: "red"
