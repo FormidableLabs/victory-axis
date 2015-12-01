@@ -4,6 +4,10 @@ import d3 from "d3";
 import _ from "lodash";
 import {VictoryAnimation} from "victory-animation";
 import {VictoryLabel} from "victory-label";
+import AxisLine from "./axis-line";
+import GridLine from "./grid";
+import Tick from "./tick";
+import { getRole } from "../util";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
 
 const defaultStyles = {
@@ -71,6 +75,7 @@ export default class VictoryAxis extends React.Component {
      * @examples {velocity: 0.02, onEnd: () => alert("done!")}
      */
     animate: PropTypes.object,
+    children: PropTypes.any,
     /**
      * This prop specifies whether a given axis is intended to cross another axis.
      */
@@ -92,10 +97,6 @@ export default class VictoryAxis extends React.Component {
      * The height props specifies the height of the chart container element in pixels
      */
     height: VictoryPropTypes.nonNegative,
-    /**
-     * The label prop specifies the label for your axis
-     */
-    label: PropTypes.string,
     /**
      * The labelPadding prop specifies the padding in pixels for you axis label
      */
@@ -381,7 +382,7 @@ export default class VictoryAxis extends React.Component {
     return `translate(${translate[0]}, ${translate[1]})`;
   }
 
-  renderAxisLine() {
+  renderLine(line) {
     const props = this.isVertical ? {
       y1: this.padding.top,
       y2: this.props.height - this.padding.bottom
@@ -389,7 +390,11 @@ export default class VictoryAxis extends React.Component {
       x1: this.padding.left,
       x2: this.props.width - this.padding.right
     };
-    return <line {...props} style={this.style.line}/>;
+    props.key = "line";
+    props.style = this.style.line;
+    return line ?
+      React.cloneElement(line, props) :
+      React.createElement(AxisLine, props);
   }
 
   renderTicks() {
@@ -403,23 +408,26 @@ export default class VictoryAxis extends React.Component {
         `translate(0, ${position})` :
         `translate(${position}, 0)`;
       return (
-        <g key={`tick-${index}`} transform={transform}>
-          <line x2={props.x2} y2={props.y2} style={style.line}/>
-          <VictoryLabel
-            x={props.x}
-            y={props.y}
-            style={style.label}
-            textAnchor={props.textAnchor}
-            verticalAnchor={props.verticalAnchor}
-          >
-            {tickFormat.call(this, tick, index)}
-          </VictoryLabel>
-        </g>
+        <Tick key={`tick-${index}`}
+          transform={transform}
+          x={props.x}
+          x2={props.x2}
+          y={props.y}
+          y2={props.y2}
+          style={style.line}
+          labelProps={{
+            textAnchor: props.textAnchor,
+            verticalAnchor: props.verticalAnchor,
+            style: style.label
+          }}
+        >
+          {tickFormat.call(this, tick, index)}
+        </Tick>
       );
     });
   }
 
-  renderGridLines() {
+  renderGrid() {
     const xPadding = this.orientation === "right" ? this.padding.right : this.padding.left;
     const yPadding = this.orientation === "top" ? this.padding.top : this.padding.bottom;
     const sign = -orientationSign[this.orientation];
@@ -436,34 +444,79 @@ export default class VictoryAxis extends React.Component {
         `translate(${-xOffset}, ${position})` :
         `translate(${position}, ${yOffset})`;
       return (
-        <g key={`grid-${index}`} transform={transform}>
-          <line x2={x2} y2={y2} style={this.style.grid}/>
-        </g>
+        <GridLine key={`grid-${index}`}
+          transform={transform}
+          x2={x2}
+          y2={y2}
+          style={this.style.grid}
+        />
       );
     });
   }
 
-  renderLabel() {
-    if (this.props.label) {
-      const sign = orientationSign[this.orientation];
-      const hPadding = this.padding.left + this.padding.right;
-      const vPadding = this.padding.top + this.padding.bottom;
-      const x = this.isVertical ?
-        -((this.props.height - vPadding) / 2) - this.padding.top :
-        ((this.props.width - hPadding) / 2) + this.padding.left;
-      return (
-        <VictoryLabel
-          x={x}
-          y={sign * this.labelPadding}
-          textAnchor="middle"
-          verticalAnchor={sign < 0 ? "end" : "start"}
-          style={this.style.label}
-          transform={this.isVertical ? "rotate(-90)" : ""}
-        >
-          {this.props.label}
-        </VictoryLabel>
-      );
+  renderLabel(label) {
+    const sign = orientationSign[this.orientation];
+    const hPadding = this.padding.left + this.padding.right;
+    const vPadding = this.padding.top + this.padding.bottom;
+    const x = this.isVertical ?
+      -((this.props.height - vPadding) / 2) - this.padding.top :
+      ((this.props.width - hPadding) / 2) + this.padding.left;
+    const props = {
+      key: "label",
+      x,
+      y: sign * this.labelPadding,
+      textAnchor: "middle",
+      verticalAnchor: sign < 0 ? "end" : "start",
+      style: this.style.label,
+      transform: this.isVertical ? "rotate(-90)" : ""
+    };
+    return React.cloneElement(label, props);
+  }
+
+  renderChildren() {
+    const roles = {};
+    const children = React.Children.map(this.props.children, (child) => {
+      let role = getRole(child);
+      if (!role) {
+        role = "label";
+        child = <VictoryLabel>{child}</VictoryLabel>;
+      }
+      if (role) {
+        // Keep track of which roles were found.
+        roles[role] = true;
+      }
+      switch (role) {
+      case "grid":
+        return child;
+      case "line":
+        return this.renderLine(child);
+      case "tick":
+        return child;
+      case "label":
+        return this.renderLabel(child);
+      default:
+        return child;
+      }
+    }) || []; // Protect against `React.Children.map` not returning an array
+              // if `children` is null or undefined.
+
+    // Add things in reverse z-index order - the first item add should render
+    // on the topmost layer.
+
+    // Label is optional, so don't add a default.
+    if (!roles.tick) {
+      // If no `tick` elements were found, render default ticks.
+      children.unshift(...this.renderTicks());
     }
+    if (!roles.line) {
+      // If no `line` element was found, render the default line.
+      children.unshift(this.renderLine());
+    }
+    if (!roles.grid) {
+      // If no `grid` elements were found, render default grid lines.
+      children.unshift(...this.renderGrid());
+    }
+    return children;
   }
 
   render() {
@@ -489,10 +542,7 @@ export default class VictoryAxis extends React.Component {
     const transform = this.getTransform(this.props);
     const group = (
       <g style={this.style.parent} transform={transform}>
-        {this.renderGridLines()}
-        {this.renderAxisLine()}
-        {this.renderTicks()}
-        {this.renderLabel()}
+        {this.renderChildren()}
       </g>
     );
     return this.props.standalone ? (
