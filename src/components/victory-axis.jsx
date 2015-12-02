@@ -7,13 +7,13 @@ import {VictoryLabel} from "victory-label";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
 
 const defaultStyles = {
-  line: {
+  axis: {
     stroke: "#756f6a",
     fill: "none",
     strokeWidth: 2,
     strokeLinecap: "round"
   },
-  label: {
+  axisLabel: {
     stroke: "transparent",
     fill: "#756f6a",
     fontSize: 16,
@@ -26,23 +26,19 @@ const defaultStyles = {
     strokeLinecap: "round"
   },
   ticks: {
-    parent: {
-      padding: 5
-    },
-    line: {
-      stroke: "#756f6a",
-      fill: "none",
-      strokeWidth: 2,
-      strokeLinecap: "round",
-      size: 4
-    },
-    label: {
-      stroke: "transparent",
-      fill: "#756f6a",
-      fontFamily: "Helvetica",
-      fontSize: 10,
-      padding: 5
-    }
+    stroke: "#756f6a",
+    fill: "none",
+    padding: 5,
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    size: 4
+  },
+  tickLabels: {
+    stroke: "transparent",
+    fill: "#756f6a",
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    padding: 5
   }
 };
 
@@ -149,21 +145,15 @@ export default class VictoryAxis extends React.Component {
      * are used to calculate range, and need to be expressed as a number of pixels.
      * styles for axis lines, gridlines, and ticks are scoped to separate props.
      * @examples {axis: {stroke: "#756f6a"}, grid: {stroke: "grey"}, ticks: {stroke: "grey"},
-     * tickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}
+     * tickLabels: {fontSize: 10, padding: 5}, axisLabel: {fontSize: 16, padding: 20}}
      */
     style: PropTypes.shape({
       parent: PropTypes.object,
-      line: PropTypes.object,
-      label: PropTypes.object,
-      grid: PropTypes.shape({
-        parent: PropTypes.object,
-        line: PropTypes.object
-      }),
-      ticks: PropTypes.shape({
-        parent: PropTypes.object,
-        line: PropTypes.object,
-        label: PropTypes.object
-      })
+      axis: PropTypes.object,
+      axisLabel: PropTypes.object,
+      grid: PropTypes.object,
+      ticks: PropTypes.object,
+      tickLabels: PropTypes.object
     }),
     /**
      * The tickCount prop specifies how many ticks should be drawn on the axis if
@@ -223,10 +213,11 @@ export default class VictoryAxis extends React.Component {
     const parentStyleProps = { height: props.height, width: props.width };
     return {
       parent: _.merge(parentStyleProps, defaultStyles.parent, style.parent),
-      line: _.merge({}, defaultStyles.line, style.line),
-      label: _.merge({}, defaultStyles.label, style.label),
+      axis: _.merge({}, defaultStyles.axis, style.axis),
+      axisLabel: _.merge({}, defaultStyles.axisLabel, style.axisLabel),
       grid: _.merge({}, defaultStyles.grid, style.grid),
-      ticks: _.merge({}, defaultStyles.ticks, style.ticks)
+      ticks: _.merge({}, defaultStyles.ticks, style.ticks),
+      tickLabels: _.merge({}, defaultStyles.tickLabels, style.tickLabels)
     };
   }
 
@@ -326,7 +317,7 @@ export default class VictoryAxis extends React.Component {
   }
 
   getLabelPadding(props) {
-    const style = this.style.label;
+    const style = this.style.axisLabel;
     if (typeof style.padding !== "undefined" && style.padding !== null) {
       return style.padding;
     }
@@ -337,10 +328,10 @@ export default class VictoryAxis extends React.Component {
   getOffset(props) {
     const xPadding = props.orientation === "right" ? this.padding.right : this.padding.left;
     const yPadding = props.orientation === "top" ? this.padding.top : this.padding.bottom;
-    const fontSize = this.style.label.fontSize;
+    const fontSize = this.style.axisLabel.fontSize;
     const offsetX = props.offsetX || xPadding;
     const offsetY = props.offsetY || yPadding;
-    const totalPadding = fontSize + (2 * this.style.ticks.line.size) + this.labelPadding;
+    const totalPadding = fontSize + (2 * this.style.ticks.size) + this.labelPadding;
     const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical ? totalPadding : minimumPadding;
     const y = this.isVertical ? minimumPadding : totalPadding;
@@ -352,11 +343,11 @@ export default class VictoryAxis extends React.Component {
 
   getTickProperties() {
     const style = this.style.ticks;
-    const tickSpacing = style.line.size + style.parent.padding;
+    const tickSpacing = style.size + style.padding;
     const sign = orientationSign[this.orientation];
     return this.isVertical ? {
       x: sign * tickSpacing,
-      x2: sign * style.line.size,
+      x2: sign * style.size,
       y: 0,
       y2: 0,
       textAnchor: sign < 0 ? "end" : "start",
@@ -365,7 +356,7 @@ export default class VictoryAxis extends React.Component {
       x: 0,
       x2: 0,
       y: sign * tickSpacing,
-      y2: sign * style.line.size,
+      y2: sign * style.size,
       textAnchor: "middle",
       verticalAnchor: sign < 0 ? "end" : "start"
     };
@@ -389,11 +380,10 @@ export default class VictoryAxis extends React.Component {
       x1: this.padding.left,
       x2: this.props.width - this.padding.right
     };
-    return <line {...props} style={this.style.line}/>;
+    return <line {...props} style={this.style.axis}/>;
   }
 
   renderTicks() {
-    const style = this.style.ticks;
     const props = this.getTickProperties(this.props);
     const tickFormat = this.getTickFormat(this.props);
     // determine the position and translation of each tick
@@ -404,11 +394,11 @@ export default class VictoryAxis extends React.Component {
         `translate(${position}, 0)`;
       return (
         <g key={`tick-${index}`} transform={transform}>
-          <line x2={props.x2} y2={props.y2} style={style.line}/>
+          <line x2={props.x2} y2={props.y2} style={this.style.ticks}/>
           <VictoryLabel
             x={props.x}
             y={props.y}
-            style={style.label}
+            style={this.style.tickLabels}
             textAnchor={props.textAnchor}
             verticalAnchor={props.verticalAnchor}
           >
@@ -457,7 +447,7 @@ export default class VictoryAxis extends React.Component {
           y={sign * this.labelPadding}
           textAnchor="middle"
           verticalAnchor={sign < 0 ? "end" : "start"}
-          style={this.style.label}
+          style={this.style.axisLabel}
           transform={this.isVertical ? "rotate(-90)" : ""}
         >
           {this.props.label}

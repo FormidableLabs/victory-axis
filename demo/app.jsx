@@ -41,16 +41,14 @@ class App extends React.Component {
 
   render() {
     const styleOverrides = {
-      line: {
+      axis: {
         stroke: "red"
       },
       grid: {
         strokeWidth: 2
       },
       ticks: {
-        line: {
-          strokeWidth: 5
-        }
+        strokeWidth: 5
       }
     };
 
