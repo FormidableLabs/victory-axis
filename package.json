@@ -31,7 +31,7 @@
     "lodash": "^3.10.0",
     "radium": "^0.14.1",
     "victory-animation": "^0.0.12",
-    "victory-label": "^0.1.4",
+    "victory-label": "^0.1.5",
     "victory-util": "^2.0.2"
   },
   "devDependencies": {
