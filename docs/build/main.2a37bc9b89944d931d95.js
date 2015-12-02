@@ -98378,7 +98378,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			"domain": {
 				"type": {
 					"name": "custom",
-					"raw": "VictoryPropTypes.minMaxArray"
+					"raw": "VictoryPropTypes.domain"
 				},
 				"required": false,
 				"description": "The domain prop describes the range of values your axis will include. This prop should be\ngiven as a array of the minimum and maximum expected values for your axis.\nIf this value is not given it will be calculated based on the scale or tickValues.\n@exampes [-1, 1]"
@@ -98516,50 +98516,30 @@ return /******/ (function(modules) { // webpackBootstrap
 							"name": "object",
 							"required": false
 						},
-						"line": {
+						"axis": {
 							"name": "object",
 							"required": false
 						},
-						"label": {
+						"axisLabel": {
 							"name": "object",
 							"required": false
 						},
 						"grid": {
-							"name": "shape",
-							"value": {
-								"parent": {
-									"name": "object",
-									"required": false
-								},
-								"line": {
-									"name": "object",
-									"required": false
-								}
-							},
+							"name": "object",
 							"required": false
 						},
 						"ticks": {
-							"name": "shape",
-							"value": {
-								"parent": {
-									"name": "object",
-									"required": false
-								},
-								"line": {
-									"name": "object",
-									"required": false
-								},
-								"label": {
-									"name": "object",
-									"required": false
-								}
-							},
+							"name": "object",
+							"required": false
+						},
+						"tickLabels": {
+							"name": "object",
 							"required": false
 						}
 					}
 				},
 				"required": false,
-				"description": "The style prop specifies styles for your chart. Victory Axis relies on Radium,\nso valid Radium style objects should work for this prop, however height, width, and margin\nare used to calculate range, and need to be expressed as a number of pixels.\nstyles for axis lines, gridlines, and ticks are scoped to separate props.\n@examples {axis: {stroke: \"#756f6a\"}, grid: {stroke: \"grey\"}, ticks: {stroke: \"grey\"},\ntickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}"
+				"description": "The style prop specifies styles for your chart. Victory Axis relies on Radium,\nso valid Radium style objects should work for this prop, however height, width, and margin\nare used to calculate range, and need to be expressed as a number of pixels.\nstyles for axis lines, gridlines, and ticks are scoped to separate props.\n@examples {axis: {stroke: \"#756f6a\"}, grid: {stroke: \"grey\"}, ticks: {stroke: \"grey\"},\ntickLabels: {fontSize: 10, padding: 5}, axisLabel: {fontSize: 16, padding: 20}}"
 			},
 			"tickCount": {
 				"type": {
@@ -98582,7 +98562,7 @@ return /******/ (function(modules) { // webpackBootstrap
 						},
 						{
 							"name": "custom",
-							"raw": "VictoryPropTypes.homogenousArray"
+							"raw": "VictoryPropTypes.homogeneousArray"
 						}
 					]
 				},
@@ -98592,7 +98572,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			"tickValues": {
 				"type": {
 					"name": "custom",
-					"raw": "VictoryPropTypes.homogenousArray"
+					"raw": "VictoryPropTypes.homogeneousArray"
 				},
 				"required": false,
 				"description": "The tickValues prop explicity specifies which ticks values to draw on the axis.\n@examples [\"apples\", \"bananas\", \"oranges\"], [2, 4, 6, 8]"
