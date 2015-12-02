@@ -87,7 +87,7 @@ export default class VictoryAxis extends React.Component {
      * If this value is not given it will be calculated based on the scale or tickValues.
      * @exampes [-1, 1]
      */
-    domain: VictoryPropTypes.minMaxArray,
+    domain: VictoryPropTypes.domain,
     /**
      * The height props specifies the height of the chart container element in pixels
      */
@@ -178,13 +178,13 @@ export default class VictoryAxis extends React.Component {
      */
     tickFormat: PropTypes.oneOfType([
       PropTypes.func,
-      VictoryPropTypes.homogenousArray
+      VictoryPropTypes.homogeneousArray
     ]),
     /**
      * The tickValues prop explicity specifies which ticks values to draw on the axis.
      * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
      */
-    tickValues: VictoryPropTypes.homogenousArray,
+    tickValues: VictoryPropTypes.homogeneousArray,
     /**
      * The width props specifies the width of the chart container element in pixels
      */
