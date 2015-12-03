@@ -5,7 +5,7 @@
           <![endif]--></meta><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/><title>VictoryAxis</title><meta name="description" content=""/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/theme/monokai.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css"/><link href="https://fonts.googleapis.com/css?family=Karla:400,700,400italic" rel="stylesheet" type="text/css"/></head><body><div><!--[if lt IE 8]>
             <p class="browsehappy">You are using an <strong>outdated</strong> browser.
             Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-          <![endif]--></div><div id="content"><div><div class="Ecology"><div class="Overview"><div><h1 id="victoryaxis">VictoryAxis</h1>
+          <![endif]--></div><div id="content" class="Container"><div><div class="Ecology"><div class="Overview"><div><h1 id="victoryaxis">VictoryAxis</h1>
 <p>VictoryAxis draws an SVG chart axis with <a href="https://github.com/facebook/react">React</a>. Styles and data can be customized by passing in your own values as properties to the component. Data changes are animated with <a href="https://github.com/FormidableLabs/victory-animation">victory-animation</a>.</p>
 <h2 id="features">Features</h2>
 <h3 id="props-are-optional">Props are Optional</h3>
@@ -185,9 +185,9 @@ padding: 0.425em 0.75em;
 vertical-align: top;}th code, td code{background: none;
 color: #111;}th{font-weight: bold;
 text-align: left;}h1,h2,h3,h4,h5,h6,hgroup, ul,ol,dd, p,figure, pre,table,fieldset,hr, .highlight{margin-top: 0;
-margin-bottom: 1.5rem;}img{max-width: 100%;}svg, img{fill: currentColor;}h1{font-size: 2.75rem;}h2{font-size: 2.5rem;}h3{font-size: 2.125rem;}h4, h5, h6{font-size: 1.9rem;}h1,h2,h3,h4{font-family: 'Didot', 'Bodoni MT', 'Cochin', 'Baskerville', 'Goudy Old Style', 'Bitstream Charter', serif;
+margin-bottom: 1.5rem;}img{max-width: 100%;}svg, img{fill: currentColor;}h1{font-size: 2.75rem;}h2{font-size: 2.5rem;}h3{font-size: 2.125rem;}h4, h5, h6{font-size: 1.9rem;}h1,h2,h3,h4{font-family: 'Didot', 'Cochin', serif;
 font-weight: normal;
-line-height: 1.2;}.Headline{font-family: 'Didot', 'Bodoni MT', 'Cochin', 'Baskerville', 'Goudy Old Style', 'Bitstream Charter', serif;
+line-height: 1.2;}.Headline{font-family: 'Didot', 'Cochin', serif;
 font-size: 2.5rem;
 font-weight: normal;}.Headline--minor{font-size: 2rem;
 font-style: italic;}.Headline--major{font-size: 3rem;
@@ -209,7 +209,7 @@ font-family: 'Karla', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 font-weight: normal;
 padding: 0.75em 1.25em;
 text-align: center;
-transition: color 0.2s ease, border-color 0.7s ease;}.Button:hover, .Button:focus{border-color: #E5847D;
+transition: color 0.2s ease, border-color 0.7s ease;}.Button:hover, .Button:focus{border-color: undefined;
 box-shadow: none;
 color: #bd1e13;
 outline: none;
@@ -229,7 +229,7 @@ max-width: 640px;}.Copy .highlight{margin-left: -16px;
 margin-right: -16px;}.Copy .highlight pre{margin-bottom: 0;
 background: #2b303b;
 color: #fff;
-font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+font-family: undefined;
 font-size: 16px;
 line-height: 1.2;
 overflow: auto;
@@ -244,7 +244,7 @@ border-radius: 50%;
 border: 1px solid #bd1e13;
 left: -24px;
 top: 11px;}.Copy li > ul, .Ecology li > ul{margin-top: 0.25em;
-margin-bottom: 0px;}.Copy code, .Ecology code{font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+margin-bottom: 0px;}.Copy code, .Ecology code{font-family: undefined;
 background: #ede7e1;
 color: #34302e;
 border-radius: 3;
@@ -253,7 +253,7 @@ padding: 0;}.Installer{display: inline-block;
 background: #ebe3db;
 border: 1px solid #d1c7bc;
 color: #2b303b;
-font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+font-family: undefined;
 font-size: 18px;
 line-height: 1.2;
 margin: 0 auto;
@@ -267,7 +267,7 @@ letter-spacing: 0.05em;
 text-transform: uppercase;}.Interactive:before{content: 'Interactive Code';}.Interactive .playgroundCode{flex: 0 0 100%;
 vertical-align: top;
 background: #fff;
-font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+font-family: undefined;
 font-size: 1rem;
 line-height: 1.2;
 margin-bottom: 30px;
@@ -278,10 +278,10 @@ background: #fff;
 position: relative;
 border: 1px solid #ebe3db;}.Interactive .playgroundPreview:before{content: 'Live Preview';
 position: absolute;
-top: -18px;}.Interactive pre, .CodeMirror-code{font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+top: -18px;}.Interactive pre, .CodeMirror-code{font-family: undefined;
 font-size: 1rem;
-line-height: 1.2;}.CodeMirror{height: auto;}.Documentation h1, .Documentation h2, .Documentation h3{font-family: 'Didot', 'Bodoni MT', 'Cochin', 'Baskerville', 'Goudy Old Style', 'Bitstream Charter', serif;
-font-weight: normal;}.Prop-name{font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;}.Prop-type{color: #91887e;
+line-height: 1.2;}.CodeMirror{height: auto;}.Documentation h1, .Documentation h2, .Documentation h3{font-family: 'Didot', 'Cochin', serif;
+font-weight: normal;}.Prop-name{font-family: undefined;}.Prop-type{color: #91887e;
 display: block;
 font-style: italic;
 line-height: 1em;}.Prop-description{display: block;
@@ -291,7 +291,7 @@ line-height: 1.3em;}.Prop-examples-title, .Prop-default-title{text-transform: up
 font-size: 0.85em;
 font-weight: bold;
 color: #91887e;
-letter-spacing: 0.04em;}.Prop-examples-value{font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;}.Prop-default-value{font-family: 'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace;
+letter-spacing: 0.04em;}.Prop-examples-value{font-family: undefined;}.Prop-default-value{font-family: undefined;
 color: #4d4945;}.u-textCenter{text-align: center;}.u-textLeft{text-align: left;}.u-textRight{text-align: right;}.u-marginModule > *:last-child{margin-bottom: 0;}@media only screen and (min-width: 70em){h1{font-size: 3rem;}h2{font-size: 2.75rem;}h3{font-size: 2.125rem;}h4, h5, h6{font-size: 1.9rem;}.Headline--major{font-size: 3.5rem;
 line-height: 1.2;
 font-style: italic;}.Header{padding-top: 65px;
@@ -312,4 +312,4 @@ font-style: italic;
 line-height: 1;}.cm-s-elegant span.cm-meta{color: #555;
 font-style: italic;
 line-height: 1;}.cm-s-elegant span.cm-variable{color: black;}.cm-s-elegant span.cm-variable-2{color: #b11;}.cm-s-elegant span.cm-qualifier{color: #555;}.cm-s-elegant span.cm-keyword{color: #730;}.cm-s-elegant span.cm-builtin{color: #30a;}.cm-s-elegant span.cm-link{color: #762;}.cm-s-elegant span.cm-error{background-color: #fdd;}.cm-s-elegant .CodeMirror-activeline-background{background: #e8f2ff;}.cm-s-elegant .CodeMirror-matchingbracket{outline: 1px solid grey;
-color: black !important;}</style></div></div><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.js"></script><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/javascript/javascript.min.js"></script><script src="main.bd03d4a9c0ac5981f613.js"></script></body></html>
+color: black !important;}</style></div></div><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.js"></script><script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/javascript/javascript.min.js"></script><script src="main.37cf0c41b7a999e3b72a.js"></script></body></html>
