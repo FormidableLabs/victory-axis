@@ -22039,14 +22039,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 194 */
 /***/ function(module, exports) {
 
-	/* eslint-disable max-len */
 	"use strict";
 
 	module.exports = {
 	  // Fonts
 	  sansSerif: "'Karla', 'Helvetica Neue', Helvetica, Arial, sans-serif",
-	  serif: "'Didot', 'Bodoni MT', 'Cochin', 'Baskerville', 'Goudy Old Style', 'Bitstream Charter', serif",
-	  monospace: "'Source Code Pro', 'Inconsolata', 'Courier New', 'Courier', monospace",
+	  serif: "'Didot', 'Cochin', serif",
+	  codeFont: "'Source Code Pro', monospace'",
 	  // Colors
 	  // Navy
 	  deepNavy: "#1b2633",
@@ -22062,12 +22061,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  darkestSand: "#4d4945",
 	  mud: "#34302e",
 	  // Red
-	  palestRed: "#E5847D",
-	  palerRed: "#C75B54",
 	  paleRed: "#bd4139",
 	  red: "#bd1e13"
 	};
-	/* eslint-enable max-len */
 
 /***/ },
 /* 195 */
@@ -102269,7 +102265,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;!function() {
 	  var d3 = {
-	    version: "3.5.9"
+	    version: "3.5.10"
 	  };
 	  var d3_arraySlice = [].slice, d3_array = function(list) {
 	    return d3_arraySlice.call(list);
@@ -108636,7 +108632,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          alpha = x;
 	        } else {
 	          timer.c = null, timer.t = NaN, timer = null;
-	          event.start({
+	          event.end({
 	            type: "end",
 	            alpha: alpha = 0
 	          });
@@ -125438,7 +125434,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          "body",
 	          null,
 	          _react2["default"].createElement("div", { dangerouslySetInnerHTML: { __html: "<!--[if lt IE 8]>\n            <p class=\"browsehappy\">You are using an <strong>outdated</strong> browser.\n            Please <a href=\"http://browsehappy.com/\">upgrade your browser</a> to improve your experience.</p>\n          <![endif]-->" } }),
-	          _react2["default"].createElement("div", { id: "content", dangerouslySetInnerHTML: { __html: this.props.content } }),
+	          _react2["default"].createElement("div", { id: "content", className: "Container", dangerouslySetInnerHTML: { __html: this.props.content } }),
 	          _react2["default"].createElement("script", { type: "text/javascript", src: "//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.js" }),
 	          _react2["default"].createElement("script", { type: "text/javascript", src: "//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/javascript/javascript.min.js" }),
 	          _react2["default"].createElement("script", { src: this.props.bundle })
