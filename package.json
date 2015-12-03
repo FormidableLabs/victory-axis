@@ -42,6 +42,7 @@
     "chai": "^3.2.0",
     "clean-webpack-plugin": "^0.1.4",
     "ecology": "~1.0.4",
+    "formidable-landers": "latest",
     "json-loader": "^0.5.3",
     "mocha": "^2.3.3",
     "react": "^0.14.0",
