@@ -11,13 +11,13 @@ import { getRole } from "../util";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
 
 const defaultStyles = {
-  line: {
+  axis: {
     stroke: "#756f6a",
     fill: "none",
     strokeWidth: 2,
     strokeLinecap: "round"
   },
-  label: {
+  axisLabel: {
     stroke: "transparent",
     fill: "#756f6a",
     fontSize: 16,
@@ -30,23 +30,19 @@ const defaultStyles = {
     strokeLinecap: "round"
   },
   ticks: {
-    parent: {
-      padding: 5
-    },
-    line: {
-      stroke: "#756f6a",
-      fill: "none",
-      strokeWidth: 2,
-      strokeLinecap: "round",
-      size: 4
-    },
-    label: {
-      stroke: "transparent",
-      fill: "#756f6a",
-      fontFamily: "Helvetica",
-      fontSize: 10,
-      padding: 5
-    }
+    stroke: "#756f6a",
+    fill: "none",
+    padding: 5,
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    size: 4
+  },
+  tickLabels: {
+    stroke: "transparent",
+    fill: "#756f6a",
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    padding: 5
   }
 };
 
@@ -75,7 +71,6 @@ export default class VictoryAxis extends React.Component {
      * @examples {velocity: 0.02, onEnd: () => alert("done!")}
      */
     animate: PropTypes.object,
-    children: PropTypes.any,
     /**
      * This prop specifies whether a given axis is intended to cross another axis.
      */
@@ -92,11 +87,16 @@ export default class VictoryAxis extends React.Component {
      * If this value is not given it will be calculated based on the scale or tickValues.
      * @exampes [-1, 1]
      */
-    domain: VictoryPropTypes.minMaxArray,
+    domain: VictoryPropTypes.domain,
     /**
      * The height props specifies the height of the chart container element in pixels
      */
     height: VictoryPropTypes.nonNegative,
+    /**
+     * The label prop specifies the label for your axis. This prop can be a string or
+     * a label component
+     */
+    label: PropTypes.any,
     /**
      * The labelPadding prop specifies the padding in pixels for you axis label
      */
@@ -150,21 +150,15 @@ export default class VictoryAxis extends React.Component {
      * are used to calculate range, and need to be expressed as a number of pixels.
      * styles for axis lines, gridlines, and ticks are scoped to separate props.
      * @examples {axis: {stroke: "#756f6a"}, grid: {stroke: "grey"}, ticks: {stroke: "grey"},
-     * tickLabels: {fontSize: 10, padding: 5}, axisLabels: {fontSize: 16, padding: 20}}
+     * tickLabels: {fontSize: 10, padding: 5}, axisLabel: {fontSize: 16, padding: 20}}
      */
     style: PropTypes.shape({
       parent: PropTypes.object,
-      line: PropTypes.object,
-      label: PropTypes.object,
-      grid: PropTypes.shape({
-        parent: PropTypes.object,
-        line: PropTypes.object
-      }),
-      ticks: PropTypes.shape({
-        parent: PropTypes.object,
-        line: PropTypes.object,
-        label: PropTypes.object
-      })
+      axis: PropTypes.object,
+      axisLabel: PropTypes.object,
+      grid: PropTypes.object,
+      ticks: PropTypes.object,
+      tickLabels: PropTypes.object
     }),
     /**
      * The tickCount prop specifies how many ticks should be drawn on the axis if
@@ -179,13 +173,13 @@ export default class VictoryAxis extends React.Component {
      */
     tickFormat: PropTypes.oneOfType([
       PropTypes.func,
-      VictoryPropTypes.homogenousArray
+      VictoryPropTypes.homogeneousArray
     ]),
     /**
      * The tickValues prop explicity specifies which ticks values to draw on the axis.
      * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
      */
-    tickValues: VictoryPropTypes.homogenousArray,
+    tickValues: VictoryPropTypes.homogeneousArray,
     /**
      * The width props specifies the width of the chart container element in pixels
      */
