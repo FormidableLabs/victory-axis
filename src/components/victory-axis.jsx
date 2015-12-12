@@ -1,6 +1,6 @@
 import React, { PropTypes } from "react";
 import Radium from "radium";
-import d3 from "d3";
+import d3Scale from "d3-scale";
 import _ from "lodash";
 import {VictoryLabel} from "victory-label";
 import AxisLine from "./axis-line";
@@ -133,7 +133,7 @@ export default class VictoryAxis extends React.Component {
     /**
      * The scale prop determines which scales your axis should use. This prop should be
      * given as a function,
-     * @examples d3.time.scale()
+     * @examples d3Scale.time()
      */
     scale: VictoryPropTypes.scale,
     /**
@@ -187,7 +187,7 @@ export default class VictoryAxis extends React.Component {
   static defaultProps = {
     height: 300,
     padding: 50,
-    scale: d3.scale.linear(),
+    scale: d3Scale.linear(),
     standalone: true,
     tickCount: 5,
     width: 450
