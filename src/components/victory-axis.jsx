@@ -2,12 +2,10 @@ import React, { PropTypes } from "react";
 import Radium from "radium";
 import d3 from "d3";
 import _ from "lodash";
-import {VictoryAnimation} from "victory-animation";
 import {VictoryLabel} from "victory-label";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
-import { getRole } from "../util";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
 
 const defaultStyles = {
@@ -208,6 +206,7 @@ export default class VictoryAxis extends React.Component {
     this.ticks = this.getTicks(props);
     this.labelPadding = this.getLabelPadding(props);
     this.offset = this.getOffset(props);
+    this.transform = this.getTransform(props);
   }
 
   getOrientation(props) {
@@ -357,81 +356,78 @@ export default class VictoryAxis extends React.Component {
     return `translate(${translate[0]}, ${translate[1]})`;
   }
 
-  renderLine(line) {
-    const props = this.isVertical ? {
-      y1: this.padding.top,
-      y2: this.props.height - this.padding.bottom
-    } : {
-      x1: this.padding.left,
-      x2: this.props.width - this.padding.right
-    };
-    props.key = "line";
-    props.style = this.style.axis;
-    return line ?
-      React.cloneElement(line, props) :
-      React.createElement(AxisLine, props);
+  renderLine(props) {
+    return (
+      <AxisLine key="line"
+        style={this.style.axis}
+        animate={props.animate}
+        x1={this.isVertical ? null : this.padding.left}
+        x2={this.isVertical ? null : props.width - this.padding.right}
+        y1={this.isVertical ? this.padding.top : null}
+        y2={this.isVertical ? props.height - this.padding.bottom : null}
+      />
+    );
   }
 
-  renderTicks() {
-    const tickFormat = this.getTickFormat(this.props);
-    // determine the position and translation of each tick
+  renderTicks(props) {
+    const tickFormat = this.getTickFormat(props);
     return _.map(this.ticks, (tick, index) => {
       const position = this.scale(tick);
-      const transform = this.isVertical ?
-        `translate(0, ${position})` :
-        `translate(${position}, 0)`;
       return (
         <Tick key={`tick-${index}`}
-          transform={transform}
-          tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
+          animate={props.animate}
+          position={position}
+          tick={this.stringTicks ? props.tickValues[tick - 1] : tick}
           orientation={this.orientation}
+          label={tickFormat.call(this, tick, index)}
           style={{
             ticks: this.style.ticks,
             tickLabels: this.style.tickLabels
           }}
-        >
-          {tickFormat.call(this, tick, index)}
-        </Tick>
+        />
       );
     });
   }
 
-  renderGrid() {
+  renderGrid(props) {
     const xPadding = this.orientation === "right" ? this.padding.right : this.padding.left;
     const yPadding = this.orientation === "top" ? this.padding.top : this.padding.bottom;
     const sign = -orientationSign[this.orientation];
-    const xOffset = this.props.crossAxis ? this.offset.x - xPadding : 0;
-    const yOffset = this.props.crossAxis ? this.offset.y - yPadding : 0;
+    const xOffset = props.crossAxis ? this.offset.x - xPadding : 0;
+    const yOffset = props.crossAxis ? this.offset.y - yPadding : 0;
     const x2 = this.isVertical ?
-      sign * (this.props.width - (this.padding.left + this.padding.right)) : 0;
+      sign * (props.width - (this.padding.left + this.padding.right)) : 0;
     const y2 = this.isVertical ?
-      0 : sign * (this.props.height - (this.padding.top + this.padding.bottom));
+      0 : sign * (props.height - (this.padding.top + this.padding.bottom));
     return _.map(this.ticks, (tick, index) => {
       // determine the position and translation of each gridline
       const position = this.scale(tick);
-      const transform = this.isVertical ?
-        `translate(${-xOffset}, ${position})` :
-        `translate(${position}, ${yOffset})`;
       return (
         <GridLine key={`grid-${index}`}
-          transform={transform}
+          animate={props.animate}
           tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
           x2={x2}
           y2={y2}
+          xTransform={this.isVertical ? -xOffset : position}
+          yTransform={this.isVertical ? position : yOffset}
           style={this.style.grid}
         />
       );
     });
   }
 
-  renderLabel(label) {
+  renderLabel(props) {
+    if (!props.label) {
+      return undefined;
+    }
+
     const sign = orientationSign[this.orientation];
     const hPadding = this.padding.left + this.padding.right;
     const vPadding = this.padding.top + this.padding.bottom;
     const x = this.isVertical ?
-      -((this.props.height - vPadding) / 2) - this.padding.top :
-      ((this.props.width - hPadding) / 2) + this.padding.left;
-    const props = {
+      -((props.height - vPadding) / 2) - this.padding.top :
+      ((props.width - hPadding) / 2) + this.padding.left;
+    const newProps = {
       key: "label",
       x,
       y: sign * this.labelPadding,
@@ -440,79 +436,19 @@ export default class VictoryAxis extends React.Component {
       style: this.style.axisLabel,
       transform: this.isVertical ? "rotate(-90)" : ""
     };
-    return React.cloneElement(label, props);
-  }
-
-  renderChildren() {
-    const roles = {};
-    const children = React.Children.map(this.props.children, (child) => {
-      let role = getRole(child);
-      if (!role) {
-        role = "label";
-        child = <VictoryLabel>{child}</VictoryLabel>;
-      }
-      if (role) {
-        // Keep track of which roles were found.
-        roles[role] = true;
-      }
-      switch (role) {
-      case "grid":
-        return child;
-      case "line":
-        return this.renderLine(child);
-      case "tick":
-        return child;
-      case "label":
-        return this.renderLabel(child);
-      default:
-        return child;
-      }
-    }) || []; // Protect against `React.Children.map` not returning an array
-              // if `children` is null or undefined.
-
-    // Add things in reverse z-index order - the first item add should render
-    // on the topmost layer.
-
-    // Label is optional, so don't add a default.
-    if (!roles.tick) {
-      // If no `tick` elements were found, render default ticks.
-      children.unshift(...this.renderTicks());
-    }
-    if (!roles.line) {
-      // If no `line` element was found, render the default line.
-      children.unshift(this.renderLine());
-    }
-    if (!roles.grid) {
-      // If no `grid` elements were found, render default grid lines.
-      children.unshift(...this.renderGrid());
-    }
-    return children;
+    return (props.label.props) ?
+      React.cloneElement(props.label, newProps) :
+      React.createElement(VictoryLabel, newProps, props.label);
   }
 
   render() {
-    // If animating, return a `VictoryAnimation` element that will create
-    // a new `VictoryAxis` with nearly identical props, except (1) tweened
-    // and (2) `animate` set to null so we don't recurse forever.
-    if (this.props.animate) {
-      // Do less work by having `VictoryAnimation` tween only values that
-      // make sense to tween. In the future, allow customization of animated
-      // prop whitelist/blacklist?
-      const animateData = _.pick(this.props, [
-        "style", "domain", "range", "tickCount", "tickValues",
-        "labelPadding", "offsetX", "offsetY", "padding", "width", "height"
-      ]);
-      return (
-        <VictoryAnimation {...this.props.animate} data={animateData}>
-          {(props) => <VictoryAxis {...this.props} {...props} animate={null}/>}
-        </VictoryAnimation>
-      );
-    } else {
-      this.getCalculatedValues(this.props);
-    }
-    const transform = this.getTransform(this.props);
+    this.getCalculatedValues(this.props);
     const group = (
-      <g style={this.style.parent} transform={transform}>
-        {this.renderChildren()}
+      <g style={this.style.parent} transform={this.transform}>
+        {this.renderLabel(this.props)}
+        {this.renderTicks(this.props)}
+        {this.renderLine(this.props)}
+        {this.renderGrid(this.props)}
       </g>
     );
     return this.props.standalone ? (

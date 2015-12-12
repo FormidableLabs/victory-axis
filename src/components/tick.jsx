@@ -2,6 +2,7 @@ import _ from "lodash";
 import React, { PropTypes } from "react";
 import Radium from "radium";
 import { VictoryLabel } from "victory-label";
+import { VictoryAnimation } from "victory-animation";
 import { getRole } from "../util";
 
 const orientationSign = {
@@ -30,12 +31,12 @@ export default class Tick extends React.Component {
   static role = "tick";
 
   static propTypes = {
-    transform: PropTypes.string,
+    animate: PropTypes.object,
+    position: PropTypes.number,
     tick: PropTypes.any,
     orientation: PropTypes.oneOf(["top", "bottom", "left", "right"]),
     style: PropTypes.object,
-    labelProps: PropTypes.object,
-    children: PropTypes.node
+    label: PropTypes.any
   };
 
   getCalculatedValues(props) {
@@ -44,6 +45,8 @@ export default class Tick extends React.Component {
     const sign = orientationSign[props.orientation];
     const anchor = anchorOrientation[props.orientation];
     const isVertical = orientationVerticality[props.orientation];
+    this.transform = isVertical ?
+      `translate(0, ${props.position})` : `translate(${props.position}, 0)`;
     this.x = isVertical ? sign * tickSpacing : 0;
     this.x2 = isVertical ? sign * style.size : 0;
     this.y = isVertical ? 0 : sign * tickSpacing;
@@ -58,19 +61,20 @@ export default class Tick extends React.Component {
     });
   }
 
-  renderLabel(props) {
-    const label = props.children; // Only one child allowed.
-    const role = getRole(label);
+  renderLabel() {
+    const isComponent = getRole(this.props.label) === "label";
+    const props = isComponent ? this.props.label.props : {};
+    const style = props.style || this.props.style.tickLabels;
     const newProps = {
       x: this.x,
       y: this.y,
-      textAnchor: this.textAnchor,
-      verticalAnchor: this.verticalAnchor,
-      style: this.evaluateStyle(props.style.tickLabels)
+      textAnchor: props.textAnchor || this.textAnchor,
+      verticalAnchor: props.verticalAnchor || this.verticalAnchor,
+      style: this.evaluateStyle(style)
     };
-    return role === "label" ?
-      React.cloneElement(label, newProps) :
-      React.createElement(VictoryLabel, newProps, label);
+    return isComponent ?
+      React.cloneElement(this.props.label, newProps) :
+      React.createElement(VictoryLabel, newProps, this.props.label);
   }
 
 
@@ -87,9 +91,21 @@ export default class Tick extends React.Component {
   }
 
   render() {
-    this.getCalculatedValues(this.props);
+    if (this.props.animate) {
+      // Do less work by having `VictoryAnimation` tween only values that
+      // make sense to tween. In the future, allow customization of animated
+      // prop whitelist/blacklist?
+      const animateData = _.pick(this.props, ["position", "style"]);
+      return (
+        <VictoryAnimation {...this.props.animate} data={animateData}>
+          {(props) => <Tick {...this.props} {...props} animate={null}/>}
+        </VictoryAnimation>
+      );
+    } else {
+      this.getCalculatedValues(this.props);
+    }
     return (
-      <g transform={this.props.transform}>
+      <g transform={this.transform}>
         {this.renderTick(this.props)}
         {this.renderLabel(this.props)}
       </g>
