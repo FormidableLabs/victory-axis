@@ -41,16 +41,18 @@ class App extends React.Component {
 
   render() {
     const styleOverrides = {
-      line: {
-        stroke: "red"
+      axis: {
+        stroke: "black"
       },
       grid: {
-        strokeWidth: 2
+        strokeWidth: 2,
+        stroke: (tick) => tick === "Mariners\nSEA" ? "red" : "grey"
       },
       ticks: {
-        line: {
-          strokeWidth: 5
-        }
+        stroke: (tick) => tick === "Mariners\nSEA" ? "red" : "grey"
+      },
+      tickLabels: {
+        fontWeight: (tick) => tick === "Mariners\nSEA" ? "bold" : "normal"
       }
     };
 

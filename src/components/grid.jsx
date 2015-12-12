@@ -1,3 +1,4 @@
+import _ from "lodash";
 import React, { PropTypes } from "react";
 import Radium from "radium";
 
@@ -7,18 +8,26 @@ export default class GridLine extends React.Component {
 
   static propTypes = {
     transform: PropTypes.string,
+    tick: PropTypes.any,
     x2: PropTypes.number,
     y2: PropTypes.number,
     style: PropTypes.object
   };
 
-  static defaultProps = {
-  };
+  evaluateStyle(style) {
+    return _.transform(style, (result, value, key) => {
+      result[key] = _.isFunction(value) ? value.call(this, this.props.tick) : value;
+    });
+  }
 
   render() {
     return (
       <g transform={this.props.transform}>
-        <line x2={this.props.x2} y2={this.props.y2} style={this.props.style}/>
+        <line
+          x2={this.props.x2}
+          y2={this.props.y2}
+          style={this.evaluateStyle(this.props.style)}
+        />
       </g>
     );
   }
