@@ -21,19 +21,18 @@
   },
   "dependencies": {
     "builder": "~2.1.4",
-    "builder-victory-component": "~0.0.4",
+    "builder-victory-component": "~0.0.5",
     "d3": "^3.5.6",
     "victory-animation": "^0.0.12",
     "victory-label": "^0.1.6",
     "victory-util": "^2.0.2"
   },
   "devDependencies": {
-    "builder-victory-component-dev": "~0.0.4",
+    "builder-victory-component-dev": "~0.0.5",
     "chai": "^3.2.0",
     "mocha": "^2.3.3",
     "react": "^0.14.0",
     "react-addons-test-utils": "^0.14.0",
-    "react-docgen": "^2.4.0",
     "react-dom": "^0.14.0",
     "sinon": "^1.17.2",
     "sinon-chai": "^2.8.0"
