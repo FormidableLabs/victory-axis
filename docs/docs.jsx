@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Ecology from 'ecology';
 import Radium, { Style } from 'radium';
+import * as docgen from "react-docgen";
 
 import {VictoryTheme} from 'formidable-landers';
 
@@ -12,7 +13,7 @@ class Docs extends React.Component {
       <div>
         <Ecology
           overview={require('!!raw!./ecology.md')}
-          source={require('json!./victory-axis.json')}
+          source={docgen.parse(require("!!raw!../src/components/victory-axis"))}
           scope={{React, ReactDOM, VictoryAxis: require('../src/components/victory-axis')}}
           playgroundtheme='elegant' />
         <Style rules={VictoryTheme}/>
