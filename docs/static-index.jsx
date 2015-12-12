@@ -12,7 +12,7 @@ class Index extends React.Component {
           <![endif]-->` }} />
           <meta charSet="utf-8" />
           <meta httpEquiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-          <title>Victory Axis</title>
+          <title>VictoryAxis</title>
           <meta name="description" content="" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
           <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.css"/>
@@ -25,7 +25,7 @@ class Index extends React.Component {
             <p class="browsehappy">You are using an <strong>outdated</strong> browser.
             Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
           <![endif]-->` }} />
-          <div id="content" dangerouslySetInnerHTML={{ __html: this.props.content }} />
+          <div id="content" className="Container" dangerouslySetInnerHTML={{ __html: this.props.content }} />
           <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/codemirror.min.js"></script>
           <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.0.0/mode/javascript/javascript.min.js"></script>
           <script src={this.props.bundle}></script>

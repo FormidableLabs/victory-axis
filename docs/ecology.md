@@ -21,7 +21,7 @@ To make a vertical axis, set the `dependentAxis` prop to `true`. Dependent axes 
 
 ### Declarative Composition
 
-Axes are meant to be composble.
+Axes are meant to be composable.
 
 ```playground
 <svg width={450} height={450}>

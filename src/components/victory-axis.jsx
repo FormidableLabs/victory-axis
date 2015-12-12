@@ -383,7 +383,6 @@ export default class VictoryAxis extends React.Component {
       return (
         <Tick key={`tick-${index}`}
           transform={transform}
-          position={position}
           tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
           orientation={this.orientation}
           style={{
