@@ -1,9 +1,11 @@
 import React, { PropTypes } from "react";
 import Radium from "radium";
-import d3 from "d3";
+import d3Scale from "d3-scale";
 import _ from "lodash";
-import {VictoryAnimation} from "victory-animation";
 import {VictoryLabel} from "victory-label";
+import AxisLine from "./axis-line";
+import GridLine from "./grid";
+import Tick from "./tick";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
 
 const defaultStyles = {
@@ -89,9 +91,10 @@ export default class VictoryAxis extends React.Component {
      */
     height: VictoryPropTypes.nonNegative,
     /**
-     * The label prop specifies the label for your axis
+     * The label prop specifies the label for your axis. This prop can be a string or
+     * a label component
      */
-    label: PropTypes.string,
+    label: PropTypes.any,
     /**
      * The labelPadding prop specifies the padding in pixels for you axis label
      */
@@ -130,7 +133,7 @@ export default class VictoryAxis extends React.Component {
     /**
      * The scale prop determines which scales your axis should use. This prop should be
      * given as a function,
-     * @examples d3.time.scale()
+     * @examples d3Scale.time()
      */
     scale: VictoryPropTypes.scale,
     /**
@@ -184,7 +187,7 @@ export default class VictoryAxis extends React.Component {
   static defaultProps = {
     height: 300,
     padding: 50,
-    scale: d3.scale.linear(),
+    scale: d3Scale.linear(),
     standalone: true,
     tickCount: 5,
     width: 450
@@ -196,12 +199,14 @@ export default class VictoryAxis extends React.Component {
     this.padding = this.getPadding(props);
     this.orientation = this.getOrientation(props);
     this.isVertical = orientationVerticality[this.orientation];
+    this.stringTicks = (this.props.tickValues && typeof this.props.tickValues[0] === "string");
     this.range = this.getRange(props);
     this.domain = this.getDomain(props);
     this.scale = this.getScale(props);
     this.ticks = this.getTicks(props);
     this.labelPadding = this.getLabelPadding(props);
     this.offset = this.getOffset(props);
+    this.transform = this.getTransform(props);
   }
 
   getOrientation(props) {
@@ -253,7 +258,7 @@ export default class VictoryAxis extends React.Component {
     let domain;
     // Since we declared that `tickValues` must be a homogenous array, we only
     // need to do a string check on the first item.
-    if (typeof props.tickValues[0] === "string") {
+    if (this.stringTicks) {
       domain = [1, props.tickValues.length];
     } else {
       // coerce ticks to numbers
@@ -288,7 +293,7 @@ export default class VictoryAxis extends React.Component {
     if (props.tickValues) {
       // Since we declared that `tickValues` must be a homogenous array, we only
       // need to do a string check on the first item.
-      if (typeof props.tickValues[0] === "string") {
+      if (this.stringTicks) {
         return _.range(1, props.tickValues.length + 1);
       }
       return props.tickValues;
@@ -307,7 +312,7 @@ export default class VictoryAxis extends React.Component {
       return props.tickFormat;
     } else if (props.tickFormat && _.isArray(props.tickFormat)) {
       return (x, index) => props.tickFormat[index];
-    } else if (props.tickValues && typeof props.tickValues[0] === "string") {
+    } else if (this.stringTicks) {
       return (x, index) => props.tickValues[index];
     } else if (_.isFunction(this.scale.tickFormat())) {
       return this.scale.tickFormat(this.ticks.length);
@@ -341,27 +346,6 @@ export default class VictoryAxis extends React.Component {
     };
   }
 
-  getTickProperties() {
-    const style = this.style.ticks;
-    const tickSpacing = style.size + style.padding;
-    const sign = orientationSign[this.orientation];
-    return this.isVertical ? {
-      x: sign * tickSpacing,
-      x2: sign * style.size,
-      y: 0,
-      y2: 0,
-      textAnchor: sign < 0 ? "end" : "start",
-      verticalAnchor: "middle"
-    } : {
-      x: 0,
-      x2: 0,
-      y: sign * tickSpacing,
-      y2: sign * style.size,
-      textAnchor: "middle",
-      verticalAnchor: sign < 0 ? "end" : "start"
-    };
-  }
-
   getTransform(props) {
     const translate = {
       top: [0, this.offset.y],
@@ -372,117 +356,99 @@ export default class VictoryAxis extends React.Component {
     return `translate(${translate[0]}, ${translate[1]})`;
   }
 
-  renderAxisLine() {
-    const props = this.isVertical ? {
-      y1: this.padding.top,
-      y2: this.props.height - this.padding.bottom
-    } : {
-      x1: this.padding.left,
-      x2: this.props.width - this.padding.right
-    };
-    return <line {...props} style={this.style.axis}/>;
+  renderLine(props) {
+    return (
+      <AxisLine key="line"
+        style={this.style.axis}
+        animate={props.animate}
+        x1={this.isVertical ? null : this.padding.left}
+        x2={this.isVertical ? null : props.width - this.padding.right}
+        y1={this.isVertical ? this.padding.top : null}
+        y2={this.isVertical ? props.height - this.padding.bottom : null}
+      />
+    );
   }
 
-  renderTicks() {
-    const props = this.getTickProperties(this.props);
-    const tickFormat = this.getTickFormat(this.props);
-    // determine the position and translation of each tick
+  renderTicks(props) {
+    const tickFormat = this.getTickFormat(props);
     return _.map(this.ticks, (tick, index) => {
       const position = this.scale(tick);
-      const transform = this.isVertical ?
-        `translate(0, ${position})` :
-        `translate(${position}, 0)`;
       return (
-        <g key={`tick-${index}`} transform={transform}>
-          <line x2={props.x2} y2={props.y2} style={this.style.ticks}/>
-          <VictoryLabel
-            x={props.x}
-            y={props.y}
-            style={this.style.tickLabels}
-            textAnchor={props.textAnchor}
-            verticalAnchor={props.verticalAnchor}
-          >
-            {tickFormat.call(this, tick, index)}
-          </VictoryLabel>
-        </g>
+        <Tick key={`tick-${index}`}
+          animate={props.animate}
+          position={position}
+          tick={this.stringTicks ? props.tickValues[tick - 1] : tick}
+          orientation={this.orientation}
+          label={tickFormat.call(this, tick, index)}
+          style={{
+            ticks: this.style.ticks,
+            tickLabels: this.style.tickLabels
+          }}
+        />
       );
     });
   }
 
-  renderGridLines() {
+  renderGrid(props) {
     const xPadding = this.orientation === "right" ? this.padding.right : this.padding.left;
     const yPadding = this.orientation === "top" ? this.padding.top : this.padding.bottom;
     const sign = -orientationSign[this.orientation];
-    const xOffset = this.props.crossAxis ? this.offset.x - xPadding : 0;
-    const yOffset = this.props.crossAxis ? this.offset.y - yPadding : 0;
+    const xOffset = props.crossAxis ? this.offset.x - xPadding : 0;
+    const yOffset = props.crossAxis ? this.offset.y - yPadding : 0;
     const x2 = this.isVertical ?
-      sign * (this.props.width - (this.padding.left + this.padding.right)) : 0;
+      sign * (props.width - (this.padding.left + this.padding.right)) : 0;
     const y2 = this.isVertical ?
-      0 : sign * (this.props.height - (this.padding.top + this.padding.bottom));
+      0 : sign * (props.height - (this.padding.top + this.padding.bottom));
     return _.map(this.ticks, (tick, index) => {
       // determine the position and translation of each gridline
       const position = this.scale(tick);
-      const transform = this.isVertical ?
-        `translate(${-xOffset}, ${position})` :
-        `translate(${position}, ${yOffset})`;
       return (
-        <g key={`grid-${index}`} transform={transform}>
-          <line x2={x2} y2={y2} style={this.style.grid}/>
-        </g>
+        <GridLine key={`grid-${index}`}
+          animate={props.animate}
+          tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
+          x2={x2}
+          y2={y2}
+          xTransform={this.isVertical ? -xOffset : position}
+          yTransform={this.isVertical ? position : yOffset}
+          style={this.style.grid}
+        />
       );
     });
   }
 
-  renderLabel() {
-    if (this.props.label) {
-      const sign = orientationSign[this.orientation];
-      const hPadding = this.padding.left + this.padding.right;
-      const vPadding = this.padding.top + this.padding.bottom;
-      const x = this.isVertical ?
-        -((this.props.height - vPadding) / 2) - this.padding.top :
-        ((this.props.width - hPadding) / 2) + this.padding.left;
-      return (
-        <VictoryLabel
-          x={x}
-          y={sign * this.labelPadding}
-          textAnchor="middle"
-          verticalAnchor={sign < 0 ? "end" : "start"}
-          style={this.style.axisLabel}
-          transform={this.isVertical ? "rotate(-90)" : ""}
-        >
-          {this.props.label}
-        </VictoryLabel>
-      );
+  renderLabel(props) {
+    if (!props.label) {
+      return undefined;
     }
+
+    const sign = orientationSign[this.orientation];
+    const hPadding = this.padding.left + this.padding.right;
+    const vPadding = this.padding.top + this.padding.bottom;
+    const x = this.isVertical ?
+      -((props.height - vPadding) / 2) - this.padding.top :
+      ((props.width - hPadding) / 2) + this.padding.left;
+    const newProps = {
+      key: "label",
+      x,
+      y: sign * this.labelPadding,
+      textAnchor: "middle",
+      verticalAnchor: sign < 0 ? "end" : "start",
+      style: this.style.axisLabel,
+      transform: this.isVertical ? "rotate(-90)" : ""
+    };
+    return (props.label.props) ?
+      React.cloneElement(props.label, newProps) :
+      React.createElement(VictoryLabel, newProps, props.label);
   }
 
   render() {
-    // If animating, return a `VictoryAnimation` element that will create
-    // a new `VictoryAxis` with nearly identical props, except (1) tweened
-    // and (2) `animate` set to null so we don't recurse forever.
-    if (this.props.animate) {
-      // Do less work by having `VictoryAnimation` tween only values that
-      // make sense to tween. In the future, allow customization of animated
-      // prop whitelist/blacklist?
-      const animateData = _.pick(this.props, [
-        "style", "domain", "range", "tickCount", "tickValues",
-        "labelPadding", "offsetX", "offsetY", "padding", "width", "height"
-      ]);
-      return (
-        <VictoryAnimation {...this.props.animate} data={animateData}>
-          {(props) => <VictoryAxis {...this.props} {...props} animate={null}/>}
-        </VictoryAnimation>
-      );
-    } else {
-      this.getCalculatedValues(this.props);
-    }
-    const transform = this.getTransform(this.props);
+    this.getCalculatedValues(this.props);
     const group = (
-      <g style={this.style.parent} transform={transform}>
-        {this.renderGridLines()}
-        {this.renderAxisLine()}
-        {this.renderTicks()}
-        {this.renderLabel()}
+      <g style={this.style.parent} transform={this.transform}>
+        {this.renderLabel(this.props)}
+        {this.renderTicks(this.props)}
+        {this.renderLine(this.props)}
+        {this.renderGrid(this.props)}
       </g>
     );
     return this.props.standalone ? (

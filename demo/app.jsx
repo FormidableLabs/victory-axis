@@ -3,6 +3,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import {VictoryAxis} from "../src/index";
+import {VictoryLabel} from "victory-label";
 import d3 from "d3";
 import _ from "lodash";
 import Radium from "radium";
@@ -42,13 +43,17 @@ class App extends React.Component {
   render() {
     const styleOverrides = {
       axis: {
-        stroke: "red"
+        stroke: "black"
       },
       grid: {
-        strokeWidth: 2
+        strokeWidth: 2,
+        stroke: (tick) => tick === "Mariners\nSEA" ? "red" : "grey"
       },
       ticks: {
-        strokeWidth: 5
+        stroke: (tick) => tick === "Mariners\nSEA" ? "red" : "grey"
+      },
+      tickLabels: {
+        fontWeight: (tick) => tick === "Mariners\nSEA" ? "bold" : "normal"
       }
     };
 
@@ -58,7 +63,7 @@ class App extends React.Component {
           <h1>Animating Axis</h1>
           <VictoryAxis style={styleOverrides}
             padding={60}
-            label={"animation\nwow!"}
+            label={<VictoryLabel>{"animation\nwow!"}</VictoryLabel>}
             tickValues={this.state.tickValues}
             tickFormat={["first", "second", "third", "fourth", "fifth"]}
             animate={{velocity: 0.01}}

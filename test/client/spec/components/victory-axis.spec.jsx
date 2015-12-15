@@ -2,36 +2,32 @@
  * Client tests
  */
 import React from "react";
-import Component from "src/components/victory-axis";
+import ReactDOM from "react-dom";
+import VictoryAxis from "src/components/victory-axis";
 // Use `TestUtils` to inject into DOM, simulate events, etc.
 // See: https://facebook.github.io/react/docs/test-utils.html
 import TestUtils from "react-addons-test-utils";
 
-describe("components/victory-component-boilerplate", () => {
+const getElement = function (output, tagName) {
+  return ReactDOM.findDOMNode(
+    TestUtils.findRenderedDOMComponentWithTag(output, tagName)
+  );
+};
 
-  it.skip("has expected content with deep render", () => {
-    // This is a "deep" render that renders children + all into an actual
-    // browser DOM node.
-    //
-    // https://facebook.github.io/react/docs/test-utils.html#renderintodocument
-    const rendered = TestUtils.renderIntoDocument(<Component />);
+let renderedComponent;
 
-    // This is a real DOM node to assert on.
-    const svgNode = TestUtils
-      .findRenderedDOMComponentWithTag(rendered, "svg");
+describe("components/victory-axis", () => {
+  describe("default component rendering", () => {
+    before(() => {
+      renderedComponent = TestUtils.renderIntoDocument(<VictoryAxis/>);
+    });
 
-    expect(svgNode).to.have.property("innerHTML", "Edit me!");
-  });
+    it("renders an svg with the correct width and height", () => {
 
-  it("has expected content with shallow render", () => {
-    // This is a "shallow" render that renders only the current component
-    // without using the actual DOM.
-    //
-    // https://facebook.github.io/react/docs/test-utils.html#shallow-rendering
-    const renderer = TestUtils.createRenderer();
-    renderer.render(<Component />);
-    const output = renderer.getRenderOutput();
-
-    expect(output.type).to.equal("svg");
+      const svg = getElement(renderedComponent, "svg");
+      // default width and height
+      expect(svg.style.width).to.equal(`${VictoryAxis.defaultProps.width}px`);
+      expect(svg.style.height).to.equal(`${VictoryAxis.defaultProps.height}px`);
+    });
   });
 });
