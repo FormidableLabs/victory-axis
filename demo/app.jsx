@@ -4,7 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import {VictoryAxis} from "../src/index";
 import {VictoryLabel} from "victory-label";
-import d3 from "d3";
+import d3Scale from "d3-scale";
 import _ from "lodash";
 import Radium from "radium";
 
@@ -74,7 +74,7 @@ class App extends React.Component {
           <VictoryAxis
             label="time axis"
             padding={{left: 10, right: 80}}
-            scale={d3.time.scale()}
+            scale={d3Scale.time()}
             style={{grid: {stroke: "black", strokeWidth: 1}}}
             tickValues={[
               new Date(1980, 1, 1),
@@ -82,7 +82,7 @@ class App extends React.Component {
               new Date(2000, 1, 1),
               new Date(2010, 1, 1),
               new Date(2020, 1, 1)]}
-            tickFormat={d3.time.format("%Y")}
+            tickFormat={(x) => x.getFullYear()}
           />
         </div>
         <div>
@@ -110,7 +110,7 @@ class App extends React.Component {
             label="cool log axis"
             padding={{top: 10, bottom: 60}}
             orientation="left"
-            scale={d3.scale.log()}
+            scale={d3Scale.log()}
             domain={[1, 5]}
             offsetX={50}
           />
@@ -118,7 +118,7 @@ class App extends React.Component {
             label="cool log axis"
             padding={{top: 10, bottom: 60}}
             orientation="right"
-            scale={d3.scale.log()}
+            scale={d3Scale.log()}
             domain={[1, 5]}
           />
         </div>
