@@ -83,30 +83,30 @@ export default class VictoryAxis extends React.Component {
      * The domain prop describes the range of values your axis will include. This prop should be
      * given as a array of the minimum and maximum expected values for your axis.
      * If this value is not given it will be calculated based on the scale or tickValues.
-     * @exampes [-1, 1]
+     * @examples [-1, 1]
      */
     domain: VictoryPropTypes.domain,
     /**
-     * The height props specifies the height of the chart container element in pixels
+     * The height prop specifies the height of the chart container element in pixels.
      */
     height: VictoryPropTypes.nonNegative,
     /**
      * The label prop specifies the label for your axis. This prop can be a string or
-     * a label component
+     * a label component.
      */
     label: PropTypes.any,
     /**
-     * The labelPadding prop specifies the padding in pixels for you axis label
+     * The labelPadding prop specifies the padding in pixels for your axis label.
      */
     labelPadding: PropTypes.number,
     /**
-     * This value describes how far from the "edge" of it's permitted area each axis
+     * This value describes how far from the "edge" of its permitted area each axis
      * will be set back in the x-direction.  If this prop is not given,
      * the offset is calculated based on font size, axis orientation, and label padding.
      */
     offsetX: PropTypes.number,
     /**
-     * This value describes how far from the "edge" of it's permitted area each axis
+     * This value describes how far from the "edge" of its permitted area each axis
      * will be set back in the y-direction.  If this prop is not given,
      * the offset is calculated based on font size, axis orientation, and label padding.
      */
@@ -132,7 +132,7 @@ export default class VictoryAxis extends React.Component {
     ]),
     /**
      * The scale prop determines which scales your axis should use. This prop should be
-     * given as a function,
+     * given as a function.
      * @examples d3Scale.time()
      */
     scale: VictoryPropTypes.scale,
@@ -146,7 +146,7 @@ export default class VictoryAxis extends React.Component {
      * The style prop specifies styles for your chart. Victory Axis relies on Radium,
      * so valid Radium style objects should work for this prop, however height, width, and margin
      * are used to calculate range, and need to be expressed as a number of pixels.
-     * styles for axis lines, gridlines, and ticks are scoped to separate props.
+     * Styles for axis lines, gridlines, and ticks are scoped to separate props.
      * @examples {axis: {stroke: "#756f6a"}, grid: {stroke: "grey"}, ticks: {stroke: "grey"},
      * tickLabels: {fontSize: 10, padding: 5}, axisLabel: {fontSize: 16, padding: 20}}
      */
@@ -160,13 +160,13 @@ export default class VictoryAxis extends React.Component {
     }),
     /**
      * The tickCount prop specifies how many ticks should be drawn on the axis if
-     * ticksValues are not explicitly provided.
+     * tickValues are not explicitly provided.
      */
     tickCount: VictoryPropTypes.nonNegative,
     /**
      * The tickFormat prop specifies how tick values should be expressed visually.
      * tickFormat can be given as a function to be applied to every tickValue, or as
-     * an array of display values for each tickValue
+     * an array of display values for each tickValue.
      * @examples d3.time.format("%Y"), (x) => x.toPrecision(2), ["first", "second", "third"]
      */
     tickFormat: PropTypes.oneOfType([
@@ -174,7 +174,7 @@ export default class VictoryAxis extends React.Component {
       VictoryPropTypes.homogeneousArray
     ]),
     /**
-     * The tickValues prop explicity specifies which ticks values to draw on the axis.
+     * The tickValues prop explicitly specifies which tick values to draw on the axis.
      * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
      */
     tickValues: VictoryPropTypes.homogeneousArray,

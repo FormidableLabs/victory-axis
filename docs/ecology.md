@@ -7,7 +7,7 @@ VictoryAxis draws an SVG chart axis with [React](https://github.com/facebook/rea
 
 ### Props are Optional
 
-VictoryAxis is written to be highly configurable, but it also includes a set of sensible defaults and fallbacks. If no properties are provided, the following default axis is rendered
+VictoryAxis is written to be highly configurable, but it also includes a set of sensible defaults and fallbacks. If no properties are provided, the following default axis is rendered:
 
 ```playground
 <VictoryAxis/>
@@ -36,7 +36,7 @@ Axes are meant to be composable.
 </svg>
 ```
 
-And can be made to cross each other by setting `offsetX`,  `offsetY`, and `crossAxis` props as shown below. Getting crossed axes to look correct requires calculating the appropriate offsets. This is handled automatically in [VictoryChart](https://github.com/FormidableLabs/victory-chart)
+And can be made to cross each other by setting `offsetX`,  `offsetY`, and `crossAxis` props as shown below. Getting crossed axes to look correct requires calculating the appropriate offsets. This is handled automatically in [VictoryChart](https://github.com/FormidableLabs/victory-chart).
 
 ```playground
 <svg width={400} height={400}>
@@ -59,7 +59,7 @@ And can be made to cross each other by setting `offsetX`,  `offsetY`, and `cross
 
 ### Flexible and Configurable
 
-The sensible defaults VictoryAxis provides makes it easy to get started, but everything can be overridden, and configured to suit your needs:
+The sensible defaults VictoryAxis provides make it easy to get started, but everything can be overridden, and configured to suit your needs:
 
 ```playground
   <VictoryAxis
