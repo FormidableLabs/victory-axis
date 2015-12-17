@@ -2,7 +2,6 @@ import _ from "lodash";
 import React, { PropTypes } from "react";
 import Radium from "radium";
 import { VictoryLabel } from "victory-label";
-import { VictoryAnimation } from "victory-animation";
 import { getRole } from "../util";
 
 const orientationSign = {
@@ -31,7 +30,6 @@ export default class Tick extends React.Component {
   static role = "tick";
 
   static propTypes = {
-    animate: PropTypes.object,
     position: PropTypes.number,
     tick: PropTypes.any,
     orientation: PropTypes.oneOf(["top", "bottom", "left", "right"]),
@@ -91,19 +89,7 @@ export default class Tick extends React.Component {
   }
 
   render() {
-    if (this.props.animate) {
-      // Do less work by having `VictoryAnimation` tween only values that
-      // make sense to tween. In the future, allow customization of animated
-      // prop whitelist/blacklist?
-      const animateData = _.pick(this.props, ["position", "style"]);
-      return (
-        <VictoryAnimation {...this.props.animate} data={animateData}>
-          {(props) => <Tick {...this.props} {...props} animate={null}/>}
-        </VictoryAnimation>
-      );
-    } else {
-      this.getCalculatedValues(this.props);
-    }
+    this.getCalculatedValues(this.props);
     return (
       <g transform={this.transform}>
         {this.renderTick(this.props)}

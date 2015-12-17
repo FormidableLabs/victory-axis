@@ -3,6 +3,7 @@ import Radium from "radium";
 import d3Scale from "d3-scale";
 import _ from "lodash";
 import {VictoryLabel} from "victory-label";
+import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
@@ -360,7 +361,6 @@ export default class VictoryAxis extends React.Component {
     return (
       <AxisLine key="line"
         style={this.style.axis}
-        animate={props.animate}
         x1={this.isVertical ? null : this.padding.left}
         x2={this.isVertical ? null : props.width - this.padding.right}
         y1={this.isVertical ? this.padding.top : null}
@@ -375,7 +375,6 @@ export default class VictoryAxis extends React.Component {
       const position = this.scale(tick);
       return (
         <Tick key={`tick-${index}`}
-          animate={props.animate}
           position={position}
           tick={this.stringTicks ? props.tickValues[tick - 1] : tick}
           orientation={this.orientation}
@@ -404,7 +403,6 @@ export default class VictoryAxis extends React.Component {
       const position = this.scale(tick);
       return (
         <GridLine key={`grid-${index}`}
-          animate={props.animate}
           tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
           x2={x2}
           y2={y2}
@@ -442,7 +440,25 @@ export default class VictoryAxis extends React.Component {
   }
 
   render() {
-    this.getCalculatedValues(this.props);
+    // If animating, return a `VictoryAnimation` element that will create
+    // a new `VictoryAxis` with nearly identical props, except (1) tweened
+    // and (2) `animate` set to null so we don't recurse forever.
+    if (this.props.animate) {
+      // Do less work by having `VictoryAnimation` tween only values that
+      // make sense to tween. In the future, allow customization of animated
+      // prop whitelist/blacklist?
+      const animateData = _.pick(this.props, [
+        "style", "domain", "range", "tickCount", "tickValues",
+        "labelPadding", "offsetX", "offsetY", "padding", "width", "height"
+      ]);
+      return (
+        <VictoryAnimation {...this.props.animate} data={animateData}>
+          {(props) => <VictoryAxis {...this.props} {...props} animate={null}/>}
+        </VictoryAnimation>
+      );
+    } else {
+      this.getCalculatedValues(this.props);
+    }
     const group = (
       <g style={this.style.parent} transform={this.transform}>
         {this.renderLabel(this.props)}
