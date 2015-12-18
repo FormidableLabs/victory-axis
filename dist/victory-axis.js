@@ -655,20 +655,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _d3Interpolate = __webpack_require__(5);
-	
-	var _d3Interpolate2 = _interopRequireDefault(_d3Interpolate);
-	
-	var _d3Ease = __webpack_require__(7);
+	var _d3Ease = __webpack_require__(5);
 	
 	var _d3Ease2 = _interopRequireDefault(_d3Ease);
+	
+	var _d3Interpolate = __webpack_require__(6);
+	
+	var _d3Interpolate2 = _interopRequireDefault(_d3Interpolate);
 	
 	var _d3Timer = __webpack_require__(8);
 	
 	var _util = __webpack_require__(9);
 	
+	// Nearly all animation libraries are duration-based, not velocity-based.
+	// In other words, you say "I want the animation to take this long", not
+	// "I want things to move this fast". Using velocity will make the animation
+	// take different amounts of time on computers of different speed, since
+	// they'll have a different framerate but still adjust values by the same
+	// velocity each frame. But for now we still support velocity as we have code
+	// using it. Since we use `d3-timer` now and it's duration-based, choose a
+	// velocity multiplier here that just happens to result in animations going
+	// approximately the same speed on systems getting around 60 fps.
+	var VELOCITY_MULTIPLIER = 16.5; // ~ 1 / 60
+	
 	(0, _util.addVictoryInterpolator)();
-	var VELOCITY_MULTIPLIER = 16.5;
 	
 	var VictoryAnimation = (function (_React$Component) {
 	  _inherits(VictoryAnimation, _React$Component);
@@ -676,11 +686,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(VictoryAnimation, null, [{
 	    key: "propTypes",
 	    value: {
+	      /**
+	       * The child of should be a function that takes an object of tweened values
+	       * and returns a component to render.
+	       */
 	      children: _react2["default"].PropTypes.func,
+	      /**
+	       * The velocity prop specifies how fast the animation should run.
+	       */
 	      velocity: _react2["default"].PropTypes.number,
+	      /**
+	       * The easing prop specifies an easing function name to use for tweening.
+	       */
 	      easing: _react2["default"].PropTypes.oneOf(["back", "backIn", "backOut", "backInOut", "bounce", "bounceIn", "bounceOut", "bounceInOut", "circle", "circleIn", "circleOut", "circleInOut", "linear", "linearIn", "linearOut", "linearInOut", "cubic", "cubicIn", "cubicOut", "cubicInOut", "elastic", "elasticIn", "elasticOut", "elasticInOut", "exp", "expIn", "expOut", "expInOut", "poly", "polyIn", "polyOut", "polyInOut", "quad", "quadIn", "quadOut", "quadInOut", "sin", "sinIn", "sinOut", "sinInOut"]),
+	      /**
+	       * The delay prop specifies a delay in milliseconds before the animation
+	       * begins. If multiple values are in the animation queue, it is the delay
+	       * between each animation.
+	       */
 	      delay: _react2["default"].PropTypes.number,
+	      /**
+	       * The onEnd prop specifies a function to run when the animation ends. If
+	       * multiple animations are in the queue, it is called after the last
+	       * animation.
+	       */
 	      onEnd: _react2["default"].PropTypes.func,
+	      /**
+	       * The data prop specifies the latest set of values to tween to. When this
+	       * prop changes, VictoryAnimation will begin animating from the current
+	       * value to the new value.
+	       */
 	      data: _react2["default"].PropTypes.oneOfType([_react2["default"].PropTypes.object, _react2["default"].PropTypes.array])
 	    },
 	    enumerable: true
@@ -706,7 +741,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    /* defaults */
 	    this.state = Array.isArray(this.props.data) ? this.props.data[0] : this.props.data;
 	    this.interpolator = null;
-	    this.step = 0;
 	    this.queue = Array.isArray(this.props.data) ? this.props.data.slice(1) : [];
 	    /* build easing function */
 	    this.ease = _d3Ease2["default"][this.props.easing];
@@ -720,8 +754,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(VictoryAnimation, [{
 	    key: "componentDidMount",
 	    value: function componentDidMount() {
+	      // Length check prevents us from triggering `onEnd` in `traverseQueue`.
 	      if (this.queue.length) {
-	        this.timer = (0, _d3Timer.timer)(this.traverseQueue.bind(this), this.props.delay);
+	        this.traverseQueue();
 	      }
 	    }
 	
@@ -729,53 +764,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "componentWillReceiveProps",
 	    value: function componentWillReceiveProps(nextProps) {
-	      /* cancel existing timer if it exists */
-	      this.stopTimer();
+	      /* cancel existing loop if it exists */
+	      if (this.timer) {
+	        this.timer.stop();
+	      }
 	      /* If an object was supplied */
-	
-	      if (Array.isArray(nextProps.data) === false) {
+	      if (!Array.isArray(nextProps.data)) {
 	        // Replace the tween queue. Could set `this.queue = [nextProps.data]`,
 	        // but let's reuse the same array.
 	        this.queue.length = 0;
 	        this.queue.push(nextProps.data);
-	        /* compare cached version to next props */
-	        this.interpolator = _d3Interpolate2["default"].value(this.state, nextProps.data);
-	        this.timer = (0, _d3Timer.timer)(this.functionToBeRunEachFrame);
 	        /* If an array was supplied */
 	      } else {
 	          var _queue;
 	
-	          /* Build our tween queue */
+	          /* Extend the tween queue */
 	          (_queue = this.queue).push.apply(_queue, _toConsumableArray(nextProps.data));
-	          /* Start traversing the tween queue */
-	          this.timer = (0, _d3Timer.timer)(this.traverseQueue.bind(this), this.props.delay);
 	        }
+	      /* Start traversing the tween queue */
+	      this.traverseQueue();
 	    }
 	  }, {
 	    key: "componentWillUnmount",
 	    value: function componentWillUnmount() {
-	      this.stopTimer();
+	      if (this.timer) {
+	        this.timer.stop();
+	      }
 	    }
 	
-	    /* Traverse the tween queue - called within d3-timer*/
+	    /* Traverse the tween queue */
 	  }, {
 	    key: "traverseQueue",
 	    value: function traverseQueue() {
-	      if (this.queue.length > 0) {
+	      if (this.queue.length) {
 	        /* Get the next index */
 	        var data = this.queue[0];
 	        /* compare cached version to next props */
 	        this.interpolator = _d3Interpolate2["default"].value(this.state, data);
-	        (0, _d3Timer.timer)(this.functionToBeRunEachFrame, this.props.delay);
+	        /* reset step to zero */
+	        this.timer = (0, _d3Timer.timer)(this.functionToBeRunEachFrame, this.props.delay);
 	      } else if (this.props.onEnd) {
 	        this.props.onEnd();
-	      }
-	    }
-	  }, {
-	    key: "stopTimer",
-	    value: function stopTimer() {
-	      if (this.timer) {
-	        this.timer.stop();
 	      }
 	    }
 	
@@ -791,11 +820,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	      if (step >= 1) {
 	        this.setState(this.interpolator(1));
-	        this.stopTimer();
-	
-	        if (this.props.onEnd) {
-	          this.props.onEnd();
-	        }
+	        this.timer.stop();
+	        this.queue.shift();
+	        this.traverseQueue(); // Will take care of calling `onEnd`.
 	        return;
 	      }
 	      /*
@@ -804,7 +831,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        interpolator, which is cached for performance whenever props are received
 	      */
 	      this.setState(this.interpolator(this.ease(step)));
-	      this.step += this.props.velocity;
 	    }
 	  }, {
 	    key: "render",
@@ -830,7 +856,237 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	  true ? factory(exports, __webpack_require__(6)) :
+	  true ? factory(exports) :
+	  typeof define === 'function' && define.amd ? define('d3-ease', ['exports'], factory) :
+	  factory((global.d3_ease = {}));
+	}(this, function (exports) { 'use strict';
+	
+	  var slice = Array.prototype.slice;
+	
+	  function curry1(type, a) {
+	    return function(t) {
+	      return type(t, a);
+	    };
+	  }
+	
+	  function curry2(type, a, b) {
+	    return function(t) {
+	      return type(t, a, b);
+	    };
+	  }
+	
+	  function curryN(type, args) {
+	    args = slice.call(args);
+	    args[0] = null;
+	    return function(t) {
+	      args[0] = t;
+	      return type.apply(null, args);
+	    };
+	  }
+	
+	  function bind(type, a, b) {
+	    switch (arguments.length) {
+	      case 1: return type;
+	      case 2: return curry1(type, a);
+	      case 3: return curry2(type, a, b);
+	      default: return curryN(type, arguments);
+	    }
+	  };
+	
+	  function linearIn(t) {
+	    return +t;
+	  };
+	
+	  function quadIn(t) {
+	    return t * t;
+	  };
+	
+	  function quadOut(t) {
+	    return t * (2 - t);
+	  };
+	
+	  function quadInOut(t) {
+	    return ((t *= 2) <= 1 ? t * t : --t * (2 - t) + 1) / 2;
+	  };
+	
+	  function cubicIn(t) {
+	    return t * t * t;
+	  };
+	
+	  function cubicOut(t) {
+	    return --t * t * t + 1;
+	  };
+	
+	  function cubicInOut(t) {
+	    return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
+	  };
+	
+	  function polyIn(t, e) {
+	    if (e == null) e = 3;
+	    return Math.pow(t, e);
+	  };
+	
+	  function polyOut(t, e) {
+	    if (e == null) e = 3;
+	    return 1 - Math.pow(1 - t, e);
+	  };
+	
+	  function polyInOut(t, e) {
+	    if (e == null) e = 3;
+	    return ((t *= 2) <= 1 ? Math.pow(t, e) : 2 - Math.pow(2 - t, e)) / 2;
+	  };
+	
+	  var pi = Math.PI;
+	  var halfPi = pi / 2;
+	  function sinIn(t) {
+	    return 1 - Math.cos(t * halfPi);
+	  };
+	
+	  function sinOut(t) {
+	    return Math.sin(t * halfPi);
+	  };
+	
+	  function sinInOut(t) {
+	    return (1 - Math.cos(pi * t)) / 2;
+	  };
+	
+	  function expIn(t) {
+	    return Math.pow(2, 10 * t - 10);
+	  };
+	
+	  function expOut(t) {
+	    return 1 - Math.pow(2, -10 * t);
+	  };
+	
+	  function expInOut(t) {
+	    return ((t *= 2) <= 1 ? Math.pow(2, 10 * t - 10) : 2 - Math.pow(2, 10 - 10 * t)) / 2;
+	  };
+	
+	  function circleIn(t) {
+	    return 1 - Math.sqrt(1 - t * t);
+	  };
+	
+	  function circleOut(t) {
+	    return Math.sqrt(1 - --t * t);
+	  };
+	
+	  function circleInOut(t) {
+	    return ((t *= 2) <= 1 ? 1 - Math.sqrt(1 - t * t) : Math.sqrt(1 - (t -= 2) * t) + 1) / 2;
+	  };
+	
+	  var b1 = 4 / 11;
+	  var b2 = 6 / 11;
+	  var b3 = 8 / 11;
+	  var b4 = 3 / 4;
+	  var b5 = 9 / 11;
+	  var b6 = 10 / 11;
+	  var b7 = 15 / 16;
+	  var b8 = 21 / 22;
+	  var b9 = 63 / 64;
+	  var b0 = 1 / b1 / b1;
+	  function bounceIn(t) {
+	    return 1 - bounceOut(1 - t);
+	  };
+	
+	  function bounceOut(t) {
+	    return t < b1 ? b0 * t * t : t < b3 ? b0 * (t -= b2) * t + b4 : t < b6 ? b0 * (t -= b5) * t + b7 : b0 * (t -= b8) * t + b9;
+	  };
+	
+	  function bounceInOut(t) {
+	    return ((t *= 2) <= 1 ? 1 - bounceOut(1 - t) : bounceOut(t - 1) + 1) / 2;
+	  };
+	
+	  function backIn(t, s) {
+	    s = s == null ? 1.70158 : +s;
+	    return t * t * ((s + 1) * t - s);
+	  };
+	
+	  function backOut(t, s) {
+	    s = s == null ? 1.70158 : +s;
+	    return --t * t * ((s + 1) * t + s) + 1;
+	  };
+	
+	  function backInOut(t, s) {
+	    s = s == null ? 1.70158 : +s;
+	    return ((t *= 2) < 1 ? t * t * ((s + 1) * t - s) : (t -= 2) * t * ((s + 1) * t + s) + 2) / 2;
+	  };
+	
+	  var tau = 2 * Math.PI;
+	
+	  function elasticIn(t, a, p) {
+	    a = a == null ? 1 : Math.max(1, a);
+	    p = (p == null ? 0.3 : p) / tau;
+	    return a * Math.pow(2, 10 * --t) * Math.sin((p * Math.asin(1 / a) - t) / p);
+	  };
+	
+	  function elasticOut(t, a, p) {
+	    a = a == null ? 1 : Math.max(1, a);
+	    p = (p == null ? 0.3 : p) / tau;
+	    return 1 - a * Math.pow(2, -10 * t) * Math.sin((+t + p * Math.asin(1 / a)) / p);
+	  };
+	
+	  function elasticInOut(t, a, p) {
+	    a = a == null ? 1 : Math.max(1, a);
+	    p = (p == null ? 0.3 : p) / tau;
+	    var s = p * Math.asin(1 / a);
+	    return ((t = t * 2 - 1) < 0
+	        ? a * Math.pow(2, 10 * t) * Math.sin((s - t) / p)
+	        : 2 - a * Math.pow(2, -10 * t) * Math.sin((s + t) / p)) / 2;
+	  };
+	
+	  var version = "0.3.0";
+	
+	  exports.version = version;
+	  exports.bind = bind;
+	  exports.linear = linearIn;
+	  exports.linearIn = linearIn;
+	  exports.linearOut = linearIn;
+	  exports.linearInOut = linearIn;
+	  exports.quad = quadIn;
+	  exports.quadIn = quadIn;
+	  exports.quadOut = quadOut;
+	  exports.quadInOut = quadInOut;
+	  exports.cubic = cubicIn;
+	  exports.cubicIn = cubicIn;
+	  exports.cubicOut = cubicOut;
+	  exports.cubicInOut = cubicInOut;
+	  exports.poly = polyIn;
+	  exports.polyIn = polyIn;
+	  exports.polyOut = polyOut;
+	  exports.polyInOut = polyInOut;
+	  exports.sin = sinIn;
+	  exports.sinIn = sinIn;
+	  exports.sinOut = sinOut;
+	  exports.sinInOut = sinInOut;
+	  exports.exp = expIn;
+	  exports.expIn = expIn;
+	  exports.expOut = expOut;
+	  exports.expInOut = expInOut;
+	  exports.circle = circleIn;
+	  exports.circleIn = circleIn;
+	  exports.circleOut = circleOut;
+	  exports.circleInOut = circleInOut;
+	  exports.bounce = bounceIn;
+	  exports.bounceIn = bounceIn;
+	  exports.bounceOut = bounceOut;
+	  exports.bounceInOut = bounceInOut;
+	  exports.back = backIn;
+	  exports.backIn = backIn;
+	  exports.backOut = backOut;
+	  exports.backInOut = backInOut;
+	  exports.elastic = elasticIn;
+	  exports.elasticIn = elasticIn;
+	  exports.elasticOut = elasticOut;
+	  exports.elasticInOut = elasticInOut;
+	
+	}));
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function (global, factory) {
+	  true ? factory(exports, __webpack_require__(7)) :
 	  typeof define === 'function' && define.amd ? define('d3-interpolate', ['exports', 'd3-color'], factory) :
 	  factory((global.d3_interpolate = {}),global.d3_color);
 	}(this, function (exports,d3Color) { 'use strict';
@@ -1313,7 +1569,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
@@ -1834,236 +2090,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	(function (global, factory) {
-	  true ? factory(exports) :
-	  typeof define === 'function' && define.amd ? define('d3-ease', ['exports'], factory) :
-	  factory((global.d3_ease = {}));
-	}(this, function (exports) { 'use strict';
-	
-	  var slice = Array.prototype.slice;
-	
-	  function curry1(type, a) {
-	    return function(t) {
-	      return type(t, a);
-	    };
-	  }
-	
-	  function curry2(type, a, b) {
-	    return function(t) {
-	      return type(t, a, b);
-	    };
-	  }
-	
-	  function curryN(type, args) {
-	    args = slice.call(args);
-	    args[0] = null;
-	    return function(t) {
-	      args[0] = t;
-	      return type.apply(null, args);
-	    };
-	  }
-	
-	  function bind(type, a, b) {
-	    switch (arguments.length) {
-	      case 1: return type;
-	      case 2: return curry1(type, a);
-	      case 3: return curry2(type, a, b);
-	      default: return curryN(type, arguments);
-	    }
-	  };
-	
-	  function linearIn(t) {
-	    return +t;
-	  };
-	
-	  function quadIn(t) {
-	    return t * t;
-	  };
-	
-	  function quadOut(t) {
-	    return t * (2 - t);
-	  };
-	
-	  function quadInOut(t) {
-	    return ((t *= 2) <= 1 ? t * t : --t * (2 - t) + 1) / 2;
-	  };
-	
-	  function cubicIn(t) {
-	    return t * t * t;
-	  };
-	
-	  function cubicOut(t) {
-	    return --t * t * t + 1;
-	  };
-	
-	  function cubicInOut(t) {
-	    return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
-	  };
-	
-	  function polyIn(t, e) {
-	    if (e == null) e = 3;
-	    return Math.pow(t, e);
-	  };
-	
-	  function polyOut(t, e) {
-	    if (e == null) e = 3;
-	    return 1 - Math.pow(1 - t, e);
-	  };
-	
-	  function polyInOut(t, e) {
-	    if (e == null) e = 3;
-	    return ((t *= 2) <= 1 ? Math.pow(t, e) : 2 - Math.pow(2 - t, e)) / 2;
-	  };
-	
-	  var pi = Math.PI;
-	  var halfPi = pi / 2;
-	  function sinIn(t) {
-	    return 1 - Math.cos(t * halfPi);
-	  };
-	
-	  function sinOut(t) {
-	    return Math.sin(t * halfPi);
-	  };
-	
-	  function sinInOut(t) {
-	    return (1 - Math.cos(pi * t)) / 2;
-	  };
-	
-	  function expIn(t) {
-	    return Math.pow(2, 10 * t - 10);
-	  };
-	
-	  function expOut(t) {
-	    return 1 - Math.pow(2, -10 * t);
-	  };
-	
-	  function expInOut(t) {
-	    return ((t *= 2) <= 1 ? Math.pow(2, 10 * t - 10) : 2 - Math.pow(2, 10 - 10 * t)) / 2;
-	  };
-	
-	  function circleIn(t) {
-	    return 1 - Math.sqrt(1 - t * t);
-	  };
-	
-	  function circleOut(t) {
-	    return Math.sqrt(1 - --t * t);
-	  };
-	
-	  function circleInOut(t) {
-	    return ((t *= 2) <= 1 ? 1 - Math.sqrt(1 - t * t) : Math.sqrt(1 - (t -= 2) * t) + 1) / 2;
-	  };
-	
-	  var b1 = 4 / 11;
-	  var b2 = 6 / 11;
-	  var b3 = 8 / 11;
-	  var b4 = 3 / 4;
-	  var b5 = 9 / 11;
-	  var b6 = 10 / 11;
-	  var b7 = 15 / 16;
-	  var b8 = 21 / 22;
-	  var b9 = 63 / 64;
-	  var b0 = 1 / b1 / b1;
-	  function bounceIn(t) {
-	    return 1 - bounceOut(1 - t);
-	  };
-	
-	  function bounceOut(t) {
-	    return t < b1 ? b0 * t * t : t < b3 ? b0 * (t -= b2) * t + b4 : t < b6 ? b0 * (t -= b5) * t + b7 : b0 * (t -= b8) * t + b9;
-	  };
-	
-	  function bounceInOut(t) {
-	    return ((t *= 2) <= 1 ? 1 - bounceOut(1 - t) : bounceOut(t - 1) + 1) / 2;
-	  };
-	
-	  function backIn(t, s) {
-	    s = s == null ? 1.70158 : +s;
-	    return t * t * ((s + 1) * t - s);
-	  };
-	
-	  function backOut(t, s) {
-	    s = s == null ? 1.70158 : +s;
-	    return --t * t * ((s + 1) * t + s) + 1;
-	  };
-	
-	  function backInOut(t, s) {
-	    s = s == null ? 1.70158 : +s;
-	    return ((t *= 2) < 1 ? t * t * ((s + 1) * t - s) : (t -= 2) * t * ((s + 1) * t + s) + 2) / 2;
-	  };
-	
-	  var tau = 2 * Math.PI;
-	
-	  function elasticIn(t, a, p) {
-	    a = a == null ? 1 : Math.max(1, a);
-	    p = (p == null ? 0.3 : p) / tau;
-	    return a * Math.pow(2, 10 * --t) * Math.sin((p * Math.asin(1 / a) - t) / p);
-	  };
-	
-	  function elasticOut(t, a, p) {
-	    a = a == null ? 1 : Math.max(1, a);
-	    p = (p == null ? 0.3 : p) / tau;
-	    return 1 - a * Math.pow(2, -10 * t) * Math.sin((+t + p * Math.asin(1 / a)) / p);
-	  };
-	
-	  function elasticInOut(t, a, p) {
-	    a = a == null ? 1 : Math.max(1, a);
-	    p = (p == null ? 0.3 : p) / tau;
-	    var s = p * Math.asin(1 / a);
-	    return ((t = t * 2 - 1) < 0
-	        ? a * Math.pow(2, 10 * t) * Math.sin((s - t) / p)
-	        : 2 - a * Math.pow(2, -10 * t) * Math.sin((s + t) / p)) / 2;
-	  };
-	
-	  var version = "0.3.0";
-	
-	  exports.version = version;
-	  exports.bind = bind;
-	  exports.linear = linearIn;
-	  exports.linearIn = linearIn;
-	  exports.linearOut = linearIn;
-	  exports.linearInOut = linearIn;
-	  exports.quad = quadIn;
-	  exports.quadIn = quadIn;
-	  exports.quadOut = quadOut;
-	  exports.quadInOut = quadInOut;
-	  exports.cubic = cubicIn;
-	  exports.cubicIn = cubicIn;
-	  exports.cubicOut = cubicOut;
-	  exports.cubicInOut = cubicInOut;
-	  exports.poly = polyIn;
-	  exports.polyIn = polyIn;
-	  exports.polyOut = polyOut;
-	  exports.polyInOut = polyInOut;
-	  exports.sin = sinIn;
-	  exports.sinIn = sinIn;
-	  exports.sinOut = sinOut;
-	  exports.sinInOut = sinInOut;
-	  exports.exp = expIn;
-	  exports.expIn = expIn;
-	  exports.expOut = expOut;
-	  exports.expInOut = expInOut;
-	  exports.circle = circleIn;
-	  exports.circleIn = circleIn;
-	  exports.circleOut = circleOut;
-	  exports.circleInOut = circleInOut;
-	  exports.bounce = bounceIn;
-	  exports.bounceIn = bounceIn;
-	  exports.bounceOut = bounceOut;
-	  exports.bounceInOut = bounceInOut;
-	  exports.back = backIn;
-	  exports.backIn = backIn;
-	  exports.backOut = backOut;
-	  exports.backInOut = backInOut;
-	  exports.elastic = elasticIn;
-	  exports.elasticIn = elasticIn;
-	  exports.elasticOut = elasticOut;
-	  exports.elasticInOut = elasticInOut;
-	
-	}));
-
-/***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -2185,7 +2211,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
-	var _d3Interpolate = __webpack_require__(5);
+	var _d3Interpolate = __webpack_require__(6);
 	
 	var _d3Interpolate2 = _interopRequireDefault(_d3Interpolate);
 	
@@ -16689,7 +16715,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	  true ? factory(exports, __webpack_require__(6), __webpack_require__(5), __webpack_require__(38), __webpack_require__(39), __webpack_require__(40), __webpack_require__(42)) :
+	  true ? factory(exports, __webpack_require__(7), __webpack_require__(6), __webpack_require__(38), __webpack_require__(39), __webpack_require__(40), __webpack_require__(42)) :
 	  typeof define === 'function' && define.amd ? define('d3-scale', ['exports', 'd3-color', 'd3-interpolate', 'd3-arrays', 'd3-format', 'd3-time-format', 'd3-time'], factory) :
 	  factory((global.d3_scale = {}),global.d3_color,global.d3_interpolate,global.d3_arrays,global.d3_format,global.d3_time_format,global.d3_time);
 	}(this, function (exports,d3Color,d3Interpolate,d3Arrays,d3Format,d3TimeFormat,d3Time) { 'use strict';
