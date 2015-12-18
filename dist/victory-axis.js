@@ -16715,10 +16715,379 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	  true ? factory(exports, __webpack_require__(7), __webpack_require__(6), __webpack_require__(38), __webpack_require__(39), __webpack_require__(40), __webpack_require__(42)) :
-	  typeof define === 'function' && define.amd ? define('d3-scale', ['exports', 'd3-color', 'd3-interpolate', 'd3-arrays', 'd3-format', 'd3-time-format', 'd3-time'], factory) :
-	  factory((global.d3_scale = {}),global.d3_color,global.d3_interpolate,global.d3_arrays,global.d3_format,global.d3_time_format,global.d3_time);
-	}(this, function (exports,d3Color,d3Interpolate,d3Arrays,d3Format,d3TimeFormat,d3Time) { 'use strict';
+	  true ? factory(exports, __webpack_require__(39), __webpack_require__(6), __webpack_require__(38), __webpack_require__(40), __webpack_require__(41), __webpack_require__(7)) :
+	  typeof define === 'function' && define.amd ? define('d3-scale', ['exports', 'd3-array', 'd3-interpolate', 'd3-format', 'd3-time', 'd3-time-format', 'd3-color'], factory) :
+	  factory((global.d3_scale = {}),global.d3_array,global.d3_interpolate,global.d3_format,global.d3_time,global.d3_time_format,global.d3_color);
+	}(this, function (exports,d3Array,d3Interpolate,d3Format,d3Time,d3TimeFormat,d3Color) { 'use strict';
+	
+	  var array = Array.prototype;
+	
+	  var map = array.map;
+	  var slice = array.slice;
+	
+	  function number(x) {
+	    return +x;
+	  };
+	
+	  function tickFormat(domain, count, specifier) {
+	    var start = domain[0],
+	        stop = domain[domain.length - 1],
+	        step = d3Array.tickStep(start, stop, count == null ? 10 : count);
+	    if (specifier == null) {
+	      specifier = ",." + d3Format.precisionFixed(step) + "f";
+	    } else {
+	      switch (specifier = d3Format.formatSpecifier(specifier), specifier.type) {
+	        case "s": {
+	          var value = Math.max(Math.abs(start), Math.abs(stop));
+	          if (specifier.precision == null) specifier.precision = d3Format.precisionPrefix(step, value);
+	          return d3Format.formatPrefix(specifier, value);
+	        }
+	        case "":
+	        case "e":
+	        case "g":
+	        case "p":
+	        case "r": {
+	          if (specifier.precision == null) specifier.precision = d3Format.precisionRound(step, Math.max(Math.abs(start), Math.abs(stop))) - (specifier.type === "e");
+	          break;
+	        }
+	        case "f":
+	        case "%": {
+	          if (specifier.precision == null) specifier.precision = d3Format.precisionFixed(step) - (specifier.type === "%") * 2;
+	          break;
+	        }
+	      }
+	    }
+	    return d3Format.format(specifier);
+	  };
+	
+	  function identity() {
+	    var domain = [0, 1];
+	
+	    function scale(x) {
+	      return +x;
+	    }
+	
+	    scale.invert = scale;
+	
+	    scale.domain = scale.range = function(_) {
+	      return arguments.length ? (domain = map.call(_, number), scale) : domain.slice();
+	    };
+	
+	    scale.ticks = function(count) {
+	      return d3Array.ticks(domain[0], domain[domain.length - 1], count == null ? 10 : count);
+	    };
+	
+	    scale.tickFormat = function(count, specifier) {
+	      return tickFormat(domain, count, specifier);
+	    };
+	
+	    scale.copy = function() {
+	      return identity().domain(domain);
+	    };
+	
+	    return scale;
+	  };
+	
+	  function constant(x) {
+	    return function() {
+	      return x;
+	    };
+	  };
+	
+	  var unit = [0, 1];
+	
+	  function deinterpolateLinear(a, b) {
+	    return (b -= (a = +a))
+	        ? function(x) { return (x - a) / b; }
+	        : constant(b);
+	  };
+	
+	  function deinterpolateClamp(deinterpolate) {
+	    return function(a, b) {
+	      var d = deinterpolate(a = +a, b = +b);
+	      return function(x) { return x <= a ? 0 : x >= b ? 1 : d(x); };
+	    };
+	  }
+	
+	  function reinterpolateClamp(reinterpolate) {
+	    return function(a, b) {
+	      var r = reinterpolate(a = +a, b = +b);
+	      return function(t) { return t <= 0 ? a : t >= 1 ? b : r(t); };
+	    };
+	  }
+	
+	  function bimap(domain, range, deinterpolate, reinterpolate) {
+	    var d0 = domain[0], d1 = domain[1], r0 = range[0], r1 = range[1];
+	    if (d1 < d0) d0 = deinterpolate(d1, d0), r0 = reinterpolate(r1, r0);
+	    else d0 = deinterpolate(d0, d1), r0 = reinterpolate(r0, r1);
+	    return function(x) { return r0(d0(x)); };
+	  }
+	
+	  function polymap(domain, range, deinterpolate, reinterpolate) {
+	    var j = Math.min(domain.length, range.length) - 1,
+	        d = new Array(j),
+	        r = new Array(j),
+	        i = -1;
+	
+	    // Reverse descending domains.
+	    if (domain[j] < domain[0]) {
+	      domain = domain.slice().reverse();
+	      range = range.slice().reverse();
+	    }
+	
+	    while (++i < j) {
+	      d[i] = deinterpolate(domain[i], domain[i + 1]);
+	      r[i] = reinterpolate(range[i], range[i + 1]);
+	    }
+	
+	    return function(x) {
+	      var i = d3Array.bisect(domain, x, 1, j) - 1;
+	      return r[i](d[i](x));
+	    };
+	  }
+	
+	  function copy(source, target) {
+	    return target
+	        .domain(source.domain())
+	        .range(source.range())
+	        .interpolate(source.interpolate())
+	        .clamp(source.clamp());
+	  };
+	
+	  // deinterpolate(a, b)(x) takes a domain value x in [a,b] and returns the corresponding parameter t in [0,1].
+	  // reinterpolate(a, b)(t) takes a parameter t in [0,1] and returns the corresponding domain value x in [a,b].
+	  function quantitative(deinterpolate, reinterpolate) {
+	    var domain = unit,
+	        range = unit,
+	        interpolate = d3Interpolate.value,
+	        clamp = false,
+	        output,
+	        input;
+	
+	    function rescale() {
+	      var map = Math.min(domain.length, range.length) > 2 ? polymap : bimap;
+	      output = map(domain, range, clamp ? deinterpolateClamp(deinterpolate) : deinterpolate, interpolate);
+	      input = map(range, domain, deinterpolateLinear, clamp ? reinterpolateClamp(reinterpolate) : reinterpolate);
+	      return scale;
+	    }
+	
+	    function scale(x) {
+	      return output(+x);
+	    }
+	
+	    scale.invert = function(y) {
+	      return input(+y);
+	    };
+	
+	    scale.domain = function(_) {
+	      return arguments.length ? (domain = map.call(_, number), rescale()) : domain.slice();
+	    };
+	
+	    scale.range = function(_) {
+	      return arguments.length ? (range = slice.call(_), rescale()) : range.slice();
+	    };
+	
+	    scale.rangeRound = function(_) {
+	      return range = slice.call(_), interpolate = d3Interpolate.round, rescale();
+	    };
+	
+	    scale.clamp = function(_) {
+	      return arguments.length ? (clamp = !!_, rescale()) : clamp;
+	    };
+	
+	    scale.interpolate = function(_) {
+	      return arguments.length ? (interpolate = _, rescale()) : interpolate;
+	    };
+	
+	    return rescale();
+	  };
+	
+	  function linearish(scale) {
+	    var domain = scale.domain;
+	
+	    scale.ticks = function(count) {
+	      var d = domain();
+	      return d3Array.ticks(d[0], d[d.length - 1], count == null ? 10 : count);
+	    };
+	
+	    scale.tickFormat = function(count, specifier) {
+	      return tickFormat(domain(), count, specifier);
+	    };
+	
+	    scale.nice = function(count) {
+	      var d = domain(),
+	          i = d.length - 1,
+	          n = count == null ? 10 : count,
+	          start = d[0],
+	          stop = d[i],
+	          step = d3Array.tickStep(start, stop, n);
+	
+	      if (step) {
+	        step = d3Array.tickStep(Math.floor(start / step) * step, Math.ceil(stop / step) * step, n);
+	        d[0] = Math.floor(start / step) * step;
+	        d[i] = Math.ceil(stop / step) * step;
+	        domain(d);
+	      }
+	
+	      return scale;
+	    };
+	
+	    return scale;
+	  };
+	
+	  function linear() {
+	    var scale = quantitative(deinterpolateLinear, d3Interpolate.number);
+	
+	    scale.copy = function() {
+	      return copy(scale, linear());
+	    };
+	
+	    return linearish(scale);
+	  };
+	
+	  function nice(domain, interval) {
+	    domain = domain.slice();
+	
+	    var i0 = 0,
+	        i1 = domain.length - 1,
+	        x0 = domain[i0],
+	        x1 = domain[i1],
+	        t;
+	
+	    if (x1 < x0) {
+	      t = i0, i0 = i1, i1 = t;
+	      t = x0, x0 = x1, x1 = t;
+	    }
+	
+	    domain[i0] = interval.floor(x0);
+	    domain[i1] = interval.ceil(x1);
+	    return domain;
+	  };
+	
+	  var tickFormat10 = d3Format.format(".0e");
+	  var tickFormatOther = d3Format.format(",");
+	  function deinterpolate(a, b) {
+	    return (b = Math.log(b / a))
+	        ? function(x) { return Math.log(x / a) / b; }
+	        : constant(b);
+	  }
+	
+	  function reinterpolate(a, b) {
+	    return a < 0
+	        ? function(t) { return -Math.pow(-b, t) * Math.pow(-a, 1 - t); }
+	        : function(t) { return Math.pow(b, t) * Math.pow(a, 1 - t); };
+	  }
+	
+	  function pow10(x) {
+	    return isFinite(x) ? +("1e" + x) : x < 0 ? 0 : x;
+	  }
+	
+	  function powp(base) {
+	    return base === 10 ? pow10
+	        : base === Math.E ? Math.exp
+	        : function(x) { return Math.pow(base, x); };
+	  }
+	
+	  function logp(base) {
+	    return base === Math.E ? Math.log
+	        : base === 10 && Math.log10
+	        || base === 2 && Math.log2
+	        || (base = Math.log(base), function(x) { return Math.log(x) / base; });
+	  }
+	
+	  function reflect(f) {
+	    return function(x) {
+	      return -f(-x);
+	    };
+	  }
+	
+	  function log() {
+	    var scale = quantitative(deinterpolate, reinterpolate).domain([1, 10]),
+	        domain = scale.domain,
+	        base = 10,
+	        logs = logp(10),
+	        pows = powp(10);
+	
+	    function rescale() {
+	      logs = logp(base), pows = powp(base);
+	      if (domain()[0] < 0) logs = reflect(logs), pows = reflect(pows);
+	      return scale;
+	    }
+	
+	    scale.base = function(_) {
+	      return arguments.length ? (base = +_, rescale()) : base;
+	    };
+	
+	    scale.domain = function(_) {
+	      return arguments.length ? (domain(_), rescale()) : domain();
+	    };
+	
+	    scale.nice = function() {
+	      return domain(nice(domain(), {
+	        floor: function(x) { return pows(Math.floor(logs(x))); },
+	        ceil: function(x) { return pows(Math.ceil(logs(x))); }
+	      }));
+	    };
+	
+	    scale.ticks = function(count) {
+	      var d = domain(),
+	          u = d[0],
+	          v = d[d.length - 1],
+	          r;
+	
+	      if (r = v < u) i = u, u = v, v = i;
+	
+	      var i = logs(u),
+	          j = logs(v),
+	          p,
+	          k,
+	          t,
+	          n = count == null ? 10 : +count,
+	          z = [];
+	
+	      if (!(base % 1) && j - i < n) {
+	        i = Math.round(i) - 1, j = Math.round(j) + 1;
+	        if (u > 0) for (; i < j; ++i) {
+	          for (k = 1, p = pows(i); k < base; ++k) {
+	            t = p * k;
+	            if (t < u) continue;
+	            if (t > v) break;
+	            z.push(t);
+	          }
+	        } else for (; i < j; ++i) {
+	          for (k = base - 1, p = pows(i); k >= 1; --k) {
+	            t = p * k;
+	            if (t < u) continue;
+	            if (t > v) break;
+	            z.push(t);
+	          }
+	        }
+	        if (r) z.reverse();
+	      } else {
+	        z = d3Array.ticks(i, j, Math.min(j - i, n)).map(pows);
+	      }
+	
+	      return z;
+	    };
+	
+	    scale.tickFormat = function(count, specifier) {
+	      if (specifier == null) specifier = base === 10 ? tickFormat10 : tickFormatOther;
+	      else if (typeof specifier !== "function") specifier = d3Format.format(specifier);
+	      if (count == null) return specifier;
+	      var k = Math.max(1, base * count / scale.ticks().length); // TODO fast estimate?
+	      return function(d) {
+	        var i = d / pows(Math.round(logs(d)));
+	        if (i * base < base - 0.5) i *= base;
+	        return i <= k ? specifier(d) : "";
+	      };
+	    };
+	
+	    scale.copy = function() {
+	      return copy(scale, log().base(base));
+	    };
+	
+	    return scale;
+	  };
 	
 	  function steps(length, start, step) {
 	    var steps = new Array(length), i = -1;
@@ -16743,7 +17112,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    scale.domain = function(x) {
 	      if (!arguments.length) return domain.slice();
 	      domain = [];
-	      index = d3Arrays.map();
+	      index = d3Array.map();
 	      var i = -1, n = x.length, xi, xk;
 	      while (++i < n) if (!index.has(xk = (xi = x[i]) + "")) index.set(xk, domain.push(xi));
 	      return scale[ranger.t].apply(scale, ranger.a);
@@ -16828,462 +17197,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return newOrdinal([], {t: "range", a: [[]]});
 	  };
 	
-	  function category10() {
-	    return ordinal().range([
-	      "#1f77b4",
-	      "#ff7f0e",
-	      "#2ca02c",
-	      "#d62728",
-	      "#9467bd",
-	      "#8c564b",
-	      "#e377c2",
-	      "#7f7f7f",
-	      "#bcbd22",
-	      "#17becf"
-	    ]);
-	  };
-	
-	  function category20b() {
-	    return ordinal().range([
-	      "#393b79", "#5254a3", "#6b6ecf", "#9c9ede",
-	      "#637939", "#8ca252", "#b5cf6b", "#cedb9c",
-	      "#8c6d31", "#bd9e39", "#e7ba52", "#e7cb94",
-	      "#843c39", "#ad494a", "#d6616b", "#e7969c",
-	      "#7b4173", "#a55194", "#ce6dbd", "#de9ed6"
-	    ]);
-	  };
-	
-	  function category20c() {
-	    return ordinal().range([
-	      "#3182bd", "#6baed6", "#9ecae1", "#c6dbef",
-	      "#e6550d", "#fd8d3c", "#fdae6b", "#fdd0a2",
-	      "#31a354", "#74c476", "#a1d99b", "#c7e9c0",
-	      "#756bb1", "#9e9ac8", "#bcbddc", "#dadaeb",
-	      "#636363", "#969696", "#bdbdbd", "#d9d9d9"
-	    ]);
-	  };
-	
-	  function category20() {
-	    return ordinal().range([
-	      "#1f77b4", "#aec7e8",
-	      "#ff7f0e", "#ffbb78",
-	      "#2ca02c", "#98df8a",
-	      "#d62728", "#ff9896",
-	      "#9467bd", "#c5b0d5",
-	      "#8c564b", "#c49c94",
-	      "#e377c2", "#f7b6d2",
-	      "#7f7f7f", "#c7c7c7",
-	      "#bcbd22", "#dbdb8d",
-	      "#17becf", "#9edae5"
-	    ]);
-	  };
-	
-	  function nice(domain, step) {
-	    domain = domain.slice();
-	    if (!step) return domain;
-	
-	    var i0 = 0,
-	        i1 = domain.length - 1,
-	        x0 = domain[i0],
-	        x1 = domain[i1],
-	        t;
-	
-	    if (x1 < x0) {
-	      t = i0, i0 = i1, i1 = t;
-	      t = x0, x0 = x1, x1 = t;
-	    }
-	
-	    domain[i0] = Math.floor(x0 / step) * step;
-	    domain[i1] = Math.ceil(x1 / step) * step;
-	    return domain;
-	  };
-	
-	  var e10 = Math.sqrt(50);
-	  var e5 = Math.sqrt(10);
-	  var e2 = Math.sqrt(2);
-	  function tickRange(domain, count) {
-	    if (count == null) count = 10;
-	
-	    var start = domain[0],
-	        stop = domain[domain.length - 1];
-	
-	    if (stop < start) error = stop, stop = start, start = error;
-	
-	    var span = stop - start,
-	        step = Math.pow(10, Math.floor(Math.log(span / count) / Math.LN10)),
-	        error = span / count / step;
-	
-	    // Filter ticks to get closer to the desired count.
-	    if (error >= e10) step *= 10;
-	    else if (error >= e5) step *= 5;
-	    else if (error >= e2) step *= 2;
-	
-	    // Round start and stop values to step interval.
-	    return [
-	      Math.ceil(start / step) * step,
-	      Math.floor(stop / step) * step + step / 2, // inclusive
-	      step
-	    ];
-	  };
-	
-	  function ticks(domain, count) {
-	    return d3Arrays.range.apply(null, tickRange(domain, count));
-	  };
-	
-	  function tickFormat(domain, count, specifier) {
-	    var range = tickRange(domain, count);
-	    if (specifier == null) {
-	      specifier = ",." + d3Format.precisionFixed(range[2]) + "f";
-	    } else {
-	      switch (specifier = d3Format.formatSpecifier(specifier), specifier.type) {
-	        case "s": {
-	          var value = Math.max(Math.abs(range[0]), Math.abs(range[1]));
-	          if (specifier.precision == null) specifier.precision = d3Format.precisionPrefix(range[2], value);
-	          return d3Format.formatPrefix(specifier, value);
-	        }
-	        case "":
-	        case "e":
-	        case "g":
-	        case "p":
-	        case "r": {
-	          if (specifier.precision == null) specifier.precision = d3Format.precisionRound(range[2], Math.max(Math.abs(range[0]), Math.abs(range[1]))) - (specifier.type === "e");
-	          break;
-	        }
-	        case "f":
-	        case "%": {
-	          if (specifier.precision == null) specifier.precision = d3Format.precisionFixed(range[2]) - (specifier.type === "%") * 2;
-	          break;
-	        }
-	      }
-	    }
-	    return d3Format.format(specifier);
-	  };
-	
-	  function uninterpolateClamp(a, b) {
-	    b = (b -= a = +a) || 1 / b;
-	    return function(x) {
-	      return Math.max(0, Math.min(1, (x - a) / b));
-	    };
+	  function raise(x, exponent) {
+	    return x < 0 ? -Math.pow(-x, exponent) : Math.pow(x, exponent);
 	  }
-	
-	  function uninterpolateNumber(a, b) {
-	    b = (b -= a = +a) || 1 / b;
-	    return function(x) {
-	      return (x - a) / b;
-	    };
-	  }
-	
-	  function bilinear(domain, range, uninterpolate, interpolate) {
-	    var u = uninterpolate(domain[0], domain[1]),
-	        i = interpolate(range[0], range[1]);
-	    return function(x) {
-	      return i(u(x));
-	    };
-	  }
-	
-	  function polylinear(domain, range, uninterpolate, interpolate) {
-	    var k = Math.min(domain.length, range.length) - 1,
-	        u = new Array(k),
-	        i = new Array(k),
-	        j = -1;
-	
-	    // Handle descending domains.
-	    if (domain[k] < domain[0]) {
-	      domain = domain.slice().reverse();
-	      range = range.slice().reverse();
-	    }
-	
-	    while (++j < k) {
-	      u[j] = uninterpolate(domain[j], domain[j + 1]);
-	      i[j] = interpolate(range[j], range[j + 1]);
-	    }
-	
-	    return function(x) {
-	      var j = d3Arrays.bisect(domain, x, 1, k) - 1;
-	      return i[j](u[j](x));
-	    };
-	  }
-	
-	  function newLinear(domain, range, interpolate, clamp) {
-	    var output,
-	        input;
-	
-	    function rescale() {
-	      var linear = Math.min(domain.length, range.length) > 2 ? polylinear : bilinear,
-	          uninterpolate = clamp ? uninterpolateClamp : uninterpolateNumber;
-	      output = linear(domain, range, uninterpolate, interpolate);
-	      input = linear(range, domain, uninterpolate, d3Interpolate.number);
-	      return scale;
-	    }
-	
-	    function scale(x) {
-	      return output(x);
-	    }
-	
-	    scale.invert = function(y) {
-	      return input(y);
-	    };
-	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return domain.slice();
-	      domain = x.map(Number);
-	      return rescale();
-	    };
-	
-	    scale.range = function(x) {
-	      if (!arguments.length) return range.slice();
-	      range = x.slice();
-	      return rescale();
-	    };
-	
-	    scale.rangeRound = function(x) {
-	      return scale.range(x).interpolate(d3Interpolate.round);
-	    };
-	
-	    scale.clamp = function(x) {
-	      if (!arguments.length) return clamp;
-	      clamp = !!x;
-	      return rescale();
-	    };
-	
-	    scale.interpolate = function(x) {
-	      if (!arguments.length) return interpolate;
-	      interpolate = x;
-	      return rescale();
-	    };
-	
-	    scale.ticks = function(count) {
-	      return ticks(domain, count);
-	    };
-	
-	    scale.tickFormat = function(count, specifier) {
-	      return tickFormat(domain, count, specifier);
-	    };
-	
-	    scale.nice = function(count) {
-	      domain = nice(domain, tickRange(domain, count)[2]);
-	      return rescale();
-	    };
-	
-	    scale.copy = function() {
-	      return newLinear(domain, range, interpolate, clamp);
-	    };
-	
-	    return rescale();
-	  }
-	
-	  function rebind(scale, linear) {
-	    scale.range = function() {
-	      var x = linear.range.apply(linear, arguments);
-	      return x === linear ? scale : x;
-	    };
-	
-	    scale.rangeRound = function() {
-	      var x = linear.rangeRound.apply(linear, arguments);
-	      return x === linear ? scale : x;
-	    };
-	
-	    scale.clamp = function() {
-	      var x = linear.clamp.apply(linear, arguments);
-	      return x === linear ? scale : x;
-	    };
-	
-	    scale.interpolate = function() {
-	      var x = linear.interpolate.apply(linear, arguments);
-	      return x === linear ? scale : x;
-	    };
-	
-	    return scale;
-	  };
-	
-	  function linear() {
-	    return newLinear([0, 1], [0, 1], d3Interpolate.value, false);
-	  };
-	
-	  function cubehelix() {
-	    return linear()
-	        .interpolate(d3Interpolate.cubehelixLong)
-	        .range([d3Color.cubehelix(300, 0.5, 0.0), d3Color.cubehelix(-240, 0.5, 1.0)]);
-	  };
-	
-	  function newIdentity(domain) {
-	
-	    function scale(x) {
-	      return +x;
-	    }
-	
-	    scale.invert = scale;
-	
-	    scale.domain = scale.range = function(x) {
-	      if (!arguments.length) return domain.slice();
-	      domain = x.map(Number);
-	      return scale;
-	    };
-	
-	    scale.ticks = function(count) {
-	      return ticks(domain, count);
-	    };
-	
-	    scale.tickFormat = function(count, specifier) {
-	      return tickFormat(domain, count, specifier);
-	    };
-	
-	    scale.copy = function() {
-	      return newIdentity(domain);
-	    };
-	
-	    return scale;
-	  }
-	
-	  function identity() {
-	    return newIdentity([0, 1]);
-	  };
-	
-	  var tickFormat10 = d3Format.format(".0e");
-	  var tickFormatOther = d3Format.format(",");
-	  function newLog(linear, base, domain) {
-	
-	    function log(x) {
-	      return (domain[0] < 0 ? -Math.log(x > 0 ? 0 : -x) : Math.log(x < 0 ? 0 : x)) / Math.log(base);
-	    }
-	
-	    function pow(x) {
-	      return domain[0] < 0 ? -Math.pow(base, -x) : Math.pow(base, x);
-	    }
-	
-	    function scale(x) {
-	      return linear(log(x));
-	    }
-	
-	    scale.invert = function(x) {
-	      return pow(linear.invert(x));
-	    };
-	
-	    scale.base = function(x) {
-	      if (!arguments.length) return base;
-	      base = +x;
-	      return scale.domain(domain);
-	    };
-	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return domain.slice();
-	      domain = x.map(Number);
-	      linear.domain(domain.map(log));
-	      return scale;
-	    };
-	
-	    scale.nice = function() {
-	      var x = nice(linear.domain(), 1);
-	      linear.domain(x);
-	      domain = x.map(pow);
-	      return scale;
-	    };
-	
-	    scale.ticks = function() {
-	      var u = domain[0],
-	          v = domain[domain.length - 1];
-	      if (v < u) i = u, u = v, v = i;
-	      var i = Math.floor(log(u)),
-	          j = Math.ceil(log(v)),
-	          k,
-	          t,
-	          n = base % 1 ? 2 : base,
-	          ticks = [];
-	
-	      if (isFinite(j - i)) {
-	        if (u > 0) {
-	          for (--j, k = 1; k < n; ++k) if ((t = pow(i) * k) < u) continue; else ticks.push(t);
-	          while (++i < j) for (k = 1; k < n; ++k) ticks.push(pow(i) * k);
-	          for (k = 1; k < n; ++k) if ((t = pow(i) * k) > v) break; else ticks.push(t);
-	        } else {
-	          for (++i, k = n - 1; k >= 1; --k) if ((t = pow(i) * k) < u) continue; else ticks.push(t);
-	          while (++i < j) for (k = n - 1; k >= 1; --k) ticks.push(pow(i) * k);
-	          for (k = n - 1; k >= 1; --k) if ((t = pow(i) * k) > v) break; else ticks.push(t);
-	        }
-	      }
-	
-	      return ticks;
-	    };
-	
-	    scale.tickFormat = function(count, specifier) {
-	      if (specifier == null) specifier = base === 10 ? tickFormat10 : tickFormatOther;
-	      else if (typeof specifier !== "function") specifier = d3Format.format(specifier);
-	      if (count == null) return specifier;
-	      var k = Math.min(base, scale.ticks().length / count),
-	          f = domain[0] > 0 ? (e = 1e-12, Math.ceil) : (e = -1e-12, Math.floor),
-	          e;
-	      return function(d) {
-	        return pow(f(log(d) + e)) / d >= k ? specifier(d) : "";
-	      };
-	    };
-	
-	    scale.copy = function() {
-	      return newLog(linear.copy(), base, domain);
-	    };
-	
-	    return rebind(scale, linear);
-	  }
-	
-	  function log() {
-	    return newLog(linear(), 10, [1, 10]);
-	  };
-	
-	  function newPow(linear, exponent, domain) {
-	
-	    function powp(x) {
-	      return x < 0 ? -Math.pow(-x, exponent) : Math.pow(x, exponent);
-	    }
-	
-	    function powb(x) {
-	      return x < 0 ? -Math.pow(-x, 1 / exponent) : Math.pow(x, 1 / exponent);
-	    }
-	
-	    function scale(x) {
-	      return linear(powp(x));
-	    }
-	
-	    scale.invert = function(x) {
-	      return powb(linear.invert(x));
-	    };
-	
-	    scale.exponent = function(x) {
-	      if (!arguments.length) return exponent;
-	      exponent = +x;
-	      return scale.domain(domain);
-	    };
-	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return domain.slice();
-	      domain = x.map(Number);
-	      linear.domain(domain.map(powp));
-	      return scale;
-	    };
-	
-	    scale.ticks = function(count) {
-	      return ticks(domain, count);
-	    };
-	
-	    scale.tickFormat = function(count, specifier) {
-	      return tickFormat(domain, count, specifier);
-	    };
-	
-	    scale.nice = function(count) {
-	      return scale.domain(nice(domain, tickRange(domain, count)[2]));
-	    };
-	
-	    scale.copy = function() {
-	      return newPow(linear.copy(), exponent, domain);
-	    };
-	
-	    return rebind(scale, linear);
-	  }
-	
-	  function sqrt() {
-	    return newPow(linear(), .5, [0, 1]);
-	  };
 	
 	  function pow() {
-	    return newPow(linear(), 1, [0, 1]);
+	    var exponent = 1,
+	        scale = quantitative(deinterpolate, reinterpolate),
+	        domain = scale.domain;
+	
+	    function deinterpolate(a, b) {
+	      return (b = raise(b, exponent) - (a = raise(a, exponent)))
+	          ? function(x) { return (raise(x, exponent) - a) / b; }
+	          : constant(b);
+	    }
+	
+	    function reinterpolate(a, b) {
+	      b = raise(b, exponent) - (a = raise(a, exponent));
+	      return function(t) { return raise(a + b * t, 1 / exponent); };
+	    }
+	
+	    scale.exponent = function(_) {
+	      return arguments.length ? (exponent = +_, domain(domain())) : exponent;
+	    };
+	
+	    scale.copy = function() {
+	      return copy(scale, pow().exponent(exponent));
+	    };
+	
+	    return linearish(scale);
+	  };
+	
+	  function sqrt() {
+	    return pow().exponent(0.5);
 	  };
 	
 	  function newQuantile(domain, range) {
@@ -17293,19 +17239,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var k = 0,
 	          q = range.length;
 	      thresholds = [];
-	      while (++k < q) thresholds[k - 1] = d3Arrays.quantile(domain, k / q);
+	      while (++k < q) thresholds[k - 1] = d3Array.quantile(domain, k / q);
 	      return scale;
 	    }
 	
 	    function scale(x) {
-	      if (!isNaN(x = +x)) return range[d3Arrays.bisect(thresholds, x)];
+	      if (!isNaN(x = +x)) return range[d3Array.bisect(thresholds, x)];
 	    }
 	
 	    scale.domain = function(x) {
 	      if (!arguments.length) return domain;
 	      domain = [];
 	      for (var i = 0, n = x.length, v; i < n; ++i) if (v = x[i], v != null && !isNaN(v = +v)) domain.push(v);
-	      domain.sort(d3Arrays.ascending);
+	      domain.sort(d3Array.ascending);
 	      return rescale();
 	    };
 	
@@ -17338,87 +17284,76 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return newQuantile([], []);
 	  };
 	
-	  function newQuantize(x0, x1, range) {
-	    var kx, i;
+	  function quantize() {
+	    var x0 = 0,
+	        x1 = 1,
+	        n = 1,
+	        domain = [0.5],
+	        range = [0, 1];
 	
 	    function scale(x) {
-	      return range[Math.max(0, Math.min(i, Math.floor(kx * (x - x0))))];
+	      if (x <= x) return range[d3Array.bisect(domain, x, 0, n)];
 	    }
 	
 	    function rescale() {
-	      kx = range.length / (x1 - x0);
-	      i = range.length - 1;
+	      var i = -1;
+	      domain = new Array(n);
+	      while (++i < n) domain[i] = ((i + 1) * x1 - (i - n) * x0) / (n + 1);
 	      return scale;
 	    }
 	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return [x0, x1];
-	      x0 = +x[0];
-	      x1 = +x[x.length - 1];
-	      return rescale();
+	    scale.domain = function(_) {
+	      return arguments.length ? (x0 = +_[0], x1 = +_[_.length - 1], rescale()) : [x0, x1];
 	    };
 	
-	    scale.range = function(x) {
-	      if (!arguments.length) return range.slice();
-	      range = x.slice();
-	      return rescale();
+	    scale.range = function(_) {
+	      return arguments.length ? (n = (range = slice.call(_)).length - 1, rescale()) : range.slice();
 	    };
 	
 	    scale.invertExtent = function(y) {
-	      y = range.indexOf(y);
-	      y = y < 0 ? NaN : y / kx + x0;
-	      return [y, y + 1 / kx];
+	      var i = range.indexOf(y);
+	      return i < 0 ? [NaN, NaN]
+	          : i < 1 ? [x0, domain[0]]
+	          : i >= n ? [domain[n - 1], x1]
+	          : [domain[i - 1], domain[i]];
 	    };
 	
 	    scale.copy = function() {
-	      return newQuantize(x0, x1, range); // copy on write
-	    };
-	
-	    return rescale();
-	  }
-	
-	  function quantize() {
-	    return newQuantize(0, 1, [0, 1]);
-	  };
-	
-	  function rainbow() {
-	    return linear()
-	        .interpolate(d3Interpolate.cubehelixLong)
-	        .domain([0, 0.5, 1.0])
-	        .range([d3Color.cubehelix(-100, 0.75, 0.35), d3Color.cubehelix(80, 1.50, 0.8), d3Color.cubehelix(260, 0.75, 0.35)]);
-	  };
-	
-	  function newThreshold(domain, range, n) {
-	
-	    function scale(x) {
-	      if (x <= x) return range[d3Arrays.bisect(domain, x, 0, n)];
-	    }
-	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return domain.slice();
-	      domain = x.slice(), n = Math.min(domain.length, range.length - 1);
-	      return scale;
-	    };
-	
-	    scale.range = function(x) {
-	      if (!arguments.length) return range.slice();
-	      range = x.slice(), n = Math.min(domain.length, range.length - 1);
-	      return scale;
-	    };
-	
-	    scale.invertExtent = function(y) {
-	      return y = range.indexOf(y), [domain[y - 1], domain[y]];
-	    };
-	
-	    scale.copy = function() {
-	      return newThreshold(domain, range);
+	      return quantize().domain([x0, x1]).range(range);
 	    };
 	
 	    return scale;
 	  };
 	
 	  function threshold() {
-	    return newThreshold([.5], [0, 1], 1);
+	    var domain = [0.5],
+	        range = [0, 1],
+	        n = 1;
+	
+	    function scale(x) {
+	      if (x <= x) return range[d3Array.bisect(domain, x, 0, n)];
+	    }
+	
+	    scale.domain = function(_) {
+	      return arguments.length ? (domain = slice.call(_), n = Math.min(domain.length, range.length - 1), scale) : domain.slice();
+	    };
+	
+	    scale.range = function(_) {
+	      return arguments.length ? (range = slice.call(_), n = Math.min(domain.length, range.length - 1), scale) : range.slice();
+	    };
+	
+	    scale.invertExtent = function(y) {
+	      var i = range.indexOf(y);
+	      return [domain[i - 1], domain[i]];
+	    };
+	
+	    scale.copy = function() {
+	      return threshold()
+	          .domain(domain)
+	          .range(range);
+	    };
+	
+	    return scale;
 	  };
 	
 	  var millisecondsPerSecond = 1000;
@@ -17428,12 +17363,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var millisecondsPerWeek = millisecondsPerDay * 7;
 	  var millisecondsPerMonth = millisecondsPerDay * 30;
 	  var millisecondsPerYear = millisecondsPerDay * 365;
-	  var bisectTickIntervals = d3Arrays.bisector(function(method) { return method[2]; }).right;
+	  var bisectTickIntervals = d3Array.bisector(function(method) { return method[2]; }).right;
 	  function newDate(t) {
 	    return new Date(t);
 	  }
 	
-	  function newTime(linear, year, month, week, day, hour, minute, second, millisecond, format) {
+	  function calendar(year, month, week, day, hour, minute, second, millisecond, format) {
+	    var scale = quantitative(deinterpolateLinear, d3Interpolate.number),
+	        invert = scale.invert,
+	        domain = scale.domain;
+	
 	    var formatMillisecond = format(".%L"),
 	        formatSecond = format(":%S"),
 	        formatMinute = format("%I:%M"),
@@ -17464,20 +17403,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      [  year,  1,      millisecondsPerYear  ]
 	    ];
 	
-	    function scale(x) {
-	      return linear(x);
-	    }
-	
-	    scale.invert = function(x) {
-	      return newDate(linear.invert(x));
-	    };
-	
-	    scale.domain = function(x) {
-	      if (!arguments.length) return linear.domain().map(newDate);
-	      linear.domain(x);
-	      return scale;
-	    };
-	
 	    function tickFormat(date) {
 	      return (second(date) < date ? formatMillisecond
 	          : minute(date) < date ? formatSecond
@@ -17498,14 +17423,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var target = Math.abs(stop - start) / interval,
 	            i = bisectTickIntervals(tickIntervals, target);
 	        if (i === tickIntervals.length) {
-	          step = tickRange([start / millisecondsPerYear, stop / millisecondsPerYear], interval)[2];
+	          step = d3Array.tickStep(start / millisecondsPerYear, stop / millisecondsPerYear, interval);
 	          interval = year;
 	        } else if (i) {
 	          i = tickIntervals[target / tickIntervals[i - 1][2] < tickIntervals[i][2] / target ? i - 1 : i];
 	          step = i[1];
 	          interval = i[0];
 	        } else {
-	          step = tickRange([start, stop], interval)[2];
+	          step = d3Array.tickStep(start, stop, interval);
 	          interval = millisecond;
 	        }
 	      }
@@ -17513,10 +17438,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return step == null ? interval : interval.every(step);
 	    }
 	
+	    scale.invert = function(y) {
+	      return new Date(invert(y));
+	    };
+	
+	    scale.domain = function(_) {
+	      return arguments.length ? domain(_) : domain().map(newDate);
+	    };
+	
+	    scale.nice = function(interval, step) {
+	      var d = domain();
+	      return (interval = tickInterval(interval, d[0], d[d.length - 1], step))
+	          ? domain(nice(d, interval))
+	          : scale;
+	    };
+	
 	    scale.ticks = function(interval, step) {
-	      var domain = linear.domain(),
-	          t0 = domain[0],
-	          t1 = domain[domain.length - 1],
+	      var d = domain(),
+	          t0 = d[0],
+	          t1 = d[d.length - 1],
 	          t;
 	
 	      if (t1 < t0) t = t0, t0 = t1, t1 = t;
@@ -17530,51 +17470,75 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return specifier == null ? tickFormat : format(specifier);
 	    };
 	
-	    scale.nice = function(interval, step) {
-	      var domain = linear.domain(),
-	          i0 = 0,
-	          i1 = domain.length - 1,
-	          t0 = domain[i0],
-	          t1 = domain[i1],
-	          t;
-	
-	      if (t1 < t0) {
-	        t = i0, i0 = i1, i1 = t;
-	        t = t0, t0 = t1, t1 = t;
-	      }
-	
-	      if (interval = tickInterval(interval, t0, t1, step)) {
-	        domain[i0] = +interval.floor(t0);
-	        domain[i1] = +interval.ceil(t1);
-	        linear.domain(domain);
-	      }
-	
-	      return scale;
-	    };
-	
 	    scale.copy = function() {
-	      return newTime(linear.copy(), year, month, week, day, hour, minute, second, millisecond, format);
+	      return copy(scale, calendar(year, month, week, day, hour, minute, second, millisecond, format));
 	    };
 	
-	    return rebind(scale, linear);
+	    return scale;
 	  };
 	
 	  function time() {
-	    return newTime(linear(), d3Time.year, d3Time.month, d3Time.week, d3Time.day, d3Time.hour, d3Time.minute, d3Time.second, d3Time.millisecond, d3TimeFormat.format).domain([new Date(2000, 0, 1), new Date(2000, 0, 2)]);
+	    return calendar(d3Time.year, d3Time.month, d3Time.week, d3Time.day, d3Time.hour, d3Time.minute, d3Time.second, d3Time.millisecond, d3TimeFormat.format).domain([new Date(2000, 0, 1), new Date(2000, 0, 2)]);
 	  };
 	
 	  function utcTime() {
-	    return newTime(linear(), d3Time.utcYear, d3Time.utcMonth, d3Time.utcWeek, d3Time.utcDay, d3Time.utcHour, d3Time.utcMinute, d3Time.utcSecond, d3Time.utcMillisecond, d3TimeFormat.utcFormat).domain([Date.UTC(2000, 0, 1), Date.UTC(2000, 0, 2)]);
+	    return calendar(d3Time.utcYear, d3Time.utcMonth, d3Time.utcWeek, d3Time.utcDay, d3Time.utcHour, d3Time.utcMinute, d3Time.utcSecond, d3Time.utcMillisecond, d3TimeFormat.utcFormat).domain([Date.UTC(2000, 0, 1), Date.UTC(2000, 0, 2)]);
 	  };
 	
-	  var version = "0.2.0";
+	  function colors(s) {
+	    return s.match(/.{6}/g).map(function(x) {
+	      return "#" + x;
+	    });
+	  };
+	
+	  function category10() {
+	    return ordinal().range(colors("1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf"));
+	  };
+	
+	  function category20b() {
+	    return ordinal().range(colors("393b795254a36b6ecf9c9ede6379398ca252b5cf6bcedb9c8c6d31bd9e39e7ba52e7cb94843c39ad494ad6616be7969c7b4173a55194ce6dbdde9ed6"));
+	  };
+	
+	  function category20c() {
+	    return ordinal().range(colors("3182bd6baed69ecae1c6dbefe6550dfd8d3cfdae6bfdd0a231a35474c476a1d99bc7e9c0756bb19e9ac8bcbddcdadaeb636363969696bdbdbdd9d9d9"));
+	  };
+	
+	  function category20() {
+	    return ordinal().range(colors("1f77b4aec7e8ff7f0effbb782ca02c98df8ad62728ff98969467bdc5b0d58c564bc49c94e377c2f7b6d27f7f7fc7c7c7bcbd22dbdb8d17becf9edae5"));
+	  };
+	
+	  function cubehelix() {
+	    return linear()
+	        .interpolate(d3Interpolate.cubehelixLong)
+	        .range([d3Color.cubehelix(300, 0.5, 0.0), d3Color.cubehelix(-240, 0.5, 1.0)]);
+	  };
+	
+	  function rainbow() {
+	    return linear()
+	        .interpolate(d3Interpolate.cubehelixLong)
+	        .domain([0, 0.5, 1.0])
+	        .range([d3Color.cubehelix(-100, 0.75, 0.35), d3Color.cubehelix(80, 1.50, 0.8), d3Color.cubehelix(260, 0.75, 0.35)]);
+	  };
+	
+	  function viridis() {
+	    return quantize().range(colors("44015444025645045745055946075a46085c460a5d460b5e470d60470e6147106347116447136548146748166848176948186a481a6c481b6d481c6e481d6f481f70482071482173482374482475482576482677482878482979472a7a472c7a472d7b472e7c472f7d46307e46327e46337f463480453581453781453882443983443a83443b84433d84433e85423f854240864241864142874144874045884046883f47883f48893e49893e4a893e4c8a3d4d8a3d4e8a3c4f8a3c508b3b518b3b528b3a538b3a548c39558c39568c38588c38598c375a8c375b8d365c8d365d8d355e8d355f8d34608d34618d33628d33638d32648e32658e31668e31678e31688e30698e306a8e2f6b8e2f6c8e2e6d8e2e6e8e2e6f8e2d708e2d718e2c718e2c728e2c738e2b748e2b758e2a768e2a778e2a788e29798e297a8e297b8e287c8e287d8e277e8e277f8e27808e26818e26828e26828e25838e25848e25858e24868e24878e23888e23898e238a8d228b8d228c8d228d8d218e8d218f8d21908d21918c20928c20928c20938c1f948c1f958b1f968b1f978b1f988b1f998a1f9a8a1e9b8a1e9c891e9d891f9e891f9f881fa0881fa1881fa1871fa28720a38620a48621a58521a68522a78522a88423a98324aa8325ab8225ac8226ad8127ad8128ae8029af7f2ab07f2cb17e2db27d2eb37c2fb47c31b57b32b67a34b67935b77937b87838b9773aba763bbb753dbc743fbc7340bd7242be7144bf7046c06f48c16e4ac16d4cc26c4ec36b50c46a52c56954c56856c66758c7655ac8645cc8635ec96260ca6063cb5f65cb5e67cc5c69cd5b6ccd5a6ece5870cf5773d05675d05477d1537ad1517cd2507fd34e81d34d84d44b86d54989d5488bd6468ed64590d74393d74195d84098d83e9bd93c9dd93ba0da39a2da37a5db36a8db34aadc32addc30b0dd2fb2dd2db5de2bb8de29bade28bddf26c0df25c2df23c5e021c8e020cae11fcde11dd0e11cd2e21bd5e21ad8e219dae319dde318dfe318e2e418e5e419e7e419eae51aece51befe51cf1e51df4e61ef6e620f8e621fbe723fde725"));
+	  };
+	
+	  function magma() {
+	    return quantize().range(colors("00000401000501010601010802010902020b02020d03030f03031204041405041606051806051a07061c08071e0907200a08220b09240c09260d0a290e0b2b100b2d110c2f120d31130d34140e36150e38160f3b180f3d19103f1a10421c10441d11471e114920114b21114e22115024125325125527125829115a2a115c2c115f2d11612f116331116533106734106936106b38106c390f6e3b0f703d0f713f0f72400f74420f75440f764510774710784910784a10794c117a4e117b4f127b51127c52137c54137d56147d57157e59157e5a167e5c167f5d177f5f187f601880621980641a80651a80671b80681c816a1c816b1d816d1d816e1e81701f81721f817320817521817621817822817922827b23827c23827e24828025828125818326818426818627818827818928818b29818c29818e2a81902a81912b81932b80942c80962c80982d80992d809b2e7f9c2e7f9e2f7fa02f7fa1307ea3307ea5317ea6317da8327daa337dab337cad347cae347bb0357bb2357bb3367ab5367ab73779b83779ba3878bc3978bd3977bf3a77c03a76c23b75c43c75c53c74c73d73c83e73ca3e72cc3f71cd4071cf4070d0416fd2426fd3436ed5446dd6456cd8456cd9466bdb476adc4869de4968df4a68e04c67e24d66e34e65e44f64e55064e75263e85362e95462ea5661eb5760ec5860ed5a5fee5b5eef5d5ef05f5ef1605df2625df2645cf3655cf4675cf4695cf56b5cf66c5cf66e5cf7705cf7725cf8745cf8765cf9785df9795df97b5dfa7d5efa7f5efa815ffb835ffb8560fb8761fc8961fc8a62fc8c63fc8e64fc9065fd9266fd9467fd9668fd9869fd9a6afd9b6bfe9d6cfe9f6dfea16efea36ffea571fea772fea973feaa74feac76feae77feb078feb27afeb47bfeb67cfeb77efeb97ffebb81febd82febf84fec185fec287fec488fec68afec88cfeca8dfecc8ffecd90fecf92fed194fed395fed597fed799fed89afdda9cfddc9efddea0fde0a1fde2a3fde3a5fde5a7fde7a9fde9aafdebacfcecaefceeb0fcf0b2fcf2b4fcf4b6fcf6b8fcf7b9fcf9bbfcfbbdfcfdbf"));
+	  };
+	
+	  function inferno() {
+	    return quantize().range(colors("00000401000501010601010802010a02020c02020e03021004031204031405041706041907051b08051d09061f0a07220b07240c08260d08290e092b10092d110a30120a32140b34150b37160b39180c3c190c3e1b0c411c0c431e0c451f0c48210c4a230c4c240c4f260c51280b53290b552b0b572d0b592f0a5b310a5c320a5e340a5f3609613809623909633b09643d09653e0966400a67420a68440a68450a69470b6a490b6a4a0c6b4c0c6b4d0d6c4f0d6c510e6c520e6d540f6d550f6d57106e59106e5a116e5c126e5d126e5f136e61136e62146e64156e65156e67166e69166e6a176e6c186e6d186e6f196e71196e721a6e741a6e751b6e771c6d781c6d7a1d6d7c1d6d7d1e6d7f1e6c801f6c82206c84206b85216b87216b88226a8a226a8c23698d23698f24699025689225689326679526679727669827669a28659b29649d29649f2a63a02a63a22b62a32c61a52c60a62d60a82e5fa92e5eab2f5ead305dae305cb0315bb1325ab3325ab43359b63458b73557b93556ba3655bc3754bd3853bf3952c03a51c13a50c33b4fc43c4ec63d4dc73e4cc83f4bca404acb4149cc4248ce4347cf4446d04545d24644d34743d44842d54a41d74b3fd84c3ed94d3dda4e3cdb503bdd513ade5238df5337e05536e15635e25734e35933e45a31e55c30e65d2fe75e2ee8602de9612bea632aeb6429eb6628ec6726ed6925ee6a24ef6c23ef6e21f06f20f1711ff1731df2741cf3761bf37819f47918f57b17f57d15f67e14f68013f78212f78410f8850ff8870ef8890cf98b0bf98c0af98e09fa9008fa9207fa9407fb9606fb9706fb9906fb9b06fb9d07fc9f07fca108fca309fca50afca60cfca80dfcaa0ffcac11fcae12fcb014fcb216fcb418fbb61afbb81dfbba1ffbbc21fbbe23fac026fac228fac42afac62df9c72ff9c932f9cb35f8cd37f8cf3af7d13df7d340f6d543f6d746f5d949f5db4cf4dd4ff4df53f4e156f3e35af3e55df2e661f2e865f2ea69f1ec6df1ed71f1ef75f1f179f2f27df2f482f3f586f3f68af4f88ef5f992f6fa96f8fb9af9fc9dfafda1fcffa4"));
+	  };
+	
+	  function plasma() {
+	    return quantize().range(colors("0d088710078813078916078a19068c1b068d1d068e20068f2206902406912605912805922a05932c05942e05952f059631059733059735049837049938049a3a049a3c049b3e049c3f049c41049d43039e44039e46039f48039f4903a04b03a14c02a14e02a25002a25102a35302a35502a45601a45801a45901a55b01a55c01a65e01a66001a66100a76300a76400a76600a76700a86900a86a00a86c00a86e00a86f00a87100a87201a87401a87501a87701a87801a87a02a87b02a87d03a87e03a88004a88104a78305a78405a78606a68707a68808a68a09a58b0aa58d0ba58e0ca48f0da4910ea3920fa39410a29511a19613a19814a099159f9a169f9c179e9d189d9e199da01a9ca11b9ba21d9aa31e9aa51f99a62098a72197a82296aa2395ab2494ac2694ad2793ae2892b02991b12a90b22b8fb32c8eb42e8db52f8cb6308bb7318ab83289ba3388bb3488bc3587bd3786be3885bf3984c03a83c13b82c23c81c33d80c43e7fc5407ec6417dc7427cc8437bc9447aca457acb4679cc4778cc4977cd4a76ce4b75cf4c74d04d73d14e72d24f71d35171d45270d5536fd5546ed6556dd7566cd8576bd9586ada5a6ada5b69db5c68dc5d67dd5e66de5f65de6164df6263e06363e16462e26561e26660e3685fe4695ee56a5de56b5de66c5ce76e5be76f5ae87059e97158e97257ea7457eb7556eb7655ec7754ed7953ed7a52ee7b51ef7c51ef7e50f07f4ff0804ef1814df1834cf2844bf3854bf3874af48849f48948f58b47f58c46f68d45f68f44f79044f79143f79342f89441f89540f9973ff9983ef99a3efa9b3dfa9c3cfa9e3bfb9f3afba139fba238fca338fca537fca636fca835fca934fdab33fdac33fdae32fdaf31fdb130fdb22ffdb42ffdb52efeb72dfeb82cfeba2cfebb2bfebd2afebe2afec029fdc229fdc328fdc527fdc627fdc827fdca26fdcb26fccd25fcce25fcd025fcd225fbd324fbd524fbd724fad824fada24f9dc24f9dd25f8df25f8e125f7e225f7e425f6e626f6e826f5e926f5eb27f4ed27f3ee27f3f027f2f227f1f426f1f525f0f724f0f921"));
+	  };
+	
+	  var version = "0.3.0";
 	
 	  exports.version = version;
-	  exports.category10 = category10;
-	  exports.category20b = category20b;
-	  exports.category20c = category20c;
-	  exports.category20 = category20;
-	  exports.cubehelix = cubehelix;
 	  exports.identity = identity;
 	  exports.linear = linear;
 	  exports.log = log;
@@ -17583,562 +17547,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	  exports.sqrt = sqrt;
 	  exports.quantile = quantile;
 	  exports.quantize = quantize;
-	  exports.rainbow = rainbow;
 	  exports.threshold = threshold;
 	  exports.time = time;
 	  exports.utcTime = utcTime;
+	  exports.category10 = category10;
+	  exports.category20b = category20b;
+	  exports.category20c = category20c;
+	  exports.category20 = category20;
+	  exports.cubehelix = cubehelix;
+	  exports.rainbow = rainbow;
+	  exports.viridis = viridis;
+	  exports.magma = magma;
+	  exports.inferno = inferno;
+	  exports.plasma = plasma;
 	
 	}));
 
 /***/ },
 /* 38 */
-/***/ function(module, exports, __webpack_require__) {
-
-	(function (global, factory) {
-	  true ? factory(exports) :
-	  typeof define === 'function' && define.amd ? define('d3-arrays', ['exports'], factory) :
-	  factory((global.d3_arrays = {}));
-	}(this, function (exports) { 'use strict';
-	
-	  function ascending(a, b) {
-	    return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
-	  };
-	
-	  function bisector(compare) {
-	    if (compare.length === 1) compare = ascendingComparator(compare);
-	    return {
-	      left: function(a, x, lo, hi) {
-	        if (arguments.length < 3) lo = 0;
-	        if (arguments.length < 4) hi = a.length;
-	        while (lo < hi) {
-	          var mid = lo + hi >>> 1;
-	          if (compare(a[mid], x) < 0) lo = mid + 1;
-	          else hi = mid;
-	        }
-	        return lo;
-	      },
-	      right: function(a, x, lo, hi) {
-	        if (arguments.length < 3) lo = 0;
-	        if (arguments.length < 4) hi = a.length;
-	        while (lo < hi) {
-	          var mid = lo + hi >>> 1;
-	          if (compare(a[mid], x) > 0) hi = mid;
-	          else lo = mid + 1;
-	        }
-	        return lo;
-	      }
-	    };
-	  };
-	
-	  function ascendingComparator(f) {
-	    return function(d, x) {
-	      return ascending(f(d), x);
-	    };
-	  }
-	
-	  var ascendingBisect = bisector(ascending);
-	  var bisectRight = ascendingBisect.right;
-	  var bisectLeft = ascendingBisect.left;
-	
-	  function descending(a, b) {
-	    return b < a ? -1 : b > a ? 1 : b >= a ? 0 : NaN;
-	  };
-	
-	  function number(x) {
-	    return x === null ? NaN : +x;
-	  };
-	
-	  function variance(array, f) {
-	    var n = array.length,
-	        m = 0,
-	        a,
-	        d,
-	        s = 0,
-	        i = -1,
-	        j = 0;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) {
-	        if (!isNaN(a = number(array[i]))) {
-	          d = a - m;
-	          m += d / ++j;
-	          s += d * (a - m);
-	        }
-	      }
-	    }
-	
-	    else {
-	      while (++i < n) {
-	        if (!isNaN(a = number(f(array[i], i, array)))) {
-	          d = a - m;
-	          m += d / ++j;
-	          s += d * (a - m);
-	        }
-	      }
-	    }
-	
-	    if (j > 1) return s / (j - 1);
-	  };
-	
-	  function deviation() {
-	    var v = variance.apply(this, arguments);
-	    return v ? Math.sqrt(v) : v;
-	  };
-	
-	  function entries(map) {
-	    var entries = [];
-	    for (var key in map) entries.push({key: key, value: map[key]});
-	    return entries;
-	  };
-	
-	  function extent(array, f) {
-	    var i = -1,
-	        n = array.length,
-	        a,
-	        b,
-	        c;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = c = b; break; }
-	      while (++i < n) if ((b = array[i]) != null) {
-	        if (a > b) a = b;
-	        if (c < b) c = b;
-	      }
-	    }
-	
-	    else {
-	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = c = b; break; }
-	      while (++i < n) if ((b = f(array[i], i, array)) != null) {
-	        if (a > b) a = b;
-	        if (c < b) c = b;
-	      }
-	    }
-	
-	    return [a, c];
-	  };
-	
-	  function keys(map) {
-	    var keys = [];
-	    for (var key in map) keys.push(key);
-	    return keys;
-	  };
-	
-	  var prefix = "$";
-	
-	  function Map() {}
-	
-	  Map.prototype = map.prototype = {
-	    has: function(key) {
-	      return (prefix + key) in this;
-	    },
-	    get: function(key) {
-	      return this[prefix + key];
-	    },
-	    set: function(key, value) {
-	      this[prefix + key] = value;
-	      return this;
-	    },
-	    remove: function(key) {
-	      var property = prefix + key;
-	      return property in this && delete this[property];
-	    },
-	    clear: function() {
-	      for (var property in this) if (property[0] === prefix) delete this[property];
-	    },
-	    keys: function() {
-	      var keys = [];
-	      for (var property in this) if (property[0] === prefix) keys.push(property.slice(1));
-	      return keys;
-	    },
-	    values: function() {
-	      var values = [];
-	      for (var property in this) if (property[0] === prefix) values.push(this[property]);
-	      return values;
-	    },
-	    entries: function() {
-	      var entries = [];
-	      for (var property in this) if (property[0] === prefix) entries.push({key: property.slice(1), value: this[property]});
-	      return entries;
-	    },
-	    size: function() {
-	      var size = 0;
-	      for (var property in this) if (property[0] === prefix) ++size;
-	      return size;
-	    },
-	    empty: function() {
-	      for (var property in this) if (property[0] === prefix) return false;
-	      return true;
-	    },
-	    each: function(f) {
-	      for (var property in this) if (property[0] === prefix) f(this[property], property.slice(1), this);
-	    }
-	  };
-	
-	  function map(object, f) {
-	    var map = new Map;
-	
-	    // Copy constructor.
-	    if (object instanceof Map) object.each(function(value, key) { map.set(key, value); });
-	
-	    // Index array by numeric index or specified key function.
-	    else if (Array.isArray(object)) {
-	      var i = -1,
-	          n = object.length,
-	          o;
-	
-	      if (arguments.length === 1) while (++i < n) map.set(i, object[i]);
-	      else while (++i < n) map.set(f(o = object[i], i, object), o);
-	    }
-	
-	    // Convert object to map.
-	    else if (object) for (var key in object) map.set(key, object[key]);
-	
-	    return map;
-	  }
-	
-	  function max(array, f) {
-	    var i = -1,
-	        n = array.length,
-	        a,
-	        b;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = b; break; }
-	      while (++i < n) if ((b = array[i]) != null && b > a) a = b;
-	    }
-	
-	    else {
-	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = b; break; }
-	      while (++i < n) if ((b = f(array[i], i, array)) != null && b > a) a = b;
-	    }
-	
-	    return a;
-	  };
-	
-	  function mean(array, f) {
-	    var s = 0,
-	        n = array.length,
-	        a,
-	        i = -1,
-	        j = n;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if (!isNaN(a = number(array[i]))) s += a; else --j;
-	    }
-	
-	    else {
-	      while (++i < n) if (!isNaN(a = number(f(array[i], i, array)))) s += a; else --j;
-	    }
-	
-	    if (j) return s / j;
-	  };
-	
-	  // R-7 per <http://en.wikipedia.org/wiki/Quantile>
-	  function quantile(values, p) {
-	    var H = (values.length - 1) * p + 1,
-	        h = Math.floor(H),
-	        v = +values[h - 1],
-	        e = H - h;
-	    return e ? v + e * (values[h] - v) : v;
-	  };
-	
-	  function median(array, f) {
-	    var numbers = [],
-	        n = array.length,
-	        a,
-	        i = -1;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if (!isNaN(a = number(array[i]))) numbers.push(a);
-	    }
-	
-	    else {
-	      while (++i < n) if (!isNaN(a = number(f(array[i], i, array)))) numbers.push(a);
-	    }
-	
-	    if (numbers.length) return quantile(numbers.sort(ascending), .5);
-	  };
-	
-	  function merge(arrays) {
-	    var n = arrays.length,
-	        m,
-	        i = -1,
-	        j = 0,
-	        merged,
-	        array;
-	
-	    while (++i < n) j += arrays[i].length;
-	    merged = new Array(j);
-	
-	    while (--n >= 0) {
-	      array = arrays[n];
-	      m = array.length;
-	      while (--m >= 0) {
-	        merged[--j] = array[m];
-	      }
-	    }
-	
-	    return merged;
-	  };
-	
-	  function min(array, f) {
-	    var i = -1,
-	        n = array.length,
-	        a,
-	        b;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = b; break; }
-	      while (++i < n) if ((b = array[i]) != null && a > b) a = b;
-	    }
-	
-	    else {
-	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = b; break; }
-	      while (++i < n) if ((b = f(array[i], i, array)) != null && a > b) a = b;
-	    }
-	
-	    return a;
-	  };
-	
-	  function nest() {
-	    var keys = [],
-	        sortKeys = [],
-	        sortValues,
-	        rollup,
-	        nest;
-	
-	    function apply(array, depth, createResult, setResult) {
-	      if (depth >= keys.length) return rollup
-	          ? rollup(array) : (sortValues
-	          ? array.sort(sortValues)
-	          : array);
-	
-	      var i = -1,
-	          n = array.length,
-	          key = keys[depth++],
-	          keyValue,
-	          value,
-	          valuesByKey = map(),
-	          values,
-	          result = createResult();
-	
-	      while (++i < n) {
-	        if (values = valuesByKey.get(keyValue = key(value = array[i]) + "")) {
-	          values.push(value);
-	        } else {
-	          valuesByKey.set(keyValue, [value]);
-	        }
-	      }
-	
-	      valuesByKey.each(function(values, key) {
-	        setResult(result, key, apply(values, depth, createResult, setResult));
-	      });
-	
-	      return result;
-	    }
-	
-	    function entries(map, depth) {
-	      if (depth >= keys.length) return map;
-	
-	      var array = [],
-	          sortKey = sortKeys[depth++];
-	
-	      map.each(function(value, key) {
-	        array.push({key: key, values: entries(value, depth)});
-	      });
-	
-	      return sortKey
-	          ? array.sort(function(a, b) { return sortKey(a.key, b.key); })
-	          : array;
-	    }
-	
-	    return nest = {
-	      object: function(array) { return apply(array, 0, createObject, setObject); },
-	      map: function(array) { return apply(array, 0, createMap, setMap); },
-	      entries: function(array) { return entries(apply(array, 0, createMap, setMap), 0); },
-	      key: function(d) { keys.push(d); return nest; },
-	      sortKeys: function(order) { sortKeys[keys.length - 1] = order; return nest; },
-	      sortValues: function(order) { sortValues = order; return nest; },
-	      rollup: function(f) { rollup = f; return nest; }
-	    };
-	  };
-	
-	  function createObject() {
-	    return {};
-	  }
-	
-	  function setObject(object, key, value) {
-	    object[key] = value;
-	  }
-	
-	  function createMap() {
-	    return map();
-	  }
-	
-	  function setMap(map, key, value) {
-	    map.set(key, value);
-	  }
-	
-	  function pairs(array) {
-	    var i = 0, n = array.length - 1, p0, p1 = array[0], pairs = new Array(n < 0 ? 0 : n);
-	    while (i < n) pairs[i] = [p0 = p1, p1 = array[++i]];
-	    return pairs;
-	  };
-	
-	  function permute(array, indexes) {
-	    var i = indexes.length, permutes = new Array(i);
-	    while (i--) permutes[i] = array[indexes[i]];
-	    return permutes;
-	  };
-	
-	  function range(start, stop, step) {
-	    if ((n = arguments.length) < 3) {
-	      step = 1;
-	      if (n < 2) {
-	        stop = start;
-	        start = 0;
-	      }
-	    }
-	
-	    var i = -1,
-	        n = Math.max(0, Math.ceil((stop - start) / step)) | 0,
-	        range = new Array(n);
-	
-	    while (++i < n) {
-	      range[i] = start + i * step;
-	    }
-	
-	    return range;
-	  };
-	
-	  function Set() {}
-	
-	  var proto = map.prototype;
-	
-	  Set.prototype = set.prototype = {
-	    has: proto.has,
-	    add: function(value) {
-	      value += "";
-	      this[prefix + value] = value;
-	      return this;
-	    },
-	    remove: proto.remove,
-	    clear: proto.clear,
-	    values: proto.keys,
-	    size: proto.size,
-	    empty: proto.empty,
-	    each: proto.each
-	  };
-	
-	  function set(object) {
-	    var set = new Set;
-	
-	    // Copy constructor.
-	    if (object instanceof Set) object.each(function(value) { set.add(value); });
-	
-	    // Otherwise, assume it’s an array.
-	    else if (object) for (var i = 0, n = object.length; i < n; ++i) set.add(object[i]);
-	
-	    return set;
-	  }
-	
-	  function shuffle(array, i0, i1) {
-	    if ((m = arguments.length) < 3) {
-	      i1 = array.length;
-	      if (m < 2) i0 = 0;
-	    }
-	
-	    var m = i1 - i0,
-	        t,
-	        i;
-	
-	    while (m) {
-	      i = Math.random() * m-- | 0;
-	      t = array[m + i0];
-	      array[m + i0] = array[i + i0];
-	      array[i + i0] = t;
-	    }
-	
-	    return array;
-	  };
-	
-	  function sum(array, f) {
-	    var s = 0,
-	        n = array.length,
-	        a,
-	        i = -1;
-	
-	    if (arguments.length === 1) {
-	      while (++i < n) if (!isNaN(a = +array[i])) s += a; // Note: zero and null are equivalent.
-	    }
-	
-	    else {
-	      while (++i < n) if (!isNaN(a = +f(array[i], i, array))) s += a;
-	    }
-	
-	    return s;
-	  };
-	
-	  function transpose(matrix) {
-	    if (!(n = matrix.length)) return [];
-	    for (var i = -1, m = min(matrix, length), transpose = new Array(m); ++i < m;) {
-	      for (var j = -1, n, row = transpose[i] = new Array(n); ++j < n;) {
-	        row[j] = matrix[j][i];
-	      }
-	    }
-	    return transpose;
-	  };
-	
-	  function length(d) {
-	    return d.length;
-	  }
-	
-	  function values(map) {
-	    var values = [];
-	    for (var key in map) values.push(map[key]);
-	    return values;
-	  };
-	
-	  function zip() {
-	    return transpose(arguments);
-	  };
-	
-	  var version = "0.4.1";
-	
-	  exports.version = version;
-	  exports.bisect = bisectRight;
-	  exports.bisectRight = bisectRight;
-	  exports.bisectLeft = bisectLeft;
-	  exports.ascending = ascending;
-	  exports.bisector = bisector;
-	  exports.descending = descending;
-	  exports.deviation = deviation;
-	  exports.entries = entries;
-	  exports.extent = extent;
-	  exports.keys = keys;
-	  exports.map = map;
-	  exports.max = max;
-	  exports.mean = mean;
-	  exports.median = median;
-	  exports.merge = merge;
-	  exports.min = min;
-	  exports.nest = nest;
-	  exports.pairs = pairs;
-	  exports.permute = permute;
-	  exports.quantile = quantile;
-	  exports.range = range;
-	  exports.set = set;
-	  exports.shuffle = shuffle;
-	  exports.sum = sum;
-	  exports.transpose = transpose;
-	  exports.values = values;
-	  exports.variance = variance;
-	  exports.zip = zip;
-	
-	}));
-
-/***/ },
-/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
@@ -18629,11 +18055,1066 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
+/* 39 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function (global, factory) {
+	  true ? factory(exports) :
+	  typeof define === 'function' && define.amd ? define('d3-array', ['exports'], factory) :
+	  factory((global.d3_array = {}));
+	}(this, function (exports) { 'use strict';
+	
+	  function ascending(a, b) {
+	    return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	  };
+	
+	  function bisector(compare) {
+	    if (compare.length === 1) compare = ascendingComparator(compare);
+	    return {
+	      left: function(a, x, lo, hi) {
+	        if (arguments.length < 3) lo = 0;
+	        if (arguments.length < 4) hi = a.length;
+	        while (lo < hi) {
+	          var mid = lo + hi >>> 1;
+	          if (compare(a[mid], x) < 0) lo = mid + 1;
+	          else hi = mid;
+	        }
+	        return lo;
+	      },
+	      right: function(a, x, lo, hi) {
+	        if (arguments.length < 3) lo = 0;
+	        if (arguments.length < 4) hi = a.length;
+	        while (lo < hi) {
+	          var mid = lo + hi >>> 1;
+	          if (compare(a[mid], x) > 0) hi = mid;
+	          else lo = mid + 1;
+	        }
+	        return lo;
+	      }
+	    };
+	  };
+	
+	  function ascendingComparator(f) {
+	    return function(d, x) {
+	      return ascending(f(d), x);
+	    };
+	  }
+	
+	  var ascendingBisect = bisector(ascending);
+	  var bisectRight = ascendingBisect.right;
+	  var bisectLeft = ascendingBisect.left;
+	
+	  function descending(a, b) {
+	    return b < a ? -1 : b > a ? 1 : b >= a ? 0 : NaN;
+	  };
+	
+	  function number$1(x) {
+	    return x === null ? NaN : +x;
+	  };
+	
+	  function variance(array, f) {
+	    var n = array.length,
+	        m = 0,
+	        a,
+	        d,
+	        s = 0,
+	        i = -1,
+	        j = 0;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) {
+	        if (!isNaN(a = number$1(array[i]))) {
+	          d = a - m;
+	          m += d / ++j;
+	          s += d * (a - m);
+	        }
+	      }
+	    }
+	
+	    else {
+	      while (++i < n) {
+	        if (!isNaN(a = number$1(f(array[i], i, array)))) {
+	          d = a - m;
+	          m += d / ++j;
+	          s += d * (a - m);
+	        }
+	      }
+	    }
+	
+	    if (j > 1) return s / (j - 1);
+	  };
+	
+	  function deviation() {
+	    var v = variance.apply(this, arguments);
+	    return v ? Math.sqrt(v) : v;
+	  };
+	
+	  function entries(map) {
+	    var entries = [];
+	    for (var key in map) entries.push({key: key, value: map[key]});
+	    return entries;
+	  };
+	
+	  function extent(array, f) {
+	    var i = -1,
+	        n = array.length,
+	        a,
+	        b,
+	        c;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = c = b; break; }
+	      while (++i < n) if ((b = array[i]) != null) {
+	        if (a > b) a = b;
+	        if (c < b) c = b;
+	      }
+	    }
+	
+	    else {
+	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = c = b; break; }
+	      while (++i < n) if ((b = f(array[i], i, array)) != null) {
+	        if (a > b) a = b;
+	        if (c < b) c = b;
+	      }
+	    }
+	
+	    return [a, c];
+	  };
+	
+	  function constant(x) {
+	    return function() {
+	      return x;
+	    };
+	  };
+	
+	  function identity(x) {
+	    return x;
+	  };
+	
+	  function range(start, stop, step) {
+	    if ((n = arguments.length) < 3) {
+	      step = 1;
+	      if (n < 2) {
+	        stop = start;
+	        start = 0;
+	      }
+	    }
+	
+	    var i = -1,
+	        n = Math.max(0, Math.ceil((stop - start) / step)) | 0,
+	        range = new Array(n);
+	
+	    while (++i < n) {
+	      range[i] = start + i * step;
+	    }
+	
+	    return range;
+	  };
+	
+	  var e10 = Math.sqrt(50);
+	  var e5 = Math.sqrt(10);
+	  var e2 = Math.sqrt(2);
+	  function ticks(start, stop, count) {
+	    var step = tickStep(start, stop, count);
+	    return range(
+	      Math.ceil(start / step) * step,
+	      Math.floor(stop / step) * step + step / 2, // inclusive
+	      step
+	    );
+	  };
+	
+	  function tickStep(start, stop, count) {
+	    var step0 = Math.abs(stop - start) / Math.max(0, count),
+	        step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
+	        error = step0 / step1;
+	    if (error >= e10) step1 *= 10;
+	    else if (error >= e5) step1 *= 5;
+	    else if (error >= e2) step1 *= 2;
+	    return stop < start ? -step1 : step1;
+	  };
+	
+	  function sturges(values) {
+	    return Math.ceil(Math.log(values.length) / Math.LN2) + 1;
+	  };
+	
+	  function number(x) {
+	    return +x;
+	  }
+	
+	  function histogram() {
+	    var value = identity,
+	        domain = extent,
+	        threshold = sturges;
+	
+	    function histogram(data) {
+	      var i,
+	          n = data.length,
+	          x,
+	          values = new Array(n);
+	
+	      // Coerce values to numbers.
+	      for (i = 0; i < n; ++i) {
+	        values[i] = +value(data[i], i, data);
+	      }
+	
+	      var xz = domain(values),
+	          x0 = +xz[0],
+	          x1 = +xz[1],
+	          tz = threshold(values, x0, x1);
+	
+	      // Convert number of thresholds into uniform thresholds.
+	      if (!Array.isArray(tz)) tz = ticks(x0, x1, +tz);
+	
+	      // Coerce thresholds to numbers, ignoring any outside the domain.
+	      var m = tz.length;
+	      for (i = 0; i < m; ++i) tz[i] = +tz[i];
+	      while (tz[0] <= x0) tz.shift(), --m;
+	      while (tz[m - 1] >= x1) tz.pop(), --m;
+	
+	      var bins = new Array(m + 1),
+	          bin;
+	
+	      // Initialize bins.
+	      for (i = 0; i <= m; ++i) {
+	        bin = bins[i] = [];
+	        bin.x0 = i > 0 ? tz[i - 1] : x0;
+	        bin.x1 = i < m ? tz[i] : x1;
+	      }
+	
+	      // Assign data to bins by value, ignoring any outside the domain.
+	      for (i = 0; i < n; ++i) {
+	        x = values[i];
+	        if (x0 <= x && x <= x1) {
+	          bins[bisectRight(tz, x, 0, m)].push(data[i]);
+	        }
+	      }
+	
+	      return bins;
+	    }
+	
+	    histogram.value = function(_) {
+	      return arguments.length ? (value = typeof _ === "function" ? _ : constant(+_), histogram) : value;
+	    };
+	
+	    histogram.domain = function(_) {
+	      return arguments.length ? (domain = typeof _ === "function" ? _ : constant([+_[0], +_[1]]), histogram) : domain;
+	    };
+	
+	    histogram.thresholds = function(_) {
+	      if (!arguments.length) return threshold;
+	      threshold = typeof _ === "function" ? _
+	          : Array.isArray(_) ? constant(Array.prototype.map.call(_, number))
+	          : constant(+_);
+	      return histogram;
+	    };
+	
+	    return histogram;
+	  };
+	
+	  function quantile(array, p, f) {
+	    if (arguments.length < 3) f = number$1;
+	    if (!(n = array.length)) return;
+	    if ((p = +p) <= 0 || n < 2) return +f(array[0], 0, array);
+	    if (p >= 1) return +f(array[n - 1], n - 1, array);
+	    var n,
+	        h = (n - 1) * p,
+	        i = Math.floor(h),
+	        a = +f(array[i], i, array),
+	        b = +f(array[i + 1], i + 1, array);
+	    return a + (b - a) * (h - i);
+	  };
+	
+	  function freedmanDiaconis(values, min, max) {
+	    values.sort(ascending);
+	    return Math.ceil((max - min) / (2 * (quantile(values, 0.75) - quantile(values, 0.25)) * Math.pow(values.length, -1 / 3)));
+	  };
+	
+	  function scott(values, min, max) {
+	    return Math.ceil((max - min) / (3.5 * deviation(values) * Math.pow(values.length, -1 / 3)));
+	  };
+	
+	  function keys(map) {
+	    var keys = [];
+	    for (var key in map) keys.push(key);
+	    return keys;
+	  };
+	
+	  var prefix = "$";
+	
+	  function Map() {}
+	
+	  Map.prototype = map.prototype = {
+	    has: function(key) {
+	      return (prefix + key) in this;
+	    },
+	    get: function(key) {
+	      return this[prefix + key];
+	    },
+	    set: function(key, value) {
+	      this[prefix + key] = value;
+	      return this;
+	    },
+	    remove: function(key) {
+	      var property = prefix + key;
+	      return property in this && delete this[property];
+	    },
+	    clear: function() {
+	      for (var property in this) if (property[0] === prefix) delete this[property];
+	    },
+	    keys: function() {
+	      var keys = [];
+	      for (var property in this) if (property[0] === prefix) keys.push(property.slice(1));
+	      return keys;
+	    },
+	    values: function() {
+	      var values = [];
+	      for (var property in this) if (property[0] === prefix) values.push(this[property]);
+	      return values;
+	    },
+	    entries: function() {
+	      var entries = [];
+	      for (var property in this) if (property[0] === prefix) entries.push({key: property.slice(1), value: this[property]});
+	      return entries;
+	    },
+	    size: function() {
+	      var size = 0;
+	      for (var property in this) if (property[0] === prefix) ++size;
+	      return size;
+	    },
+	    empty: function() {
+	      for (var property in this) if (property[0] === prefix) return false;
+	      return true;
+	    },
+	    each: function(f) {
+	      for (var property in this) if (property[0] === prefix) f(this[property], property.slice(1), this);
+	    }
+	  };
+	
+	  function map(object, f) {
+	    var map = new Map;
+	
+	    // Copy constructor.
+	    if (object instanceof Map) object.each(function(value, key) { map.set(key, value); });
+	
+	    // Index array by numeric index or specified key function.
+	    else if (Array.isArray(object)) {
+	      var i = -1,
+	          n = object.length,
+	          o;
+	
+	      if (arguments.length === 1) while (++i < n) map.set(i, object[i]);
+	      else while (++i < n) map.set(f(o = object[i], i, object), o);
+	    }
+	
+	    // Convert object to map.
+	    else if (object) for (var key in object) map.set(key, object[key]);
+	
+	    return map;
+	  }
+	
+	  function max(array, f) {
+	    var i = -1,
+	        n = array.length,
+	        a,
+	        b;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = b; break; }
+	      while (++i < n) if ((b = array[i]) != null && b > a) a = b;
+	    }
+	
+	    else {
+	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = b; break; }
+	      while (++i < n) if ((b = f(array[i], i, array)) != null && b > a) a = b;
+	    }
+	
+	    return a;
+	  };
+	
+	  function mean(array, f) {
+	    var s = 0,
+	        n = array.length,
+	        a,
+	        i = -1,
+	        j = n;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if (!isNaN(a = number$1(array[i]))) s += a; else --j;
+	    }
+	
+	    else {
+	      while (++i < n) if (!isNaN(a = number$1(f(array[i], i, array)))) s += a; else --j;
+	    }
+	
+	    if (j) return s / j;
+	  };
+	
+	  function median(array, f) {
+	    var numbers = [],
+	        n = array.length,
+	        a,
+	        i = -1;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if (!isNaN(a = number$1(array[i]))) numbers.push(a);
+	    }
+	
+	    else {
+	      while (++i < n) if (!isNaN(a = number$1(f(array[i], i, array)))) numbers.push(a);
+	    }
+	
+	    return quantile(numbers.sort(ascending), 0.5);
+	  };
+	
+	  function merge(arrays) {
+	    var n = arrays.length,
+	        m,
+	        i = -1,
+	        j = 0,
+	        merged,
+	        array;
+	
+	    while (++i < n) j += arrays[i].length;
+	    merged = new Array(j);
+	
+	    while (--n >= 0) {
+	      array = arrays[n];
+	      m = array.length;
+	      while (--m >= 0) {
+	        merged[--j] = array[m];
+	      }
+	    }
+	
+	    return merged;
+	  };
+	
+	  function min(array, f) {
+	    var i = -1,
+	        n = array.length,
+	        a,
+	        b;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if ((b = array[i]) != null && b >= b) { a = b; break; }
+	      while (++i < n) if ((b = array[i]) != null && a > b) a = b;
+	    }
+	
+	    else {
+	      while (++i < n) if ((b = f(array[i], i, array)) != null && b >= b) { a = b; break; }
+	      while (++i < n) if ((b = f(array[i], i, array)) != null && a > b) a = b;
+	    }
+	
+	    return a;
+	  };
+	
+	  function nest() {
+	    var keys = [],
+	        sortKeys = [],
+	        sortValues,
+	        rollup,
+	        nest;
+	
+	    function apply(array, depth, createResult, setResult) {
+	      if (depth >= keys.length) return rollup
+	          ? rollup(array) : (sortValues
+	          ? array.sort(sortValues)
+	          : array);
+	
+	      var i = -1,
+	          n = array.length,
+	          key = keys[depth++],
+	          keyValue,
+	          value,
+	          valuesByKey = map(),
+	          values,
+	          result = createResult();
+	
+	      while (++i < n) {
+	        if (values = valuesByKey.get(keyValue = key(value = array[i]) + "")) {
+	          values.push(value);
+	        } else {
+	          valuesByKey.set(keyValue, [value]);
+	        }
+	      }
+	
+	      valuesByKey.each(function(values, key) {
+	        setResult(result, key, apply(values, depth, createResult, setResult));
+	      });
+	
+	      return result;
+	    }
+	
+	    function entries(map, depth) {
+	      if (depth >= keys.length) return map;
+	
+	      var array = [],
+	          sortKey = sortKeys[depth++];
+	
+	      map.each(function(value, key) {
+	        array.push({key: key, values: entries(value, depth)});
+	      });
+	
+	      return sortKey
+	          ? array.sort(function(a, b) { return sortKey(a.key, b.key); })
+	          : array;
+	    }
+	
+	    return nest = {
+	      object: function(array) { return apply(array, 0, createObject, setObject); },
+	      map: function(array) { return apply(array, 0, createMap, setMap); },
+	      entries: function(array) { return entries(apply(array, 0, createMap, setMap), 0); },
+	      key: function(d) { keys.push(d); return nest; },
+	      sortKeys: function(order) { sortKeys[keys.length - 1] = order; return nest; },
+	      sortValues: function(order) { sortValues = order; return nest; },
+	      rollup: function(f) { rollup = f; return nest; }
+	    };
+	  };
+	
+	  function createObject() {
+	    return {};
+	  }
+	
+	  function setObject(object, key, value) {
+	    object[key] = value;
+	  }
+	
+	  function createMap() {
+	    return map();
+	  }
+	
+	  function setMap(map, key, value) {
+	    map.set(key, value);
+	  }
+	
+	  function pairs(array) {
+	    var i = 0, n = array.length - 1, p0, p1 = array[0], pairs = new Array(n < 0 ? 0 : n);
+	    while (i < n) pairs[i] = [p0 = p1, p1 = array[++i]];
+	    return pairs;
+	  };
+	
+	  function permute(array, indexes) {
+	    var i = indexes.length, permutes = new Array(i);
+	    while (i--) permutes[i] = array[indexes[i]];
+	    return permutes;
+	  };
+	
+	  function scan(array, compare) {
+	    if (!(n = array.length)) return;
+	    var i = 0,
+	        n,
+	        j = 0,
+	        xi,
+	        xj = array[j];
+	
+	    if (!compare) compare = ascending;
+	
+	    while (++i < n) if (compare(xi = array[i], xj) < 0 || compare(xj, xj) !== 0) xj = xi, j = i;
+	
+	    if (compare(xj, xj) === 0) return j;
+	  };
+	
+	  function Set() {}
+	
+	  var proto = map.prototype;
+	
+	  Set.prototype = set.prototype = {
+	    has: proto.has,
+	    add: function(value) {
+	      value += "";
+	      this[prefix + value] = value;
+	      return this;
+	    },
+	    remove: proto.remove,
+	    clear: proto.clear,
+	    values: proto.keys,
+	    size: proto.size,
+	    empty: proto.empty,
+	    each: proto.each
+	  };
+	
+	  function set(object, f) {
+	    var set = new Set;
+	
+	    // Copy constructor.
+	    if (object instanceof Set) object.each(function(value) { set.add(value); });
+	
+	    // Otherwise, assume it’s an array.
+	    else if (object) {
+	      var i = -1, n = object.length, o;
+	      if (arguments.length === 1) while (++i < n) set.add(object[i]);
+	      else while (++i < n) set.add(f(o = object[i], i, object));
+	    }
+	
+	    return set;
+	  }
+	
+	  function shuffle(array, i0, i1) {
+	    if ((m = arguments.length) < 3) {
+	      i1 = array.length;
+	      if (m < 2) i0 = 0;
+	    }
+	
+	    var m = i1 - i0,
+	        t,
+	        i;
+	
+	    while (m) {
+	      i = Math.random() * m-- | 0;
+	      t = array[m + i0];
+	      array[m + i0] = array[i + i0];
+	      array[i + i0] = t;
+	    }
+	
+	    return array;
+	  };
+	
+	  function sum(array, f) {
+	    var s = 0,
+	        n = array.length,
+	        a,
+	        i = -1;
+	
+	    if (arguments.length === 1) {
+	      while (++i < n) if (!isNaN(a = +array[i])) s += a; // Note: zero and null are equivalent.
+	    }
+	
+	    else {
+	      while (++i < n) if (!isNaN(a = +f(array[i], i, array))) s += a;
+	    }
+	
+	    return s;
+	  };
+	
+	  function transpose(matrix) {
+	    if (!(n = matrix.length)) return [];
+	    for (var i = -1, m = min(matrix, length), transpose = new Array(m); ++i < m;) {
+	      for (var j = -1, n, row = transpose[i] = new Array(n); ++j < n;) {
+	        row[j] = matrix[j][i];
+	      }
+	    }
+	    return transpose;
+	  };
+	
+	  function length(d) {
+	    return d.length;
+	  }
+	
+	  function values(map) {
+	    var values = [];
+	    for (var key in map) values.push(map[key]);
+	    return values;
+	  };
+	
+	  function zip() {
+	    return transpose(arguments);
+	  };
+	
+	  var version = "0.6.1";
+	
+	  exports.version = version;
+	  exports.bisect = bisectRight;
+	  exports.bisectRight = bisectRight;
+	  exports.bisectLeft = bisectLeft;
+	  exports.ascending = ascending;
+	  exports.bisector = bisector;
+	  exports.descending = descending;
+	  exports.deviation = deviation;
+	  exports.entries = entries;
+	  exports.extent = extent;
+	  exports.histogram = histogram;
+	  exports.thresholdFreedmanDiaconis = freedmanDiaconis;
+	  exports.thresholdScott = scott;
+	  exports.thresholdSturges = sturges;
+	  exports.keys = keys;
+	  exports.map = map;
+	  exports.max = max;
+	  exports.mean = mean;
+	  exports.median = median;
+	  exports.merge = merge;
+	  exports.min = min;
+	  exports.nest = nest;
+	  exports.pairs = pairs;
+	  exports.permute = permute;
+	  exports.quantile = quantile;
+	  exports.range = range;
+	  exports.scan = scan;
+	  exports.set = set;
+	  exports.shuffle = shuffle;
+	  exports.sum = sum;
+	  exports.ticks = ticks;
+	  exports.tickStep = tickStep;
+	  exports.transpose = transpose;
+	  exports.values = values;
+	  exports.variance = variance;
+	  exports.zip = zip;
+	
+	}));
+
+/***/ },
 /* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	  true ? factory(exports, __webpack_require__(41)) :
+	  true ? factory(exports) :
+	  typeof define === 'function' && define.amd ? define('d3-time', ['exports'], factory) :
+	  factory((global.d3_time = {}));
+	}(this, function (exports) { 'use strict';
+	
+	  var t0 = new Date;
+	  var t1 = new Date;
+	  function newInterval(floori, offseti, count, field) {
+	
+	    function interval(date) {
+	      return floori(date = new Date(+date)), date;
+	    }
+	
+	    interval.floor = interval;
+	
+	    interval.round = function(date) {
+	      var d0 = new Date(+date),
+	          d1 = new Date(date - 1);
+	      floori(d0), floori(d1), offseti(d1, 1);
+	      return date - d0 < d1 - date ? d0 : d1;
+	    };
+	
+	    interval.ceil = function(date) {
+	      return floori(date = new Date(date - 1)), offseti(date, 1), date;
+	    };
+	
+	    interval.offset = function(date, step) {
+	      return offseti(date = new Date(+date), step == null ? 1 : Math.floor(step)), date;
+	    };
+	
+	    interval.range = function(start, stop, step) {
+	      var range = [];
+	      start = new Date(start - 1);
+	      stop = new Date(+stop);
+	      step = step == null ? 1 : Math.floor(step);
+	      if (!(start < stop) || !(step > 0)) return range; // also handles Invalid Date
+	      offseti(start, 1), floori(start);
+	      if (start < stop) range.push(new Date(+start));
+	      while (offseti(start, step), floori(start), start < stop) range.push(new Date(+start));
+	      return range;
+	    };
+	
+	    interval.filter = function(test) {
+	      return newInterval(function(date) {
+	        while (floori(date), !test(date)) date.setTime(date - 1);
+	      }, function(date, step) {
+	        while (--step >= 0) while (offseti(date, 1), !test(date));
+	      });
+	    };
+	
+	    if (count) {
+	      interval.count = function(start, end) {
+	        t0.setTime(+start), t1.setTime(+end);
+	        floori(t0), floori(t1);
+	        return Math.floor(count(t0, t1));
+	      };
+	
+	      interval.every = function(step) {
+	        step = Math.floor(step);
+	        return !isFinite(step) || !(step > 0) ? null
+	            : !(step > 1) ? interval
+	            : interval.filter(field
+	                ? function(d) { return field(d) % step === 0; }
+	                : function(d) { return interval.count(0, d) % step === 0; });
+	      };
+	    }
+	
+	    return interval;
+	  };
+	
+	  var millisecond = newInterval(function() {
+	    // noop
+	  }, function(date, step) {
+	    date.setTime(+date + step);
+	  }, function(start, end) {
+	    return end - start;
+	  });
+	
+	  // An optimized implementation for this simple case.
+	  millisecond.every = function(k) {
+	    k = Math.floor(k);
+	    if (!isFinite(k) || !(k > 0)) return null;
+	    if (!(k > 1)) return millisecond;
+	    return newInterval(function(date) {
+	      date.setTime(Math.floor(date / k) * k);
+	    }, function(date, step) {
+	      date.setTime(+date + step * k);
+	    }, function(start, end) {
+	      return (end - start) / k;
+	    });
+	  };
+	
+	  var second = newInterval(function(date) {
+	    date.setMilliseconds(0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 1e3);
+	  }, function(start, end) {
+	    return (end - start) / 1e3;
+	  }, function(date) {
+	    return date.getSeconds();
+	  });
+	
+	  var minute = newInterval(function(date) {
+	    date.setSeconds(0, 0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 6e4);
+	  }, function(start, end) {
+	    return (end - start) / 6e4;
+	  }, function(date) {
+	    return date.getMinutes();
+	  });
+	
+	  var hour = newInterval(function(date) {
+	    date.setMinutes(0, 0, 0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 36e5);
+	  }, function(start, end) {
+	    return (end - start) / 36e5;
+	  }, function(date) {
+	    return date.getHours();
+	  });
+	
+	  var day = newInterval(function(date) {
+	    date.setHours(0, 0, 0, 0);
+	  }, function(date, step) {
+	    date.setDate(date.getDate() + step);
+	  }, function(start, end) {
+	    return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 864e5;
+	  }, function(date) {
+	    return date.getDate() - 1;
+	  });
+	
+	  function weekday(i) {
+	    return newInterval(function(date) {
+	      date.setHours(0, 0, 0, 0);
+	      date.setDate(date.getDate() - (date.getDay() + 7 - i) % 7);
+	    }, function(date, step) {
+	      date.setDate(date.getDate() + step * 7);
+	    }, function(start, end) {
+	      return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 6048e5;
+	    });
+	  }
+	
+	  var sunday = weekday(0);
+	  var monday = weekday(1);
+	  var tuesday = weekday(2);
+	  var wednesday = weekday(3);
+	  var thursday = weekday(4);
+	  var friday = weekday(5);
+	  var saturday = weekday(6);
+	
+	  var month = newInterval(function(date) {
+	    date.setHours(0, 0, 0, 0);
+	    date.setDate(1);
+	  }, function(date, step) {
+	    date.setMonth(date.getMonth() + step);
+	  }, function(start, end) {
+	    return end.getMonth() - start.getMonth() + (end.getFullYear() - start.getFullYear()) * 12;
+	  }, function(date) {
+	    return date.getMonth();
+	  });
+	
+	  var year = newInterval(function(date) {
+	    date.setHours(0, 0, 0, 0);
+	    date.setMonth(0, 1);
+	  }, function(date, step) {
+	    date.setFullYear(date.getFullYear() + step);
+	  }, function(start, end) {
+	    return end.getFullYear() - start.getFullYear();
+	  }, function(date) {
+	    return date.getFullYear();
+	  });
+	
+	  var utcSecond = newInterval(function(date) {
+	    date.setUTCMilliseconds(0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 1e3);
+	  }, function(start, end) {
+	    return (end - start) / 1e3;
+	  }, function(date) {
+	    return date.getUTCSeconds();
+	  });
+	
+	  var utcMinute = newInterval(function(date) {
+	    date.setUTCSeconds(0, 0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 6e4);
+	  }, function(start, end) {
+	    return (end - start) / 6e4;
+	  }, function(date) {
+	    return date.getUTCMinutes();
+	  });
+	
+	  var utcHour = newInterval(function(date) {
+	    date.setUTCMinutes(0, 0, 0);
+	  }, function(date, step) {
+	    date.setTime(+date + step * 36e5);
+	  }, function(start, end) {
+	    return (end - start) / 36e5;
+	  }, function(date) {
+	    return date.getUTCHours();
+	  });
+	
+	  var utcDay = newInterval(function(date) {
+	    date.setUTCHours(0, 0, 0, 0);
+	  }, function(date, step) {
+	    date.setUTCDate(date.getUTCDate() + step);
+	  }, function(start, end) {
+	    return (end - start) / 864e5;
+	  }, function(date) {
+	    return date.getUTCDate() - 1;
+	  });
+	
+	  function utcWeekday(i) {
+	    return newInterval(function(date) {
+	      date.setUTCHours(0, 0, 0, 0);
+	      date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 7 - i) % 7);
+	    }, function(date, step) {
+	      date.setUTCDate(date.getUTCDate() + step * 7);
+	    }, function(start, end) {
+	      return (end - start) / 6048e5;
+	    });
+	  }
+	
+	  var utcSunday = utcWeekday(0);
+	  var utcMonday = utcWeekday(1);
+	  var utcTuesday = utcWeekday(2);
+	  var utcWednesday = utcWeekday(3);
+	  var utcThursday = utcWeekday(4);
+	  var utcFriday = utcWeekday(5);
+	  var utcSaturday = utcWeekday(6);
+	
+	  var utcMonth = newInterval(function(date) {
+	    date.setUTCHours(0, 0, 0, 0);
+	    date.setUTCDate(1);
+	  }, function(date, step) {
+	    date.setUTCMonth(date.getUTCMonth() + step);
+	  }, function(start, end) {
+	    return end.getUTCMonth() - start.getUTCMonth() + (end.getUTCFullYear() - start.getUTCFullYear()) * 12;
+	  }, function(date) {
+	    return date.getUTCMonth();
+	  });
+	
+	  var utcYear = newInterval(function(date) {
+	    date.setUTCHours(0, 0, 0, 0);
+	    date.setUTCMonth(0, 1);
+	  }, function(date, step) {
+	    date.setUTCFullYear(date.getUTCFullYear() + step);
+	  }, function(start, end) {
+	    return end.getUTCFullYear() - start.getUTCFullYear();
+	  }, function(date) {
+	    return date.getUTCFullYear();
+	  });
+	
+	  var milliseconds = millisecond.range;
+	  var seconds = second.range;
+	  var minutes = minute.range;
+	  var hours = hour.range;
+	  var days = day.range;
+	  var sundays = sunday.range;
+	  var mondays = monday.range;
+	  var tuesdays = tuesday.range;
+	  var wednesdays = wednesday.range;
+	  var thursdays = thursday.range;
+	  var fridays = friday.range;
+	  var saturdays = saturday.range;
+	  var weeks = sunday.range;
+	  var months = month.range;
+	  var years = year.range;
+	
+	  var utcMillisecond = millisecond;
+	  var utcMilliseconds = milliseconds;
+	  var utcSeconds = utcSecond.range;
+	  var utcMinutes = utcMinute.range;
+	  var utcHours = utcHour.range;
+	  var utcDays = utcDay.range;
+	  var utcSundays = utcSunday.range;
+	  var utcMondays = utcMonday.range;
+	  var utcTuesdays = utcTuesday.range;
+	  var utcWednesdays = utcWednesday.range;
+	  var utcThursdays = utcThursday.range;
+	  var utcFridays = utcFriday.range;
+	  var utcSaturdays = utcSaturday.range;
+	  var utcWeeks = utcSunday.range;
+	  var utcMonths = utcMonth.range;
+	  var utcYears = utcYear.range;
+	
+	  var version = "0.1.0";
+	
+	  exports.version = version;
+	  exports.milliseconds = milliseconds;
+	  exports.seconds = seconds;
+	  exports.minutes = minutes;
+	  exports.hours = hours;
+	  exports.days = days;
+	  exports.sundays = sundays;
+	  exports.mondays = mondays;
+	  exports.tuesdays = tuesdays;
+	  exports.wednesdays = wednesdays;
+	  exports.thursdays = thursdays;
+	  exports.fridays = fridays;
+	  exports.saturdays = saturdays;
+	  exports.weeks = weeks;
+	  exports.months = months;
+	  exports.years = years;
+	  exports.utcMillisecond = utcMillisecond;
+	  exports.utcMilliseconds = utcMilliseconds;
+	  exports.utcSeconds = utcSeconds;
+	  exports.utcMinutes = utcMinutes;
+	  exports.utcHours = utcHours;
+	  exports.utcDays = utcDays;
+	  exports.utcSundays = utcSundays;
+	  exports.utcMondays = utcMondays;
+	  exports.utcTuesdays = utcTuesdays;
+	  exports.utcWednesdays = utcWednesdays;
+	  exports.utcThursdays = utcThursdays;
+	  exports.utcFridays = utcFridays;
+	  exports.utcSaturdays = utcSaturdays;
+	  exports.utcWeeks = utcWeeks;
+	  exports.utcMonths = utcMonths;
+	  exports.utcYears = utcYears;
+	  exports.millisecond = millisecond;
+	  exports.second = second;
+	  exports.minute = minute;
+	  exports.hour = hour;
+	  exports.day = day;
+	  exports.sunday = sunday;
+	  exports.monday = monday;
+	  exports.tuesday = tuesday;
+	  exports.wednesday = wednesday;
+	  exports.thursday = thursday;
+	  exports.friday = friday;
+	  exports.saturday = saturday;
+	  exports.week = sunday;
+	  exports.month = month;
+	  exports.year = year;
+	  exports.utcSecond = utcSecond;
+	  exports.utcMinute = utcMinute;
+	  exports.utcHour = utcHour;
+	  exports.utcDay = utcDay;
+	  exports.utcSunday = utcSunday;
+	  exports.utcMonday = utcMonday;
+	  exports.utcTuesday = utcTuesday;
+	  exports.utcWednesday = utcWednesday;
+	  exports.utcThursday = utcThursday;
+	  exports.utcFriday = utcFriday;
+	  exports.utcSaturday = utcSaturday;
+	  exports.utcWeek = utcSunday;
+	  exports.utcMonth = utcMonth;
+	  exports.utcYear = utcYear;
+	  exports.interval = newInterval;
+	
+	}));
+
+/***/ },
+/* 41 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function (global, factory) {
+	  true ? factory(exports, __webpack_require__(42)) :
 	  typeof define === 'function' && define.amd ? define('d3-time-format', ['exports', 'd3-time'], factory) :
 	  factory((global.d3_time_format = {}),global.d3_time);
 	}(this, function (exports,d3Time) { 'use strict';
@@ -19454,7 +19935,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}));
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
@@ -19697,365 +20178,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var utcYears = utcYear.range;
 	
 	  var version = "0.0.7";
-	
-	  exports.version = version;
-	  exports.milliseconds = milliseconds;
-	  exports.seconds = seconds;
-	  exports.minutes = minutes;
-	  exports.hours = hours;
-	  exports.days = days;
-	  exports.sundays = sundays;
-	  exports.mondays = mondays;
-	  exports.tuesdays = tuesdays;
-	  exports.wednesdays = wednesdays;
-	  exports.thursdays = thursdays;
-	  exports.fridays = fridays;
-	  exports.saturdays = saturdays;
-	  exports.weeks = weeks;
-	  exports.months = months;
-	  exports.years = years;
-	  exports.utcMillisecond = utcMillisecond;
-	  exports.utcMilliseconds = utcMilliseconds;
-	  exports.utcSeconds = utcSeconds;
-	  exports.utcMinutes = utcMinutes;
-	  exports.utcHours = utcHours;
-	  exports.utcDays = utcDays;
-	  exports.utcSundays = utcSundays;
-	  exports.utcMondays = utcMondays;
-	  exports.utcTuesdays = utcTuesdays;
-	  exports.utcWednesdays = utcWednesdays;
-	  exports.utcThursdays = utcThursdays;
-	  exports.utcFridays = utcFridays;
-	  exports.utcSaturdays = utcSaturdays;
-	  exports.utcWeeks = utcWeeks;
-	  exports.utcMonths = utcMonths;
-	  exports.utcYears = utcYears;
-	  exports.millisecond = millisecond;
-	  exports.second = second;
-	  exports.minute = minute;
-	  exports.hour = hour;
-	  exports.day = day;
-	  exports.sunday = sunday;
-	  exports.monday = monday;
-	  exports.tuesday = tuesday;
-	  exports.wednesday = wednesday;
-	  exports.thursday = thursday;
-	  exports.friday = friday;
-	  exports.saturday = saturday;
-	  exports.week = sunday;
-	  exports.month = month;
-	  exports.year = year;
-	  exports.utcSecond = utcSecond;
-	  exports.utcMinute = utcMinute;
-	  exports.utcHour = utcHour;
-	  exports.utcDay = utcDay;
-	  exports.utcSunday = utcSunday;
-	  exports.utcMonday = utcMonday;
-	  exports.utcTuesday = utcTuesday;
-	  exports.utcWednesday = utcWednesday;
-	  exports.utcThursday = utcThursday;
-	  exports.utcFriday = utcFriday;
-	  exports.utcSaturday = utcSaturday;
-	  exports.utcWeek = utcSunday;
-	  exports.utcMonth = utcMonth;
-	  exports.utcYear = utcYear;
-	  exports.interval = newInterval;
-	
-	}));
-
-/***/ },
-/* 42 */
-/***/ function(module, exports, __webpack_require__) {
-
-	(function (global, factory) {
-	  true ? factory(exports) :
-	  typeof define === 'function' && define.amd ? define('d3-time', ['exports'], factory) :
-	  factory((global.d3_time = {}));
-	}(this, function (exports) { 'use strict';
-	
-	  var t0 = new Date;
-	  var t1 = new Date;
-	  function newInterval(floori, offseti, count, field) {
-	
-	    function interval(date) {
-	      return floori(date = new Date(+date)), date;
-	    }
-	
-	    interval.floor = interval;
-	
-	    interval.round = function(date) {
-	      var d0 = new Date(+date),
-	          d1 = new Date(date - 1);
-	      floori(d0), floori(d1), offseti(d1, 1);
-	      return date - d0 < d1 - date ? d0 : d1;
-	    };
-	
-	    interval.ceil = function(date) {
-	      return floori(date = new Date(date - 1)), offseti(date, 1), date;
-	    };
-	
-	    interval.offset = function(date, step) {
-	      return offseti(date = new Date(+date), step == null ? 1 : Math.floor(step)), date;
-	    };
-	
-	    interval.range = function(start, stop, step) {
-	      var range = [];
-	      start = new Date(start - 1);
-	      stop = new Date(+stop);
-	      step = step == null ? 1 : Math.floor(step);
-	      if (!(start < stop) || !(step > 0)) return range; // also handles Invalid Date
-	      offseti(start, 1), floori(start);
-	      if (start < stop) range.push(new Date(+start));
-	      while (offseti(start, step), floori(start), start < stop) range.push(new Date(+start));
-	      return range;
-	    };
-	
-	    interval.filter = function(test) {
-	      return newInterval(function(date) {
-	        while (floori(date), !test(date)) date.setTime(date - 1);
-	      }, function(date, step) {
-	        while (--step >= 0) while (offseti(date, 1), !test(date));
-	      });
-	    };
-	
-	    if (count) {
-	      interval.count = function(start, end) {
-	        t0.setTime(+start), t1.setTime(+end);
-	        floori(t0), floori(t1);
-	        return Math.floor(count(t0, t1));
-	      };
-	
-	      interval.every = function(step) {
-	        step = Math.floor(step);
-	        return !isFinite(step) || !(step > 0) ? null
-	            : !(step > 1) ? interval
-	            : interval.filter(field
-	                ? function(d) { return field(d) % step === 0; }
-	                : function(d) { return interval.count(0, d) % step === 0; });
-	      };
-	    }
-	
-	    return interval;
-	  };
-	
-	  var millisecond = newInterval(function() {
-	    // noop
-	  }, function(date, step) {
-	    date.setTime(+date + step);
-	  }, function(start, end) {
-	    return end - start;
-	  });
-	
-	  // An optimized implementation for this simple case.
-	  millisecond.every = function(k) {
-	    k = Math.floor(k);
-	    if (!isFinite(k) || !(k > 0)) return null;
-	    if (!(k > 1)) return millisecond;
-	    return newInterval(function(date) {
-	      date.setTime(Math.floor(date / k) * k);
-	    }, function(date, step) {
-	      date.setTime(+date + step * k);
-	    }, function(start, end) {
-	      return (end - start) / k;
-	    });
-	  };
-	
-	  var second = newInterval(function(date) {
-	    date.setMilliseconds(0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 1e3);
-	  }, function(start, end) {
-	    return (end - start) / 1e3;
-	  }, function(date) {
-	    return date.getSeconds();
-	  });
-	
-	  var minute = newInterval(function(date) {
-	    date.setSeconds(0, 0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 6e4);
-	  }, function(start, end) {
-	    return (end - start) / 6e4;
-	  }, function(date) {
-	    return date.getMinutes();
-	  });
-	
-	  var hour = newInterval(function(date) {
-	    date.setMinutes(0, 0, 0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 36e5);
-	  }, function(start, end) {
-	    return (end - start) / 36e5;
-	  }, function(date) {
-	    return date.getHours();
-	  });
-	
-	  var day = newInterval(function(date) {
-	    date.setHours(0, 0, 0, 0);
-	  }, function(date, step) {
-	    date.setDate(date.getDate() + step);
-	  }, function(start, end) {
-	    return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 864e5;
-	  }, function(date) {
-	    return date.getDate() - 1;
-	  });
-	
-	  function weekday(i) {
-	    return newInterval(function(date) {
-	      date.setHours(0, 0, 0, 0);
-	      date.setDate(date.getDate() - (date.getDay() + 7 - i) % 7);
-	    }, function(date, step) {
-	      date.setDate(date.getDate() + step * 7);
-	    }, function(start, end) {
-	      return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 6048e5;
-	    });
-	  }
-	
-	  var sunday = weekday(0);
-	  var monday = weekday(1);
-	  var tuesday = weekday(2);
-	  var wednesday = weekday(3);
-	  var thursday = weekday(4);
-	  var friday = weekday(5);
-	  var saturday = weekday(6);
-	
-	  var month = newInterval(function(date) {
-	    date.setHours(0, 0, 0, 0);
-	    date.setDate(1);
-	  }, function(date, step) {
-	    date.setMonth(date.getMonth() + step);
-	  }, function(start, end) {
-	    return end.getMonth() - start.getMonth() + (end.getFullYear() - start.getFullYear()) * 12;
-	  }, function(date) {
-	    return date.getMonth();
-	  });
-	
-	  var year = newInterval(function(date) {
-	    date.setHours(0, 0, 0, 0);
-	    date.setMonth(0, 1);
-	  }, function(date, step) {
-	    date.setFullYear(date.getFullYear() + step);
-	  }, function(start, end) {
-	    return end.getFullYear() - start.getFullYear();
-	  }, function(date) {
-	    return date.getFullYear();
-	  });
-	
-	  var utcSecond = newInterval(function(date) {
-	    date.setUTCMilliseconds(0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 1e3);
-	  }, function(start, end) {
-	    return (end - start) / 1e3;
-	  }, function(date) {
-	    return date.getUTCSeconds();
-	  });
-	
-	  var utcMinute = newInterval(function(date) {
-	    date.setUTCSeconds(0, 0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 6e4);
-	  }, function(start, end) {
-	    return (end - start) / 6e4;
-	  }, function(date) {
-	    return date.getUTCMinutes();
-	  });
-	
-	  var utcHour = newInterval(function(date) {
-	    date.setUTCMinutes(0, 0, 0);
-	  }, function(date, step) {
-	    date.setTime(+date + step * 36e5);
-	  }, function(start, end) {
-	    return (end - start) / 36e5;
-	  }, function(date) {
-	    return date.getUTCHours();
-	  });
-	
-	  var utcDay = newInterval(function(date) {
-	    date.setUTCHours(0, 0, 0, 0);
-	  }, function(date, step) {
-	    date.setUTCDate(date.getUTCDate() + step);
-	  }, function(start, end) {
-	    return (end - start) / 864e5;
-	  }, function(date) {
-	    return date.getUTCDate() - 1;
-	  });
-	
-	  function utcWeekday(i) {
-	    return newInterval(function(date) {
-	      date.setUTCHours(0, 0, 0, 0);
-	      date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 7 - i) % 7);
-	    }, function(date, step) {
-	      date.setUTCDate(date.getUTCDate() + step * 7);
-	    }, function(start, end) {
-	      return (end - start) / 6048e5;
-	    });
-	  }
-	
-	  var utcSunday = utcWeekday(0);
-	  var utcMonday = utcWeekday(1);
-	  var utcTuesday = utcWeekday(2);
-	  var utcWednesday = utcWeekday(3);
-	  var utcThursday = utcWeekday(4);
-	  var utcFriday = utcWeekday(5);
-	  var utcSaturday = utcWeekday(6);
-	
-	  var utcMonth = newInterval(function(date) {
-	    date.setUTCHours(0, 0, 0, 0);
-	    date.setUTCDate(1);
-	  }, function(date, step) {
-	    date.setUTCMonth(date.getUTCMonth() + step);
-	  }, function(start, end) {
-	    return end.getUTCMonth() - start.getUTCMonth() + (end.getUTCFullYear() - start.getUTCFullYear()) * 12;
-	  }, function(date) {
-	    return date.getUTCMonth();
-	  });
-	
-	  var utcYear = newInterval(function(date) {
-	    date.setUTCHours(0, 0, 0, 0);
-	    date.setUTCMonth(0, 1);
-	  }, function(date, step) {
-	    date.setUTCFullYear(date.getUTCFullYear() + step);
-	  }, function(start, end) {
-	    return end.getUTCFullYear() - start.getUTCFullYear();
-	  }, function(date) {
-	    return date.getUTCFullYear();
-	  });
-	
-	  var milliseconds = millisecond.range;
-	  var seconds = second.range;
-	  var minutes = minute.range;
-	  var hours = hour.range;
-	  var days = day.range;
-	  var sundays = sunday.range;
-	  var mondays = monday.range;
-	  var tuesdays = tuesday.range;
-	  var wednesdays = wednesday.range;
-	  var thursdays = thursday.range;
-	  var fridays = friday.range;
-	  var saturdays = saturday.range;
-	  var weeks = sunday.range;
-	  var months = month.range;
-	  var years = year.range;
-	
-	  var utcMillisecond = millisecond;
-	  var utcMilliseconds = milliseconds;
-	  var utcSeconds = utcSecond.range;
-	  var utcMinutes = utcMinute.range;
-	  var utcHours = utcHour.range;
-	  var utcDays = utcDay.range;
-	  var utcSundays = utcSunday.range;
-	  var utcMondays = utcMonday.range;
-	  var utcTuesdays = utcTuesday.range;
-	  var utcWednesdays = utcWednesday.range;
-	  var utcThursdays = utcThursday.range;
-	  var utcFridays = utcFriday.range;
-	  var utcSaturdays = utcSaturday.range;
-	  var utcWeeks = utcSunday.range;
-	  var utcMonths = utcMonth.range;
-	  var utcYears = utcYear.range;
-	
-	  var version = "0.1.0";
 	
 	  exports.version = version;
 	  exports.milliseconds = milliseconds;
