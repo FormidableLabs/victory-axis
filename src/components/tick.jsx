@@ -1,4 +1,5 @@
-import _ from "lodash";
+import isFunction from "lodash/lang/isFunction";
+import transform from "lodash/object/transform";
 import React, { PropTypes } from "react";
 import Radium from "radium";
 import { VictoryLabel } from "victory-label";
@@ -54,8 +55,8 @@ export default class Tick extends React.Component {
   }
 
   evaluateStyle(style) {
-    return _.transform(style, (result, value, key) => {
-      result[key] = _.isFunction(value) ? value.call(this, this.props.tick) : value;
+    return transform(style, (result, value, key) => {
+      result[key] = isFunction(value) ? value.call(this, this.props.tick) : value;
     });
   }
 
