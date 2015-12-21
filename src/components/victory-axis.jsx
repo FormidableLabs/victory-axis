@@ -1,7 +1,17 @@
+import without from "lodash/array/without";
+import map from "lodash/collection/map";
+import includes from "lodash/collection/includes";
+import isArray from "lodash/lang/isArray";
+import isFunction from "lodash/lang/isFunction";
+import max from "lodash/math/max";
+import min from "lodash/math/min";
+import merge from "lodash/object/merge";
+import pick from "lodash/object/pick";
+import identity from "lodash/utility/identity";
+import range from "lodash/utility/range";
 import React, { PropTypes } from "react";
 import Radium from "radium";
 import d3Scale from "d3-scale";
-import _ from "lodash";
 import {VictoryLabel} from "victory-label";
 import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
@@ -218,12 +228,12 @@ export default class VictoryAxis extends React.Component {
     const style = props.style || {};
     const parentStyleProps = { height: props.height, width: props.width };
     return {
-      parent: _.merge(parentStyleProps, defaultStyles.parent, style.parent),
-      axis: _.merge({}, defaultStyles.axis, style.axis),
-      axisLabel: _.merge({}, defaultStyles.axisLabel, style.axisLabel),
-      grid: _.merge({}, defaultStyles.grid, style.grid),
-      ticks: _.merge({}, defaultStyles.ticks, style.ticks),
-      tickLabels: _.merge({}, defaultStyles.tickLabels, style.tickLabels)
+      parent: merge(parentStyleProps, defaultStyles.parent, style.parent),
+      axis: merge({}, defaultStyles.axis, style.axis),
+      axisLabel: merge({}, defaultStyles.axisLabel, style.axisLabel),
+      grid: merge({}, defaultStyles.grid, style.grid),
+      ticks: merge({}, defaultStyles.ticks, style.ticks),
+      tickLabels: merge({}, defaultStyles.tickLabels, style.tickLabels)
     };
   }
 
@@ -263,8 +273,8 @@ export default class VictoryAxis extends React.Component {
       domain = [1, props.tickValues.length];
     } else {
       // coerce ticks to numbers
-      const ticks = _.map(props.tickValues, Number);
-      domain = [_.min(ticks), _.max(ticks)];
+      const ticks = map(props.tickValues, Number);
+      domain = [min(ticks), max(ticks)];
     }
     if (this.isVertical) {
       domain.reverse();
@@ -295,13 +305,13 @@ export default class VictoryAxis extends React.Component {
       // Since we declared that `tickValues` must be a homogenous array, we only
       // need to do a string check on the first item.
       if (this.stringTicks) {
-        return _.range(1, props.tickValues.length + 1);
+        return range(1, props.tickValues.length + 1);
       }
       return props.tickValues;
-    } else if (_.isFunction(this.scale.ticks)) {
+    } else if (isFunction(this.scale.ticks)) {
       const ticks = this.scale.ticks(props.tickCount);
       if (props.crossAxis) {
-        return _.includes(ticks, 0) ? _.without(ticks, 0) : ticks;
+        return includes(ticks, 0) ? without(ticks, 0) : ticks;
       }
       return ticks;
     }
@@ -309,16 +319,16 @@ export default class VictoryAxis extends React.Component {
   }
 
   getTickFormat(props) {
-    if (props.tickFormat && _.isFunction(props.tickFormat)) {
+    if (props.tickFormat && isFunction(props.tickFormat)) {
       return props.tickFormat;
-    } else if (props.tickFormat && _.isArray(props.tickFormat)) {
+    } else if (props.tickFormat && isArray(props.tickFormat)) {
       return (x, index) => props.tickFormat[index];
     } else if (this.stringTicks) {
       return (x, index) => props.tickValues[index];
-    } else if (_.isFunction(this.scale.tickFormat())) {
+    } else if (isFunction(this.scale.tickFormat())) {
       return this.scale.tickFormat(this.ticks.length);
     } else {
-      return _.identity;
+      return identity;
     }
   }
 
@@ -371,7 +381,7 @@ export default class VictoryAxis extends React.Component {
 
   renderTicks(props) {
     const tickFormat = this.getTickFormat(props);
-    return _.map(this.ticks, (tick, index) => {
+    return map(this.ticks, (tick, index) => {
       const position = this.scale(tick);
       return (
         <Tick key={`tick-${index}`}
@@ -398,7 +408,7 @@ export default class VictoryAxis extends React.Component {
       sign * (props.width - (this.padding.left + this.padding.right)) : 0;
     const y2 = this.isVertical ?
       0 : sign * (props.height - (this.padding.top + this.padding.bottom));
-    return _.map(this.ticks, (tick, index) => {
+    return map(this.ticks, (tick, index) => {
       // determine the position and translation of each gridline
       const position = this.scale(tick);
       return (
@@ -447,7 +457,7 @@ export default class VictoryAxis extends React.Component {
       // Do less work by having `VictoryAnimation` tween only values that
       // make sense to tween. In the future, allow customization of animated
       // prop whitelist/blacklist?
-      const animateData = _.pick(this.props, [
+      const animateData = pick(this.props, [
         "style", "domain", "range", "tickCount", "tickValues",
         "labelPadding", "offsetX", "offsetY", "padding", "width", "height"
       ]);
