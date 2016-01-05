@@ -63,12 +63,7 @@ const orientationSign = {
   bottom: 1
 };
 
-const orientationVerticality = {
-  top: false,
-  bottom: false,
-  left: true,
-  right: true
-};
+
 
 @Radium
 export default class VictoryAxis extends React.Component {
@@ -210,10 +205,14 @@ export default class VictoryAxis extends React.Component {
     this.style = this.getStyles(props);
     this.padding = Chart.getPadding(props);
     this.orientation = this.getOrientation(props);
-    this.isVertical = orientationVerticality[this.orientation];
     this.scale = this.getScale(props, this.axisDimension);
     this.ticks = this.getTicks(props);
     this.offset = this.getOffset(props);
+  }
+
+  isVertical(props) {
+    const vertical = {top: false, bottom: false, left: true, right: true};
+    return vertical[this.getOrientation(props)]
   }
 
   getStringTicks (props) {
@@ -347,82 +346,96 @@ export default class VictoryAxis extends React.Component {
     return `translate(${translate[0]}, ${translate[1]})`;
   }
 
-  renderLine(props) {
+  renderLine(props, style) {
+    const padding = Chart.getPadding(props);
+    const isVertical = this.isVertical(props)
     return (
       <AxisLine key="line"
-        style={this.style.axis}
-        x1={this.isVertical ? null : this.padding.left}
-        x2={this.isVertical ? null : props.width - this.padding.right}
-        y1={this.isVertical ? this.padding.top : null}
-        y2={this.isVertical ? props.height - this.padding.bottom : null}
+        style={style.axis}
+        x1={isVertical ? null : padding.left}
+        x2={isVertical ? null : props.width - padding.right}
+        y1={isVertical ? padding.top : null}
+        y2={isVertical ? props.height - padding.bottom : null}
       />
     );
   }
 
-  renderTicks(props) {
+  renderTicks(props, style) {
+    const orientation = this.getOrientation(props);
+    const scale = this.getScale(props);
+    const ticks = this.getTicks(props);
     const tickFormat = this.getTickFormat(props);
-    return map(this.ticks, (tick, index) => {
-      const position = this.scale(tick);
+    return map(ticks, (tick, index) => {
+      const position = scale(tick);
       return (
         <Tick key={`tick-${index}`}
           position={position}
           tick={this.getStringTicks(props) ? props.tickValues[tick - 1] : tick}
-          orientation={this.orientation}
+          orientation={orientation}
           label={tickFormat.call(this, tick, index)}
           style={{
-            ticks: this.style.ticks,
-            tickLabels: this.style.tickLabels
+            ticks: style.ticks,
+            tickLabels: style.tickLabels
           }}
         />
       );
     });
   }
 
-  renderGrid(props) {
-    const xPadding = this.orientation === "right" ? this.padding.right : this.padding.left;
-    const yPadding = this.orientation === "top" ? this.padding.top : this.padding.bottom;
-    const sign = -orientationSign[this.orientation];
-    const xOffset = props.crossAxis ? this.offset.x - xPadding : 0;
-    const yOffset = props.crossAxis ? this.offset.y - yPadding : 0;
-    const x2 = this.isVertical ?
-      sign * (props.width - (this.padding.left + this.padding.right)) : 0;
-    const y2 = this.isVertical ?
-      0 : sign * (props.height - (this.padding.top + this.padding.bottom));
-    return map(this.ticks, (tick, index) => {
+  renderGrid(props, style) {
+    const orientation = this.getOrientation(props);
+    const scale = this.getScale(props);
+    const ticks = this.getTicks(props);
+    const padding = Chart.getPadding(props);
+    const isVertical = this.isVertical(props);
+    const offset = this.getOffset(props);
+    const xPadding = orientation === "right" ? padding.right : padding.left;
+    const yPadding = orientation === "top" ? padding.top : padding.bottom;
+    const sign = -orientationSign[orientation];
+    const xOffset = props.crossAxis ? offset.x - xPadding : 0;
+    const yOffset = props.crossAxis ? offset.y - yPadding : 0;
+    const x2 = isVertical ?
+      sign * (props.width - (padding.left + padding.right)) : 0;
+    const y2 = isVertical ?
+      0 : sign * (props.height - (padding.top + padding.bottom));
+    return map(ticks, (tick, index) => {
       // determine the position and translation of each gridline
-      const position = this.scale(tick);
+      const position = scale(tick);
       return (
         <GridLine key={`grid-${index}`}
-          tick={this.getStringTicks(props) ? this.props.tickValues[tick - 1] : tick}
+          tick={this.getStringTicks(props) ? props.tickValues[tick - 1] : tick}
           x2={x2}
           y2={y2}
-          xTransform={this.isVertical ? -xOffset : position}
-          yTransform={this.isVertical ? position : yOffset}
-          style={this.style.grid}
+          xTransform={isVertical ? -xOffset : position}
+          yTransform={isVertical ? position : yOffset}
+          style={style.grid}
         />
       );
     });
   }
 
-  renderLabel(props) {
+  renderLabel(props, style) {
     if (!props.label) {
       return undefined;
     }
+    const orientation = this.getOrientation(props);
+    const padding = Chart.getPadding(props);
+    const isVertical = this.isVertical(props);
 
     const sign = orientationSign[this.orientation];
-    const hPadding = this.padding.left + this.padding.right;
-    const vPadding = this.padding.top + this.padding.bottom;
-    const x = this.isVertical ?
-      -((props.height - vPadding) / 2) - this.padding.top :
-      ((props.width - hPadding) / 2) + this.padding.left;
+    const hPadding = padding.left + padding.right;
+    const vPadding = padding.top + padding.bottom;
+    const x = isVertical ?
+      -((props.height - vPadding) / 2) - padding.top :
+      ((props.width - hPadding) / 2) + padding.left;
     const newProps = {
       key: "label",
       x,
       y: sign * this.getLabelPadding(props),
       textAnchor: "middle",
       verticalAnchor: sign < 0 ? "end" : "start",
-      style: this.style.axisLabel,
-      transform: this.isVertical ? "rotate(-90)" : ""
+      style: style.axisLabel,
+      transform: isVertical ? "rotate(-90)" : ""
     };
     return (props.label.props) ?
       React.cloneElement(props.label, newProps) :
@@ -447,18 +460,19 @@ export default class VictoryAxis extends React.Component {
         </VictoryAnimation>
       );
     }
-    const calculatedProps = this.getCalculatedValues(this.props);
+    this.getCalculatedValues(this.props);
     const transform = this.getTransform(this.props);
+    const style = this.getStyles(this.props)
     const group = (
-      <g style={this.style.parent} transform={transform}>
-        {this.renderLabel(this.props)}
-        {this.renderTicks(this.props)}
-        {this.renderLine(this.props)}
-        {this.renderGrid(this.props)}
+      <g style={style.parent} transform={transform}>
+        {this.renderLabel(this.props, style)}
+        {this.renderTicks(this.props, style)}
+        {this.renderLine(this.props, style)}
+        {this.renderGrid(this.props, style)}
       </g>
     );
     return this.props.standalone ? (
-      <svg style={this.style.parent}>
+      <svg style={style.parent}>
         {group}
       </svg>
     ) : group;
