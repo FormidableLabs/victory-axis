@@ -206,7 +206,7 @@ export default class VictoryAxis extends React.Component {
     this.padding = Chart.getPadding(props);
     this.orientation = this.getOrientation(props);
     this.scale = this.getScale(props, this.axisDimension);
-    this.ticks = this.getTicks(props);
+    this.ticks = this.getTicks(props, this.scale);
     this.offset = this.getOffset(props);
   }
 
@@ -268,7 +268,7 @@ export default class VictoryAxis extends React.Component {
       const ticks = map(props.tickValues, Number);
       domain = [min(ticks), max(ticks)];
     }
-    if (this.isVertical) {
+    if (this.isVertical(props)) {
       domain.reverse();
     }
     return domain;
@@ -279,7 +279,7 @@ export default class VictoryAxis extends React.Component {
     return props.scale.domain();
   }
 
-  getTicks(props) {
+  getTicks(props, scale) {
     if (props.tickValues) {
       // Since we declared that `tickValues` must be a homogenous array, we only
       // need to do a string check on the first item.
@@ -287,25 +287,25 @@ export default class VictoryAxis extends React.Component {
         return range(1, props.tickValues.length + 1);
       }
       return props.tickValues;
-    } else if (isFunction(this.scale.ticks)) {
-      const ticks = this.scale.ticks(props.tickCount);
+    } else if (isFunction(scale.ticks)) {
+      const ticks = scale.ticks(props.tickCount);
       if (props.crossAxis) {
         return includes(ticks, 0) ? without(ticks, 0) : ticks;
       }
       return ticks;
     }
-    return this.scale.domain();
+    return scale.domain();
   }
 
-  getTickFormat(props) {
+  getTickFormat(props, scale, ticks) {
     if (props.tickFormat && isFunction(props.tickFormat)) {
       return props.tickFormat;
     } else if (props.tickFormat && isArray(props.tickFormat)) {
       return (x, index) => props.tickFormat[index];
     } else if (this.getStringTicks(props)) {
       return (x, index) => props.tickValues[index];
-    } else if (isFunction(this.scale.tickFormat())) {
-      return this.scale.tickFormat(this.ticks.length);
+    } else if (isFunction(scale.tickFormat())) {
+      return scale.tickFormat(ticks.length);
     } else {
       return identity;
     }
@@ -320,35 +320,51 @@ export default class VictoryAxis extends React.Component {
     return props.label ? (style.fontSize * (this.isVertical ? 2.3 : 1.6)) : 0;
   }
 
-  getOffset(props) {
-    const xPadding = props.orientation === "right" ? this.padding.right : this.padding.left;
-    const yPadding = props.orientation === "top" ? this.padding.top : this.padding.bottom;
-    const fontSize = this.style.axisLabel.fontSize;
+  getOffset(props, layoutProps) {
+    const {style, padding, isVertical} = layoutProps;
+    const xPadding = props.orientation === "right" ? padding.right : padding.left;
+    const yPadding = props.orientation === "top" ? padding.top : padding.bottom;
+    const fontSize = style.axisLabel.fontSize;
     const offsetX = props.offsetX || xPadding;
     const offsetY = props.offsetY || yPadding;
-    const totalPadding = fontSize + (2 * this.style.ticks.size) + this.getLabelPadding(props);
+    const totalPadding = fontSize + (2 * style.ticks.size) + this.getLabelPadding(props);
     const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
-    const x = this.isVertical ? totalPadding : minimumPadding;
-    const y = this.isVertical ? minimumPadding : totalPadding;
+    const x = isVertical ? totalPadding : minimumPadding;
+    const y = isVertical ? minimumPadding : totalPadding;
     return {
       x: offsetX || x,
       y: offsetY || y
     };
   }
 
-  getTransform(props) {
+  getTransform(props, layoutProps) {
+    const offset = this.getOffset(props, layoutProps);
+    const {orientation} = layoutProps;
     const translate = {
-      top: [0, this.offset.y],
-      bottom: [0, props.height - this.offset.y],
-      left: [this.offset.x, 0],
-      right: [props.width - this.offset.x, 0]
-    }[this.orientation];
+      top: [0, offset.y],
+      bottom: [0, props.height - offset.y],
+      left: [offset.x, 0],
+      right: [props.width - offset.x, 0]
+    }[orientation];
     return `translate(${translate[0]}, ${translate[1]})`;
   }
 
-  renderLine(props, style) {
+  getCalculatedProps(props) {
+    const scale = this.getScale(props);
+    const ticks = this.getTicks(props, scale);
+    return {scale, ticks};
+  }
+
+  getLayoutProps(props) {
+    const style = this.getStyles(props);
     const padding = Chart.getPadding(props);
     const isVertical = this.isVertical(props)
+    const orientation = this.getOrientation(props);
+    return {style, padding, isVertical, orientation};
+  }
+
+  renderLine(props, layoutProps) {
+    const {padding, isVertical} = layoutProps;
     return (
       <AxisLine key="line"
         style={style.axis}
@@ -360,11 +376,10 @@ export default class VictoryAxis extends React.Component {
     );
   }
 
-  renderTicks(props, style) {
-    const orientation = this.getOrientation(props);
-    const scale = this.getScale(props);
-    const ticks = this.getTicks(props);
-    const tickFormat = this.getTickFormat(props);
+  renderTicks(props, layoutProps) {
+    const {style, orientation} = layoutProps;
+    const {scale, ticks} = this.getCalculatedProps(props);
+    const tickFormat = this.getTickFormat(props, scale, ticks);
     return map(ticks, (tick, index) => {
       const position = scale(tick);
       return (
@@ -382,13 +397,10 @@ export default class VictoryAxis extends React.Component {
     });
   }
 
-  renderGrid(props, style) {
-    const orientation = this.getOrientation(props);
-    const scale = this.getScale(props);
-    const ticks = this.getTicks(props);
-    const padding = Chart.getPadding(props);
-    const isVertical = this.isVertical(props);
-    const offset = this.getOffset(props);
+  renderGrid(props, layoutProps) {
+    const {scale, ticks} = this.getCalculatedProps(props);
+    const {style, padding, isVertical, orientation} = layoutProps;
+    const offset = this.getOffset(props, layoutProps);
     const xPadding = orientation === "right" ? padding.right : padding.left;
     const yPadding = orientation === "top" ? padding.top : padding.bottom;
     const sign = -orientationSign[orientation];
@@ -414,15 +426,12 @@ export default class VictoryAxis extends React.Component {
     });
   }
 
-  renderLabel(props, style) {
+  renderLabel(props, layoutProps) {
     if (!props.label) {
       return undefined;
     }
-    const orientation = this.getOrientation(props);
-    const padding = Chart.getPadding(props);
-    const isVertical = this.isVertical(props);
-
-    const sign = orientationSign[this.orientation];
+    const {style, orientation, padding, isVertical} = layoutProps;
+    const sign = orientationSign[orientation];
     const hPadding = padding.left + padding.right;
     const vPadding = padding.top + padding.bottom;
     const x = isVertical ?
@@ -461,14 +470,15 @@ export default class VictoryAxis extends React.Component {
       );
     }
     this.getCalculatedValues(this.props);
-    const transform = this.getTransform(this.props);
-    const style = this.getStyles(this.props)
+    const layoutProps = this.getLayoutProps(this.props);
+    const {style} = layoutProps;
+    const transform = this.getTransform(this.props, layoutProps);
     const group = (
       <g style={style.parent} transform={transform}>
-        {this.renderLabel(this.props, style)}
-        {this.renderTicks(this.props, style)}
-        {this.renderLine(this.props, style)}
-        {this.renderGrid(this.props, style)}
+        {this.renderLabel(this.props, layoutProps)}
+        {this.renderTicks(this.props, layoutProps)}
+        {this.renderLine(this.props, layoutProps)}
+        {this.renderGrid(this.props, layoutProps)}
       </g>
     );
     return this.props.standalone ? (
