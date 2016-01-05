@@ -18,6 +18,7 @@ import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
+import {Chart, Data, Domain, Scale} from "victory-util";
 
 const defaultStyles = {
   axis: {
@@ -207,17 +208,16 @@ export default class VictoryAxis extends React.Component {
   getCalculatedValues(props) {
     // order matters!
     this.style = this.getStyles(props);
-    this.padding = this.getPadding(props);
+    this.padding = Chart.getPadding(props);
     this.orientation = this.getOrientation(props);
     this.isVertical = orientationVerticality[this.orientation];
-    this.stringTicks = (this.props.tickValues && typeof this.props.tickValues[0] === "string");
-    this.range = this.getRange(props);
-    this.domain = this.getDomain(props);
-    this.scale = this.getScale(props);
+    this.scale = this.getScale(props, this.axisDimension);
     this.ticks = this.getTicks(props);
-    this.labelPadding = this.getLabelPadding(props);
     this.offset = this.getOffset(props);
-    this.transform = this.getTransform(props);
+  }
+
+  getStringTicks (props) {
+    return props.tickValues && typeof props.tickValues[0] === "string";
   }
 
   getOrientation(props) {
@@ -237,22 +237,15 @@ export default class VictoryAxis extends React.Component {
     };
   }
 
-  getPadding(props) {
-    const padding = props.padding || 0;
-    if (typeof padding === "number") {
-      return {
-        top: padding,
-        right: padding,
-        bottom: padding,
-        left: padding
-      };
-    }
-    return {
-      top: padding.top || 0,
-      right: padding.right || 0,
-      bottom: padding.bottom || 0,
-      left: padding.left || 0
-    };
+  getScale(props) {
+    const axisDimensions = {top: "x", bottom: "x", left: "y", right: "y"};
+    const axis = axisDimensions[this.getOrientation(props)];
+    const scale = Scale.getBaseScale(props, axis);
+    const range = Chart.getRange(props, axis);
+    const domain = this.getDomain(props);
+    scale.range(range);
+    scale.domain(domain);
+    return scale;
   }
 
   getDomain(props) {
@@ -269,7 +262,7 @@ export default class VictoryAxis extends React.Component {
     let domain;
     // Since we declared that `tickValues` must be a homogenous array, we only
     // need to do a string check on the first item.
-    if (this.stringTicks) {
+    if (this.getStringTicks(props)) {
       domain = [1, props.tickValues.length];
     } else {
       // coerce ticks to numbers
@@ -287,24 +280,11 @@ export default class VictoryAxis extends React.Component {
     return props.scale.domain();
   }
 
-  getRange(props) {
-    return this.isVertical ?
-      [props.height - this.padding.bottom, this.padding.top] :
-      [this.padding.left, props.width - this.padding.right];
-  }
-
-  getScale(props) {
-    const scale = props.scale.copy();
-    scale.range(this.range);
-    scale.domain(this.domain);
-    return scale;
-  }
-
   getTicks(props) {
     if (props.tickValues) {
       // Since we declared that `tickValues` must be a homogenous array, we only
       // need to do a string check on the first item.
-      if (this.stringTicks) {
+      if (this.getStringTicks(props)) {
         return range(1, props.tickValues.length + 1);
       }
       return props.tickValues;
@@ -323,7 +303,7 @@ export default class VictoryAxis extends React.Component {
       return props.tickFormat;
     } else if (props.tickFormat && isArray(props.tickFormat)) {
       return (x, index) => props.tickFormat[index];
-    } else if (this.stringTicks) {
+    } else if (this.getStringTicks(props)) {
       return (x, index) => props.tickValues[index];
     } else if (isFunction(this.scale.tickFormat())) {
       return this.scale.tickFormat(this.ticks.length);
@@ -347,7 +327,7 @@ export default class VictoryAxis extends React.Component {
     const fontSize = this.style.axisLabel.fontSize;
     const offsetX = props.offsetX || xPadding;
     const offsetY = props.offsetY || yPadding;
-    const totalPadding = fontSize + (2 * this.style.ticks.size) + this.labelPadding;
+    const totalPadding = fontSize + (2 * this.style.ticks.size) + this.getLabelPadding(props);
     const minimumPadding = 1.2 * fontSize; // TODO: magic numbers
     const x = this.isVertical ? totalPadding : minimumPadding;
     const y = this.isVertical ? minimumPadding : totalPadding;
@@ -386,7 +366,7 @@ export default class VictoryAxis extends React.Component {
       return (
         <Tick key={`tick-${index}`}
           position={position}
-          tick={this.stringTicks ? props.tickValues[tick - 1] : tick}
+          tick={this.getStringTicks(props) ? props.tickValues[tick - 1] : tick}
           orientation={this.orientation}
           label={tickFormat.call(this, tick, index)}
           style={{
@@ -413,7 +393,7 @@ export default class VictoryAxis extends React.Component {
       const position = this.scale(tick);
       return (
         <GridLine key={`grid-${index}`}
-          tick={this.stringTicks ? this.props.tickValues[tick - 1] : tick}
+          tick={this.getStringTicks(props) ? this.props.tickValues[tick - 1] : tick}
           x2={x2}
           y2={y2}
           xTransform={this.isVertical ? -xOffset : position}
@@ -438,7 +418,7 @@ export default class VictoryAxis extends React.Component {
     const newProps = {
       key: "label",
       x,
-      y: sign * this.labelPadding,
+      y: sign * this.getLabelPadding(props),
       textAnchor: "middle",
       verticalAnchor: sign < 0 ? "end" : "start",
       style: this.style.axisLabel,
@@ -466,11 +446,11 @@ export default class VictoryAxis extends React.Component {
           {(props) => <VictoryAxis {...this.props} {...props} animate={null}/>}
         </VictoryAnimation>
       );
-    } else {
-      this.getCalculatedValues(this.props);
     }
+    const calculatedProps = this.getCalculatedValues(this.props);
+    const transform = this.getTransform(this.props);
     const group = (
-      <g style={this.style.parent} transform={this.transform}>
+      <g style={this.style.parent} transform={transform}>
         {this.renderLabel(this.props)}
         {this.renderTicks(this.props)}
         {this.renderLine(this.props)}
