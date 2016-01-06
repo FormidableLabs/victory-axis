@@ -3,8 +3,6 @@ import map from "lodash/collection/map";
 import includes from "lodash/collection/includes";
 import isArray from "lodash/lang/isArray";
 import isFunction from "lodash/lang/isFunction";
-import max from "lodash/math/max";
-import min from "lodash/math/min";
 import merge from "lodash/object/merge";
 import pick from "lodash/object/pick";
 import identity from "lodash/utility/identity";
@@ -17,8 +15,9 @@ import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
+import {getDomain} from "./static-methods";
 import * as VictoryPropTypes from "victory-util/lib/prop-types";
-import {Chart, Data, Domain, Scale} from "victory-util";
+import {Chart, Scale} from "victory-util";
 
 const defaultStyles = {
   axis: {
@@ -62,8 +61,6 @@ const orientationSign = {
   right: 1,
   bottom: 1
 };
-
-
 
 @Radium
 export default class VictoryAxis extends React.Component {
@@ -200,12 +197,16 @@ export default class VictoryAxis extends React.Component {
     width: 450
   };
 
+  static getDomain = (props) => {
+    return getDomain(props);
+  };
+
   isVertical(props) {
     const vertical = {top: false, bottom: false, left: true, right: true};
-    return vertical[this.getOrientation(props)]
+    return vertical[this.getOrientation(props)];
   }
 
-  getStringTicks (props) {
+  getStringTicks(props) {
     return props.tickValues && typeof props.tickValues[0] === "string";
   }
 
@@ -230,43 +231,9 @@ export default class VictoryAxis extends React.Component {
     const axisDimensions = {top: "x", bottom: "x", left: "y", right: "y"};
     const axis = axisDimensions[this.getOrientation(props)];
     const scale = Scale.getBaseScale(props, axis);
-    const range = Chart.getRange(props, axis);
-    const domain = this.getDomain(props);
-    scale.range(range);
-    scale.domain(domain);
+    scale.range(Chart.getRange(props, axis));
+    scale.domain(getDomain(props));
     return scale;
-  }
-
-  getDomain(props) {
-    if (props.domain) {
-      return props.domain;
-    } else if (props.tickValues) {
-      return this._getDomainFromTickValues(props);
-    }
-    return this._getDomainFromScale(props);
-  }
-
-  // helper for getDomain()
-  _getDomainFromTickValues(props) {
-    let domain;
-    // Since we declared that `tickValues` must be a homogenous array, we only
-    // need to do a string check on the first item.
-    if (this.getStringTicks(props)) {
-      domain = [1, props.tickValues.length];
-    } else {
-      // coerce ticks to numbers
-      const ticks = map(props.tickValues, Number);
-      domain = [min(ticks), max(ticks)];
-    }
-    if (this.isVertical(props)) {
-      domain.reverse();
-    }
-    return domain;
-  }
-
-  // helper for getDomain()
-  _getDomainFromScale(props) {
-    return props.scale.domain();
   }
 
   getTicks(props, scale, stringTicks) {
@@ -352,7 +319,7 @@ export default class VictoryAxis extends React.Component {
   getLayoutProps(props) {
     const style = this.getStyles(props);
     const padding = Chart.getPadding(props);
-    const isVertical = this.isVertical(props)
+    const isVertical = this.isVertical(props);
     const orientation = this.getOrientation(props);
     return {style, padding, isVertical, orientation};
   }
