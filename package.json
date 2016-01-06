@@ -21,14 +21,14 @@
   },
   "dependencies": {
     "builder": "~2.1.4",
-    "builder-victory-component": "~0.0.5",
+    "builder-victory-component": "~0.0.9",
     "d3-scale": "^0.3.0",
     "victory-animation": "^0.0.13",
     "victory-label": "^0.1.8",
     "victory-util": "^2.0.3"
   },
   "devDependencies": {
-    "builder-victory-component-dev": "~0.0.5",
+    "builder-victory-component-dev": "~0.0.9",
     "chai": "^3.2.0",
     "mocha": "^2.3.3",
     "react": "^0.14.0",
