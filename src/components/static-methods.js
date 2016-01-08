@@ -19,13 +19,22 @@ const getDomainFromTickValues = (props) => {
   return domain;
 };
 
-const getDomain = (props) => {
+const getAxis = (props) => {
+  const vertical = {top: "x", bottom: "x", left: "y", right: "y"};
+  const orientation = props.orientation || (props.dependentAxis ? "left" : "bottom");
+  return vertical[orientation];
+};
+
+const getDomain = (props, axis) => {
+  if (axis && axis !== getAxis(props)) {
+    return undefined;
+  }
   if (props.domain) {
     return props.domain;
   } else if (props.tickValues) {
     return getDomainFromTickValues(props);
   }
-  return props.scale.domain();
+  return undefined;
 };
 
 export default {getDomain};

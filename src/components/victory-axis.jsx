@@ -231,8 +231,9 @@ export default class VictoryAxis extends React.Component {
     const axisDimensions = {top: "x", bottom: "x", left: "y", right: "y"};
     const axis = axisDimensions[this.getOrientation(props)];
     const scale = Scale.getBaseScale(props, axis);
+    const domain = getDomain(props) || scale.domain();
     scale.range(Chart.getRange(props, axis));
-    scale.domain(getDomain(props));
+    scale.domain(domain);
     return scale;
   }
 
