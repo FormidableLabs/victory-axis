@@ -197,8 +197,8 @@ export default class VictoryAxis extends React.Component {
     width: 450
   };
 
-  static getDomain = (props) => {
-    return getDomain(props);
+  static getDomain = (props, axis) => {
+    return getDomain(props, axis);
   };
 
   isVertical(props) {
