@@ -1,23 +1,17 @@
 import without from "lodash/array/without";
-import map from "lodash/collection/map";
-import includes from "lodash/collection/includes";
-import isArray from "lodash/lang/isArray";
 import isFunction from "lodash/lang/isFunction";
 import merge from "lodash/object/merge";
 import pick from "lodash/object/pick";
-import identity from "lodash/utility/identity";
 import range from "lodash/utility/range";
 import React, { PropTypes } from "react";
 import Radium from "radium";
-import d3Scale from "d3-scale";
-import {VictoryLabel} from "victory-label";
+import { VictoryLabel } from "victory-label";
 import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
-import {getDomain} from "./static-methods";
-import * as VictoryPropTypes from "victory-util/lib/prop-types";
-import {Chart, Scale} from "victory-util";
+import { getDomain } from "./static-methods";
+import { PropTypes as CustomPropTypes, Chart, Scale } from "victory-util";
 
 const defaultStyles = {
   axis: {
@@ -89,11 +83,11 @@ export default class VictoryAxis extends React.Component {
      * If this value is not given it will be calculated based on the scale or tickValues.
      * @examples [-1, 1]
      */
-    domain: VictoryPropTypes.domain,
+    domain: CustomPropTypes.domain,
     /**
      * The height prop specifies the height of the chart container element in pixels.
      */
-    height: VictoryPropTypes.nonNegative,
+    height: CustomPropTypes.nonNegative,
     /**
      * The label prop specifies the label for your axis. This prop can be a string or
      * a label component.
@@ -139,7 +133,7 @@ export default class VictoryAxis extends React.Component {
      * given as a function.
      * @examples d3Scale.time()
      */
-    scale: VictoryPropTypes.scale,
+    scale: CustomPropTypes.scale,
     /**
      * The standalone prop determines whether the component will render a standalone svg
      * or a <g> tag that will be included in an external svg. Set standalone to false to
@@ -166,7 +160,7 @@ export default class VictoryAxis extends React.Component {
      * The tickCount prop specifies how many ticks should be drawn on the axis if
      * tickValues are not explicitly provided.
      */
-    tickCount: VictoryPropTypes.nonNegative,
+    tickCount: CustomPropTypes.nonNegative,
     /**
      * The tickFormat prop specifies how tick values should be expressed visually.
      * tickFormat can be given as a function to be applied to every tickValue, or as
@@ -175,23 +169,23 @@ export default class VictoryAxis extends React.Component {
      */
     tickFormat: PropTypes.oneOfType([
       PropTypes.func,
-      VictoryPropTypes.homogeneousArray
+      CustomPropTypes.homogeneousArray
     ]),
     /**
      * The tickValues prop explicitly specifies which tick values to draw on the axis.
      * @examples ["apples", "bananas", "oranges"], [2, 4, 6, 8]
      */
-    tickValues: VictoryPropTypes.homogeneousArray,
+    tickValues: CustomPropTypes.homogeneousArray,
     /**
      * The width props specifies the width of the chart container element in pixels
      */
-    width: VictoryPropTypes.nonNegative
+    width: CustomPropTypes.nonNegative
   };
 
   static defaultProps = {
     height: 300,
     padding: 50,
-    scale: d3Scale.linear(),
+    scale: "linear",
     standalone: true,
     tickCount: 5,
     width: 450
@@ -248,7 +242,7 @@ export default class VictoryAxis extends React.Component {
     } else if (isFunction(scale.ticks)) {
       const ticks = scale.ticks(props.tickCount);
       if (props.crossAxis) {
-        return includes(ticks, 0) ? without(ticks, 0) : ticks;
+        return ticks.includes(0) ? without(ticks, 0) : ticks;
       }
       return ticks;
     }
@@ -259,14 +253,14 @@ export default class VictoryAxis extends React.Component {
     const {scale, ticks, stringTicks} = tickProps;
     if (props.tickFormat && isFunction(props.tickFormat)) {
       return props.tickFormat;
-    } else if (props.tickFormat && isArray(props.tickFormat)) {
+    } else if (props.tickFormat && Array.isArray(props.tickFormat)) {
       return (x, index) => props.tickFormat[index];
     } else if (stringTicks) {
       return (x, index) => props.tickValues[index];
     } else if (isFunction(scale.tickFormat())) {
       return scale.tickFormat(ticks.length);
     } else {
-      return identity;
+      return (x) => x;
     }
   }
 
@@ -342,7 +336,7 @@ export default class VictoryAxis extends React.Component {
     const {style, orientation} = layoutProps;
     const {scale, ticks, stringTicks} = tickProps;
     const tickFormat = this.getTickFormat(props, tickProps);
-    return map(ticks, (tick, index) => {
+    return ticks.map((tick, index) => {
       const position = scale(tick);
       return (
         <Tick key={`tick-${index}`}
@@ -372,7 +366,7 @@ export default class VictoryAxis extends React.Component {
       sign * (props.width - (padding.left + padding.right)) : 0;
     const y2 = isVertical ?
       0 : sign * (props.height - (padding.top + padding.bottom));
-    return map(ticks, (tick, index) => {
+    return ticks.map((tick, index) => {
       // determine the position and translation of each gridline
       const position = scale(tick);
       return (
