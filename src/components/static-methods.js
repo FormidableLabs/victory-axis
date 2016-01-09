@@ -21,10 +21,15 @@ const getDomainFromTickValues = (props) => {
   return domain;
 };
 
-const getAxis = (props) => {
-  const vertical = {top: "x", bottom: "x", left: "y", right: "y"};
-  const orientation = props.orientation || (props.dependentAxis ? "left" : "bottom");
-  return vertical[orientation];
+const getAxis = (props, flipped) => {
+  if (props.orientation) {
+    const vertical = {top: "x", bottom: "x", left: "y", right: "y"};
+    return vertical[props.orientation];
+  }
+  const axisType = props.dependentAxis ? "dependent" : "independent";
+  const flippedAxis = { dependent: "x", independent: "y"};
+  const normalAxis = { independent: "x", dependent: "y"};
+  return flipped ? flippedAxis[axisType] : normalAxis[axisType];
 };
 
 const getDomain = (props, axis) => {
@@ -46,6 +51,6 @@ const getScale = (props) => {
   scale.range(Chart.getRange(props, axis));
   scale.domain(domain);
   return scale;
-}
+};
 
 export default { getAxis, getDomain, getScale };

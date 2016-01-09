@@ -1,8 +1,6 @@
-import isFunction from "lodash/lang/isFunction";
-import transform from "lodash/object/transform";
 import React, { PropTypes } from "react";
 import Radium from "radium";
-
+import { Chart } from "victory-util";
 
 @Radium
 export default class GridLine extends React.Component {
@@ -17,19 +15,13 @@ export default class GridLine extends React.Component {
     style: PropTypes.object
   };
 
-  evaluateStyle(style) {
-    return transform(style, (result, value, key) => {
-      result[key] = isFunction(value) ? value.call(this, this.props.tick) : value;
-    });
-  }
-
   render() {
     return (
       <g transform={`translate(${this.props.xTransform}, ${this.props.yTransform})`}>
         <line
           x2={this.props.x2}
           y2={this.props.y2}
-          style={this.evaluateStyle(this.props.style)}
+          style={Chart.evaluateStyle(this.props.style, this.props.tick)}
         />
       </g>
     );

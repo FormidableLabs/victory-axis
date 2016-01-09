@@ -11,7 +11,7 @@ import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
 import { getAxis, getDomain, getScale } from "./static-methods";
-import { PropTypes as CustomPropTypes, Chart, Scale } from "victory-util";
+import { PropTypes as CustomPropTypes, Chart} from "victory-util";
 
 const defaultStyles = {
   axis: {
@@ -376,6 +376,14 @@ export default class VictoryAxis extends React.Component {
     if (!props.label) {
       return undefined;
     }
+    const newProps = this.getLableProps(props, layoutProps);
+    return (props.label.props) ?
+      React.cloneElement(props.label, newProps) :
+      React.createElement(VictoryLabel, newProps, props.label);
+  }
+
+  getLableProps(props, layoutProps) {
+    const componentProps = props.label.props || {};
     const {style, orientation, padding, isVertical} = layoutProps;
     const sign = orientationSign[orientation];
     const hPadding = padding.left + padding.right;
@@ -383,18 +391,18 @@ export default class VictoryAxis extends React.Component {
     const x = isVertical ?
       -((props.height - vPadding) / 2) - padding.top :
       ((props.width - hPadding) / 2) + padding.left;
-    const newProps = {
+    const y = sign * this.getLabelPadding(props, layoutProps);
+    const verticalAnchor = sign < 0 ? "end" : "start";
+    const transform = isVertical ? "rotate(-90)" : "";
+    return {
       key: "label",
-      x,
-      y: sign * this.getLabelPadding(props, layoutProps),
-      textAnchor: "middle",
-      verticalAnchor: sign < 0 ? "end" : "start",
-      style: style.axisLabel,
-      transform: isVertical ? "rotate(-90)" : ""
+      x: componentProps.x || x,
+      y: componentProps.y || y,
+      textAnchor: componentProps.textAnchor || "middle",
+      verticalAnchor: componentProps.verticalAnchor || verticalAnchor,
+      style: merge({}, componentProps.style, style.axisLabel),
+      transform: componentProps.transform || transform
     };
-    return (props.label.props) ?
-      React.cloneElement(props.label, newProps) :
-      React.createElement(VictoryLabel, newProps, props.label);
   }
 
   render() {
