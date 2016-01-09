@@ -27,9 +27,8 @@ const defaultStyles = {
     fontFamily: "Helvetica"
   },
   grid: {
-    stroke: "#c9c5bb",
+    stroke: "none",
     fill: "none",
-    strokeWidth: 0,
     strokeLinecap: "round"
   },
   ticks: {
