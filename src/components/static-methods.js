@@ -1,3 +1,5 @@
+import { Chart, Scale } from "victory-util";
+
 const getDomainFromTickValues = (props) => {
   const orientation = props.orientation || (props.dependentAxis ? "left" : "bottom");
   const vertical = {top: false, bottom: false, left: true, right: true};
@@ -37,4 +39,13 @@ const getDomain = (props, axis) => {
   return undefined;
 };
 
-export default {getDomain};
+const getScale = (props) => {
+  const axis = getAxis(props);
+  const scale = Scale.getBaseScale(props, axis);
+  const domain = getDomain(props) || scale.domain();
+  scale.range(Chart.getRange(props, axis));
+  scale.domain(domain);
+  return scale;
+}
+
+export default { getAxis, getDomain, getScale };

@@ -10,7 +10,7 @@ import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
-import { getDomain } from "./static-methods";
+import { getAxis, getDomain, getScale } from "./static-methods";
 import { PropTypes as CustomPropTypes, Chart, Scale } from "victory-util";
 
 const defaultStyles = {
@@ -191,9 +191,9 @@ export default class VictoryAxis extends React.Component {
     width: 450
   };
 
-  static getDomain = (props, axis) => {
-    return getDomain(props, axis);
-  };
+  static getDomain = getDomain;
+  static getAxis = getAxis;
+  static getScale = getScale;
 
   isVertical(props) {
     const vertical = {top: false, bottom: false, left: true, right: true};
@@ -219,16 +219,6 @@ export default class VictoryAxis extends React.Component {
       ticks: merge({}, defaultStyles.ticks, style.ticks),
       tickLabels: merge({}, defaultStyles.tickLabels, style.tickLabels)
     };
-  }
-
-  getScale(props) {
-    const axisDimensions = {top: "x", bottom: "x", left: "y", right: "y"};
-    const axis = axisDimensions[this.getOrientation(props)];
-    const scale = Scale.getBaseScale(props, axis);
-    const domain = getDomain(props) || scale.domain();
-    scale.range(Chart.getRange(props, axis));
-    scale.domain(domain);
-    return scale;
   }
 
   getTicks(props, scale, stringTicks) {
@@ -306,7 +296,7 @@ export default class VictoryAxis extends React.Component {
 
   getTickProps(props) {
     const stringTicks = this.getStringTicks(props);
-    const scale = this.getScale(props);
+    const scale = getScale(props);
     const ticks = this.getTicks(props, scale, stringTicks);
     return {scale, ticks, stringTicks};
   }
