@@ -3,9 +3,12 @@
 Victory Axis
 =============
 
-[Interactive documentation for VictoryAxis]("https://victory.formidable.com/victory-axis")
-
 Victory axis is an implementation of d3 axis that leaves all of the rendering to React. In addition to the usual d3 features, Victory Axis comes with some default styling, and will also nicely center your axis given a height and width.
+
+API Documentation
+-----------------
+
+See https://victory.formidable.com/victory-axis
 
 IMPORTANT
 =========
