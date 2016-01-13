@@ -8,7 +8,7 @@ Victory axis is an implementation of d3 axis that leaves all of the rendering to
 API Documentation
 -----------------
 
-See https://victory.formidable.com/victory-axis
+Detailed documentation and interactive examples can be found at http://victory.formidable.com/victory-axis
 
 IMPORTANT
 =========
