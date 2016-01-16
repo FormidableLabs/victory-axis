@@ -7,8 +7,7 @@ import { VictoryAnimation } from "victory-animation";
 import AxisLine from "./axis-line";
 import GridLine from "./grid";
 import Tick from "./tick";
-import { getAxis, getDomain, getScale } from "../static-methods";
-import * as Helpers from "../helper-methods";
+import Helpers from "../helper-methods";
 import { PropTypes as CustomPropTypes, Chart} from "victory-util";
 
 const defaultStyles = {
@@ -188,9 +187,9 @@ export default class VictoryAxis extends React.Component {
     width: 450
   };
 
-  static getDomain = getDomain;
-  static getAxis = getAxis;
-  static getScale = getScale;
+  static getDomain = Helpers.getDomain;
+  static getAxis = Helpers.getAxis;
+  static getScale = Helpers.getScale;
 
   getStyles(props) {
     const style = props.style || {};
@@ -206,22 +205,20 @@ export default class VictoryAxis extends React.Component {
   }
 
   getTickProps(props) {
-    const stringTicks = props.tickValues && typeof props.tickValues[0] === "string";
-    const scale = getScale(props);
-    const ticks = Helpers.getTicks(props, scale, stringTicks);
+    const stringTicks = Helpers.stringTicks(props);
+    const scale = Helpers.getScale(props);
+    const ticks = Helpers.getTicks(props, scale);
     return {scale, ticks, stringTicks};
   }
 
   getLayoutProps(props) {
     const style = this.getStyles(props);
     const padding = Chart.getPadding(props);
-    const orientation = props.orientation || (props.dependentAxis ? "left" : "bottom");
-    const vertical = {top: false, bottom: false, left: true, right: true};
-    const isVertical = vertical[orientation];
-    const labelPadding = Helpers.getLabelPadding(props, style, isVertical);
-    const layoutProps = {style, padding, isVertical, labelPadding, orientation};
-    const offset = Helpers.getOffset(props, layoutProps);
-    return {...layoutProps, offset};
+    const orientation = Helpers.getOrientation(props);
+    const isVertical = Helpers.isVertical(props);
+    const labelPadding = Helpers.getLabelPadding(props, style);
+    const offset = Helpers.getOffset(props, style);
+    return {style, padding, orientation, isVertical, labelPadding, offset};
   }
 
   renderLine(props, layoutProps) {
