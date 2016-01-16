@@ -187,9 +187,9 @@ export default class VictoryAxis extends React.Component {
     width: 450
   };
 
-  static getDomain = Helpers.getDomain;
-  static getAxis = Helpers.getAxis;
-  static getScale = Helpers.getScale;
+  static getDomain = Helpers.getDomain.bind(Helpers);
+  static getAxis = Helpers.getAxis.bind(Helpers);
+  static getScale = Helpers.getScale.bind(Helpers);
 
   getStyles(props) {
     const style = props.style || {};
