@@ -65,7 +65,7 @@ module.exports = {
   },
 
   stringTicks(props) {
-    return props.tickValues && Collection.containsStrings(props.tickValues);
+    return props.tickValues !== undefined && Collection.containsStrings(props.tickValues);
   },
 
   getTicks(props, scale) {
