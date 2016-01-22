@@ -125,9 +125,10 @@ export default class VictoryAxis extends React.Component {
       })
     ]),
     /**
-     * The scale prop determines which scales your axis should use. This prop should be
-     * given as a function.
-     * @examples d3Scale.time()
+     * The scale prop determines which scales your axis should use. This prop can be
+     * given as a `d3-scale@0.3.0` function or as a string corresponding to a supported d3-string
+     * function.
+     * @examples d3Scale.time(), "linear", "time", "log", "sqrt"
      */
     scale: CustomPropTypes.scale,
     /**

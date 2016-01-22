@@ -86,7 +86,7 @@ With a little more code, you can make a time scale axis with custom tick values 
 
 ```playground
 <VictoryAxis
-  scale={d3Scale.time()}
+  scale="time"
   tickValues={[
     new Date(1980, 1, 1),
     new Date(1990, 1, 1),
@@ -102,7 +102,7 @@ Here's how you make a log scale:
 <VictoryAxis
   dependentAxis
   padding={{left: 50, top: 20, bottom: 20}}
-  scale={d3Scale.log()}
+  scale="log"
   domain={[1, 5]}
 />
 ```

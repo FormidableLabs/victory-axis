@@ -71,7 +71,7 @@ export default class App extends React.Component {
           <VictoryAxis
             label="time axis"
             padding={{left: 10, right: 80}}
-            scale={"time"}
+            scale="time"
             style={{grid: {stroke: "black", strokeWidth: 1}}}
             tickValues={[
               new Date(1980, 1, 1),
