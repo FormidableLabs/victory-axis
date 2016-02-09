@@ -1,5 +1,5 @@
 [![Travis Status][trav_img]][trav_site]
-![](https://badge-size.herokuapp.com/FormidableLabs/victory-axis/master/dist/victory-axis.js.svg?compression=gzip)
+![](https://badge-size.herokuapp.com/FormidableLabs/victory-axis/master/dist/victory-axis.min.js?compression=gzip)
 
 Victory Axis
 =============
